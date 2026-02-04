@@ -6,9 +6,9 @@ function initSidebar(activePage = '/dashboard') {
         <div class="sidebar">
             <div class="sidebar-header">
                 <div class="sidebar-logo">
-                    <span class="logo-icon">📊</span> Spearity
+                    <span class="logo-icon">🤖</span> SEO Agents
                 </div>
-                <div class="sidebar-subtitle">Marketing Platform</div>
+                <div class="sidebar-subtitle">Multi-Site Dashboard</div>
             </div>
 
             <ul class="sidebar-nav">

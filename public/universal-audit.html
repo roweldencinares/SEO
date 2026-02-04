@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Universal Website Audit - Spearity Marketing</title>
+
+    
+    
+
+    <!-- Shared Sidebar Styles -->
+    <link rel="stylesheet" href="/sidebar.css">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fa;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin-left: 300px;
+            padding: 30px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 50px 40px;
+            border-radius: 16px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.8rem;
+            margin-bottom: 12px;
+        }
+
+        .subtitle {
+            opacity: 0.95;
+            font-size: 1.2rem;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        /* Audit Form */
+        .audit-form-section {
+            background: white;
+            padding: 48px;
+            border-radius: 16px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        }
+
+        .audit-form-section h2 {
+            font-size: 1.8rem;
+            color: #333;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 0.95rem;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 16px 20px;
+            font-size: 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 200px;
+            gap: 20px;
+        }
+
+        .select-input {
+            padding: 16px 20px;
+            font-size: 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            background: white;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .btn-audit {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 18px 48px;
+            font-size: 18px;
+            font-weight: 700;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 12px;
+            transition: all 0.3s;
+        }
+
+        .btn-audit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-audit:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading-state {
+            display: none;
+            text-align: center;
+            padding: 40px;
+            background: white;
+            border-radius: 16px;
+            margin-bottom: 30px;
+        }
+
+        .loading-state.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-size: 1.2rem;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .loading-subtext {
+            color: #666;
+            font-size: 0.95rem;
+        }
+
+        /* Results Section */
+        .results-section {
+            display: none;
+        }
+
+        .results-section.active {
+            display: block;
+        }
+
+        .score-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .score-card {
+            background: white;
+            padding: 28px;
+            border-radius: 16px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            text-align: center;
+        }
+
+        .score-value {
+            font-size: 3.2rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .score-value.critical { color: #dc3545; }
+        .score-value.warning { color: #ffc107; }
+        .score-value.passed { color: #28a745; }
+        .score-value.info { color: #17a2b8; }
+
+        .score-label {
+            color: #666;
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .section {
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        }
+
+        .section-title {
+            font-size: 1.8rem;
+            color: #333;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .section-title-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .audit-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .audit-item {
+            padding: 18px 24px;
+            margin-bottom: 12px;
+            border-radius: 10px;
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+            border-left: 4px solid;
+        }
+
+        .audit-item.critical {
+            background: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+        }
+
+        .audit-item.warning {
+            background: #fff3cd;
+            border-color: #ffc107;
+            color: #856404;
+        }
+
+        .audit-item-icon {
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .audit-item-content {
+            flex: 1;
+        }
+
+        .audit-item-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .audit-item-description {
+            font-size: 0.9rem;
+            opacity: 0.85;
+        }
+
+        .audit-item-count {
+            background: rgba(0,0,0,0.1);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-left: auto;
+            flex-shrink: 0;
+        }
+
+        .example-urls {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .example-url {
+            background: #f7fafc;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            color: #667eea;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid #e2e8f0;
+        }
+
+        .example-url:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .audit-history {
+            background: white;
+            padding: 32px;
+            border-radius: 16px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        }
+
+        .audit-history h3 {
+            font-size: 1.4rem;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .history-item {
+            padding: 16px;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.2s;
+        }
+
+        .history-item:hover {
+            background: #f7fafc;
+        }
+
+        .history-item:last-child {
+            border-bottom: none;
+        }
+
+        .history-url {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .history-date {
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        .history-issues {
+            font-size: 0.9rem;
+            color: #dc3545;
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin-left: 0;
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .audit-form-section {
+                padding: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div id="sidebar-container"></div>
+
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🔍 Universal Website Audit</h1>
+            <p class="subtitle">
+                Comprehensive SEO audit for any website. Analyze technical SEO, performance, and content quality in minutes.
+            </p>
+        </div>
+
+        <!-- Audit Form -->
+        <div class="audit-form-section">
+            <h2>Enter Website URL to Audit</h2>
+
+            <form id="auditForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label" for="websiteUrl">
+                            🌐 Website URL
+                        </label>
+                        <input
+                            type="url"
+                            id="websiteUrl"
+                            class="form-input"
+                            placeholder="https://www.example.com"
+                            required
+                        />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="maxPages">
+                            📄 Max Pages
+                        </label>
+                        <select id="maxPages" class="select-input">
+                            <option value="10">10 pages</option>
+                            <option value="50" selected>50 pages</option>
+                            <option value="100">100 pages</option>
+                            <option value="300">300 pages</option>
+                            <option value="999">All pages</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-audit" id="auditBtn">
+                    🚀 Start Comprehensive Audit
+                </button>
+            </form>
+
+            <div class="example-urls">
+                <strong style="width: 100%; font-size: 0.9rem; color: #666; margin-bottom: 8px;">Quick examples:</strong>
+                <span class="example-url" onclick="fillExample('https://www.spearity.com')">Spearity.com</span>
+                <span class="example-url" onclick="fillExample('https://www.example.com')">Example.com</span>
+                <span class="example-url" onclick="fillExample('https://www.google.com')">Google.com</span>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div class="loading-state" id="loadingState">
+            <div class="spinner"></div>
+            <div class="loading-text">Auditing Website...</div>
+            <div class="loading-subtext">This may take 30-60 seconds depending on site size</div>
+            <div class="loading-subtext" style="margin-top: 20px; font-style: italic;">
+                Crawling pages • Checking links • Analyzing SEO • Generating report
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div class="results-section" id="resultsSection">
+            <!-- Score Summary -->
+            <div class="score-summary" id="scoreSummary">
+                <!-- Will be populated dynamically -->
+            </div>
+
+            <!-- Critical Issues -->
+            <div class="section" id="criticalSection" style="display: none;">
+                <div class="section-title">
+                    <div class="section-title-icon">🔴</div>
+                    <span>Critical Issues</span>
+                </div>
+                <ul class="audit-list" id="criticalList"></ul>
+            </div>
+
+            <!-- Warnings -->
+            <div class="section" id="warningSection" style="display: none;">
+                <div class="section-title">
+                    <div class="section-title-icon">⚠️</div>
+                    <span>Warnings</span>
+                </div>
+                <ul class="audit-list" id="warningList"></ul>
+            </div>
+
+            <!-- Notices -->
+            <div class="section" id="noticeSection" style="display: none;">
+                <div class="section-title">
+                    <div class="section-title-icon">ℹ️</div>
+                    <span>Notices</span>
+                </div>
+                <ul class="audit-list" id="noticeList"></ul>
+            </div>
+        </div>
+
+        <!-- Audit History -->
+        <div class="audit-history" id="auditHistory" style="display: none;">
+            <h3>📋 Recent Audits</h3>
+            <div id="historyList">
+                <!-- Will be populated from localStorage -->
+            </div>
+        </div>
+    </div>
+
+    <script src="/sidebar.js"></script>
+
+    <script>
+        const auditForm = document.getElementById('auditForm');
+        const loadingState = document.getElementById('loadingState');
+        const resultsSection = document.getElementById('resultsSection');
+        const auditBtn = document.getElementById('auditBtn');
+
+        // Fill example URL
+        function fillExample(url) {
+            document.getElementById('websiteUrl').value = url;
+        }
+
+        // Load audit history from localStorage
+        function loadAuditHistory() {
+            const history = JSON.parse(localStorage.getItem('auditHistory') || '[]');
+            if (history.length > 0) {
+                document.getElementById('auditHistory').style.display = 'block';
+                const historyList = document.getElementById('historyList');
+                historyList.innerHTML = history.slice(0, 5).map(item => `
+                    <div class="history-item" onclick="fillExample('${item.url}')">
+                        <div>
+                            <div class="history-url">${item.url}</div>
+                            <div class="history-date">${new Date(item.date).toLocaleString()}</div>
+                        </div>
+                        <div class="history-issues">${item.issues} issues</div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        // Save audit to history
+        function saveToHistory(url, issues) {
+            const history = JSON.parse(localStorage.getItem('auditHistory') || '[]');
+            history.unshift({
+                url,
+                issues,
+                date: new Date().toISOString()
+            });
+            localStorage.setItem('auditHistory', JSON.stringify(history.slice(0, 10)));
+            loadAuditHistory();
+        }
+
+        // Handle form submission
+        auditForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const url = document.getElementById('websiteUrl').value;
+            const maxPages = document.getElementById('maxPages').value;
+
+            // Validate URL
+            try {
+                new URL(url);
+            } catch {
+                alert('Please enter a valid URL (e.g., https://www.example.com)');
+                return;
+            }
+
+            // Show loading
+            loadingState.classList.add('active');
+            resultsSection.classList.remove('active');
+            auditBtn.disabled = true;
+
+            try {
+                // Call audit API
+                const response = await fetch('/api/site-audit/run', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ url, maxPages: parseInt(maxPages) })
+                });
+
+                const report = await response.json();
+
+                // Save to history
+                saveToHistory(url, report.summary.totalIssues);
+
+                // Display results
+                displayResults(report);
+
+                // Hide loading, show results
+                loadingState.classList.remove('active');
+                resultsSection.classList.add('active');
+
+                // Scroll to results
+                resultsSection.scrollIntoView({ behavior: 'smooth' });
+
+            } catch (error) {
+                console.error('Audit failed:', error);
+                alert('Audit failed. Please try again or contact support.');
+                loadingState.classList.remove('active');
+            } finally {
+                auditBtn.disabled = false;
+            }
+        });
+
+        // Display audit results
+        function displayResults(report) {
+            // Score Summary
+            const scoreSummary = document.getElementById('scoreSummary');
+            scoreSummary.innerHTML = `
+                <div class="score-card">
+                    <div class="score-value info">${report.summary.totalPages}</div>
+                    <div class="score-label">Pages Crawled</div>
+                </div>
+                <div class="score-card">
+                    <div class="score-value critical">${report.issues.critical.length}</div>
+                    <div class="score-label">Critical Issues</div>
+                </div>
+                <div class="score-card">
+                    <div class="score-value warning">${report.issues.warnings.length}</div>
+                    <div class="score-label">Warnings</div>
+                </div>
+                <div class="score-card">
+                    <div class="score-value passed">${report.issues.notices.length}</div>
+                    <div class="score-label">Notices</div>
+                </div>
+            `;
+
+            // Critical Issues
+            displayIssues('critical', report.issues.critical);
+
+            // Warnings
+            displayIssues('warning', report.issues.warnings);
+
+            // Notices
+            displayIssues('notice', report.issues.notices);
+        }
+
+        // Display issue category
+        function displayIssues(category, issues) {
+            const section = document.getElementById(`${category}Section`);
+            const list = document.getElementById(`${category}List`);
+
+            if (issues.length === 0) {
+                section.style.display = 'none';
+                return;
+            }
+
+            section.style.display = 'block';
+            list.innerHTML = issues.map(issue => `
+                <li class="audit-item ${category}">
+                    <div class="audit-item-icon">${category === 'critical' ? '🔴' : category === 'warning' ? '⚠️' : 'ℹ️'}</div>
+                    <div class="audit-item-content">
+                        <div class="audit-item-title">${issue.type}</div>
+                        <div class="audit-item-description">${issue.impact || 'Needs attention'}</div>
+                    </div>
+                    <span class="audit-item-count">${issue.count}</span>
+                </li>
+            `).join('');
+        }
+
+        // Load history on page load
+        loadAuditHistory();
+    </script>
+</body>
+</html>

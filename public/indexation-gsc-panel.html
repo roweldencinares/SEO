@@ -1,0 +1,461 @@
+<!-- GSC-POWERED INDEXATION PANELS -->
+<!-- Add these tabs to the nav-tabs div -->
+<div class="nav-tab" onclick="switchTab('gsc-status')">🔍 GSC Index Check</div>
+<div class="nav-tab" onclick="switchTab('gsc-coverage')">📊 GSC Coverage</div>
+<div class="nav-tab" onclick="switchTab('gsc-summary')">📈 GSC Dashboard</div>
+<div class="nav-tab" onclick="switchTab('gsc-bulk')">🔎 Bulk Inspector</div>
+
+<!-- GSC INDEX STATUS CHECK PANEL -->
+<div id="gsc-status-panel" class="panel">
+    <div class="card">
+        <h2>🔍 Real Index Status Check (Google Search Console)</h2>
+        <p style="color: #718096; margin-bottom: 20px;">
+            Check if a URL is actually indexed in Google using official Search Console API data
+        </p>
+
+        <div class="form-group">
+            <label>URL to Check</label>
+            <input type="text" id="gsc-check-url" value="https://www.spearity.com/business-coaching/" placeholder="https://www.spearity.com/page/">
+        </div>
+
+        <button class="btn" onclick="checkGSCStatus()">Check Index Status</button>
+
+        <div id="gsc-status-result"></div>
+    </div>
+</div>
+
+<!-- GSC COVERAGE REPORT PANEL -->
+<div id="gsc-coverage-panel" class="panel">
+    <div class="card">
+        <h2>📊 Index Coverage Report (Google Search Console)</h2>
+        <p style="color: #718096; margin-bottom: 20px;">
+            See all pages Google has indexed with real impressions, clicks, and positions
+        </p>
+
+        <div class="form-group">
+            <label>Pages Limit</label>
+            <input type="number" id="gsc-coverage-limit" value="100" min="10" max="1000">
+        </div>
+
+        <button class="btn" onclick="getGSCCoverage()">Get Coverage Report</button>
+
+        <div id="gsc-coverage-result"></div>
+    </div>
+</div>
+
+<!-- GSC SUMMARY DASHBOARD PANEL -->
+<div id="gsc-summary-panel" class="panel">
+    <div class="card">
+        <h2>📈 GSC Performance Dashboard</h2>
+        <p style="color: #718096; margin-bottom: 20px;">
+            Real-time metrics from Google Search Console
+        </p>
+
+        <div class="form-group">
+            <label>Date Range (days)</label>
+            <select id="gsc-days">
+                <option value="7">Last 7 days</option>
+                <option value="30" selected>Last 30 days</option>
+                <option value="90">Last 90 days</option>
+            </select>
+        </div>
+
+        <button class="btn" onclick="getGSCSummary()">Load Dashboard</button>
+
+        <div id="gsc-summary-result"></div>
+    </div>
+</div>
+
+<!-- GSC BULK INSPECTOR PANEL -->
+<div id="gsc-bulk-panel" class="panel">
+    <div class="card">
+        <h2>🔎 Bulk URL Inspector (Google Search Console)</h2>
+        <p style="color: #718096; margin-bottom: 20px;">
+            Check multiple URLs at once to see which are indexed in Google
+        </p>
+
+        <div class="form-group">
+            <label>URLs to Check (one per line)</label>
+            <textarea id="gsc-bulk-urls" rows="10" placeholder="https://www.spearity.com/page-1/
+https://www.spearity.com/page-2/
+https://www.spearity.com/page-3/"></textarea>
+        </div>
+
+        <button class="btn" onclick="bulkInspectGSC()">Inspect URLs</button>
+
+        <div id="gsc-bulk-result"></div>
+    </div>
+</div>
+
+<!-- GSC JAVASCRIPT FUNCTIONS -->
+<script>
+// Check real index status from GSC
+async function checkGSCStatus() {
+    const url = document.getElementById('gsc-check-url').value;
+    const resultDiv = document.getElementById('gsc-status-result');
+
+    if (!url) {
+        resultDiv.innerHTML = '<div class="result-box error">Please enter a URL</div>';
+        return;
+    }
+
+    resultDiv.innerHTML = '<div class="loading">Checking Google Search Console...</div>';
+
+    try {
+        const response = await fetch(`/api/indexation/gsc/status?url=${encodeURIComponent(url)}`);
+        const data = await response.json();
+
+        if (!data.success) {
+            throw new Error(data.error);
+        }
+
+        const statusClass = data.indexed ? 'success' : 'error';
+        let html = `
+            <div class="result-box ${statusClass}">
+                <h3>${data.message}</h3>
+                <p><strong>Source:</strong> ${data.source}</p>
+                ${data.data ? `
+                    <div class="stats-grid" style="margin-top: 20px;">
+                        <div class="stat-card">
+                            <div class="stat-label">Clicks (30d)</div>
+                            <div class="stat-value">${data.data.clicks}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Impressions</div>
+                            <div class="stat-value">${data.data.impressions}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">CTR</div>
+                            <div class="stat-value">${data.data.ctr}%</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Avg Position</div>
+                            <div class="stat-value">${data.data.position}</div>
+                        </div>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+
+        resultDiv.innerHTML = html;
+    } catch (error) {
+        resultDiv.innerHTML = `<div class="result-box error"><strong>Error:</strong> ${error.message}</div>`;
+    }
+}
+
+// Get coverage report from GSC
+async function getGSCCoverage() {
+    const limit = document.getElementById('gsc-coverage-limit').value;
+    const resultDiv = document.getElementById('gsc-coverage-result');
+
+    resultDiv.innerHTML = '<div class="loading">Loading coverage data from Google Search Console...</div>';
+
+    try {
+        const response = await fetch(`/api/indexation/gsc/coverage?limit=${limit}`);
+        const data = await response.json();
+
+        if (!data.success) {
+            throw new Error(data.error);
+        }
+
+        let html = `
+            <div class="result-box success">
+                <h3>📊 Index Coverage Summary</h3>
+                <p><strong>Source:</strong> ${data.source}</p>
+                <p><strong>Date Range:</strong> ${data.dateRange.current.startDate} to ${data.dateRange.current.endDate}</p>
+
+                <div class="stats-grid" style="margin-top: 20px;">
+                    <div class="stat-card">
+                        <div class="stat-label">Total Pages in GSC</div>
+                        <div class="stat-value">${data.summary.total}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Getting Clicks</div>
+                        <div class="stat-value">${data.summary.indexed}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Has Impressions Only</div>
+                        <div class="stat-value">${data.summary.hasImpressions}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Index Rate</div>
+                        <div class="stat-value">${data.summary.indexRate}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Avg Position</div>
+                        <div class="stat-value">${data.summary.avgPosition}</div>
+                    </div>
+                </div>
+
+                <h4 style="margin-top: 30px;">Top ${data.pages.length} Pages:</h4>
+                <div class="table-container" style="margin-top: 15px; max-height: 500px; overflow-y: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Page</th>
+                                <th>Clicks</th>
+                                <th>Impressions</th>
+                                <th>CTR</th>
+                                <th>Position</th>
+                                <th>Trend</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${data.pages.map(page => `
+                                <tr>
+                                    <td><a href="${page.page}" target="_blank">${page.page.substring(0, 60)}...</a></td>
+                                    <td>${page.clicks}</td>
+                                    <td>${page.impressions}</td>
+                                    <td>${page.ctr}%</td>
+                                    <td>${page.position}</td>
+                                    <td style="color: ${page.trend > 0 ? '#48bb78' : page.trend < 0 ? '#f56565' : '#718096'}">
+                                        ${page.trend > 0 ? '↗' : page.trend < 0 ? '↘' : '→'} ${page.trend}%
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+
+        resultDiv.innerHTML = html;
+    } catch (error) {
+        resultDiv.innerHTML = `<div class="result-box error"><strong>Error:</strong> ${error.message}</div>`;
+    }
+}
+
+// Get GSC summary dashboard
+async function getGSCSummary() {
+    const days = document.getElementById('gsc-days').value;
+    const resultDiv = document.getElementById('gsc-summary-result');
+
+    resultDiv.innerHTML = '<div class="loading">Loading dashboard from Google Search Console...</div>';
+
+    try {
+        const response = await fetch(`/api/indexation/gsc/summary?days=${days}`);
+        const data = await response.json();
+
+        if (!data.success) {
+            throw new Error(data.error);
+        }
+
+        let html = `
+            <div class="result-box success">
+                <h3>📈 GSC Performance Dashboard</h3>
+                <p><strong>Source:</strong> ${data.source}</p>
+                <p><strong>Date Range:</strong> ${data.dateRange.startDate} to ${data.dateRange.endDate}</p>
+
+                <div class="stats-grid" style="margin-top: 20px;">
+                    <div class="stat-card">
+                        <div class="stat-label">Keywords Tracked</div>
+                        <div class="stat-value">${data.summary.keywordsTracked}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Top 10 Rankings</div>
+                        <div class="stat-value">${data.summary.top10Rankings}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Total Clicks</div>
+                        <div class="stat-value">${data.summary.totalClicks}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Total Impressions</div>
+                        <div class="stat-value">${data.summary.totalImpressions}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Avg Position</div>
+                        <div class="stat-value">${data.summary.avgPosition}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Avg CTR</div>
+                        <div class="stat-value">${data.summary.avgCTR}%</div>
+                    </div>
+                </div>
+
+                <h4 style="margin-top: 30px;">Top 10 Keywords:</h4>
+                <div class="table-container" style="margin-top: 15px;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Keyword</th>
+                                <th>Position</th>
+                                <th>Clicks</th>
+                                <th>Impressions</th>
+                                <th>CTR</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${data.topKeywords.map(kw => `
+                                <tr>
+                                    <td><strong>${kw.keyword}</strong></td>
+                                    <td style="color: ${kw.positionNum <= 3 ? '#48bb78' : kw.positionNum <= 10 ? '#ed8936' : '#718096'}">#${kw.position}</td>
+                                    <td>${kw.clicks}</td>
+                                    <td>${kw.impressions}</td>
+                                    <td>${kw.ctr}%</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+
+        resultDiv.innerHTML = html;
+    } catch (error) {
+        resultDiv.innerHTML = `<div class="result-box error"><strong>Error:</strong> ${error.message}</div>`;
+    }
+}
+
+// Bulk URL inspection
+async function bulkInspectGSC() {
+    const urlsText = document.getElementById('gsc-bulk-urls').value;
+    const resultDiv = document.getElementById('gsc-bulk-result');
+
+    const urls = urlsText.trim().split('\n').filter(url => url.trim());
+
+    if (urls.length === 0) {
+        resultDiv.innerHTML = '<div class="result-box error">Please enter at least one URL</div>';
+        return;
+    }
+
+    resultDiv.innerHTML = `<div class="loading">Inspecting ${urls.length} URLs in Google Search Console...</div>`;
+
+    try {
+        const response = await fetch('/api/indexation/gsc/inspect-bulk', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ urls })
+        });
+
+        const data = await response.json();
+
+        if (!data.success) {
+            throw new Error(data.error);
+        }
+
+        let html = `
+            <div class="result-box success">
+                <h3>🔎 Bulk Inspection Results</h3>
+                <p><strong>Source:</strong> ${data.source}</p>
+
+                <div class="stats-grid" style="margin-top: 20px;">
+                    <div class="stat-card">
+                        <div class="stat-label">Total URLs</div>
+                        <div class="stat-value">${data.total}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">✅ Indexed</div>
+                        <div class="stat-value">${data.indexed}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">❌ Not Indexed</div>
+                        <div class="stat-value">${data.notIndexed}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Index Rate</div>
+                        <div class="stat-value">${data.indexRate}</div>
+                    </div>
+                </div>
+
+                <h4 style="margin-top: 30px;">Inspection Results:</h4>
+                <div class="table-container" style="margin-top: 15px; max-height: 500px; overflow-y: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>URL</th>
+                                <th>Status</th>
+                                <th>Clicks</th>
+                                <th>Impressions</th>
+                                <th>Position</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${data.inspections.map(item => `
+                                <tr>
+                                    <td><a href="${item.url}" target="_blank">${item.url.substring(0, 50)}...</a></td>
+                                    <td>${item.status}</td>
+                                    <td>${item.clicks}</td>
+                                    <td>${item.impressions}</td>
+                                    <td>${item.position || 'N/A'}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+
+        resultDiv.innerHTML = html;
+    } catch (error) {
+        resultDiv.innerHTML = `<div class="result-box error"><strong>Error:</strong> ${error.message}</div>`;
+    }
+}
+
+// Add styles for table
+const styles = `
+    <style>
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        thead {
+            background: #f7fafc;
+            position: sticky;
+            top: 0;
+        }
+
+        th {
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #2d3748;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #e2e8f0;
+            color: #4a5568;
+        }
+
+        tr:hover {
+            background: #f7fafc;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #718096;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1a202c;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+    </style>
+`;
+
+document.head.insertAdjacentHTML('beforeend', styles);
+</script>

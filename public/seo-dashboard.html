@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spearity SEO Dashboard - Live Rankings & Analytics</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <!-- LocalBusiness Schema Markup -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "ProfessionalService",
+      "name": "Spearity",
+      "image": "https://www.spearity.com/logo.png",
+      "description": "AI-powered business coaching and leadership training for Milwaukee businesses. Helping companies achieve 30% revenue growth through strategic planning, executive coaching, and data-driven insights.",
+      "@id": "https://www.spearity.com",
+      "url": "https://www.spearity.com",
+      "telephone": "(414) 265-5755",
+      "email": "support@spearity.com",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "313 N Plankinton Ave Ste 207",
+        "addressLocality": "Milwaukee",
+        "addressRegion": "WI",
+        "postalCode": "53203",
+        "addressCountry": "US"
+      },
+      "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": 43.0389,
+        "longitude": -87.9065
+      },
+      "openingHoursSpecification": [
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+          "opens": "09:00",
+          "closes": "17:00"
+        }
+      ],
+      "sameAs": [
+        "https://www.linkedin.com/company/spearity"
+      ],
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "5.0",
+        "reviewCount": "28",
+        "bestRating": "5",
+        "worstRating": "1"
+      },
+      "priceRange": "$$$$",
+      "serviceType": [
+        "Business Coaching",
+        "Executive Coaching",
+        "Leadership Training",
+        "Strategic Planning",
+        "Business Consulting"
+      ],
+      "areaServed": {
+        "@type": "GeoCircle",
+        "geoMidpoint": {
+          "@type": "GeoCoordinates",
+          "latitude": 43.0389,
+          "longitude": -87.9065
+        },
+        "geoRadius": "50000"
+      },
+      "knowsAbout": [
+        "Business Strategy",
+        "Leadership Development",
+        "Revenue Growth",
+        "AI-Powered Analytics",
+        "Executive Coaching"
+      ]
+    }
+    </script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            color: #667eea;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1.1rem;
+        }
+
+        .status-bar {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .status-badge.connected {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-badge.disconnected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #667eea;
+            margin: 10px 0;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-change {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            margin-top: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .stat-change.positive {
+            color: #28a745;
+        }
+
+        .stat-change.negative {
+            color: #dc3545;
+        }
+
+        .chart-container {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            margin-bottom: 30px;
+        }
+
+        .chart-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .keywords-table {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: #f8f9fa;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #555;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        .position {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .position.top3 {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .position.top10 {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .position.top20 {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .position.other {
+            background: #f8f9fa;
+            color: #6c757d;
+        }
+
+        .setup-card {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            margin-bottom: 30px;
+        }
+
+        .setup-steps {
+            counter-reset: step-counter;
+            list-style: none;
+        }
+
+        .setup-steps li {
+            counter-increment: step-counter;
+            position: relative;
+            padding-left: 50px;
+            margin-bottom: 25px;
+        }
+
+        .setup-steps li::before {
+            content: counter(step-counter);
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 35px;
+            height: 35px;
+            background: #667eea;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+        }
+
+        .code-block {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            overflow-x: auto;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border-left: 4px solid #17a2b8;
+        }
+
+        .alert-warning {
+            background: #fff3cd;
+            color: #856404;
+            border-left: 4px solid #ffc107;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        /* Tab Navigation Styles */
+        .tabs-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+
+        .tabs-nav {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+            overflow-x: auto;
+        }
+
+        .tab-button {
+            padding: 18px 30px;
+            background: transparent;
+            border: none;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+            white-space: nowrap;
+        }
+
+        .tab-button:hover {
+            background: rgba(102, 126, 234, 0.1);
+            color: #667eea;
+        }
+
+        .tab-button.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+            background: white;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 30px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Contact Header */
+        .contact-header {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            color: white;
+            padding: 12px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 30px;
+            font-size: 0.9rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .contact-header a {
+            color: white;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+            transition: opacity 0.3s ease;
+        }
+
+        .contact-header a:hover {
+            opacity: 0.8;
+        }
+
+        .contact-header .rating {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 4px 12px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            .contact-header {
+                flex-direction: column;
+                gap: 10px;
+                font-size: 0.85rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Contact Header -->
+    <div class="contact-header">
+        <a href="tel:+14142655755">
+            <span>📞</span>
+            <span>(414) 265-5755</span>
+        </a>
+        <a href="https://maps.google.com/?q=313+N+Plankinton+Ave+Ste+207+Milwaukee+WI+53203" target="_blank">
+            <span>📍</span>
+            <span>313 N Plankinton Ave Ste 207, Milwaukee, WI 53203</span>
+        </a>
+        <div class="rating">
+            <span>⭐</span>
+            <span>5.0 (28 reviews)</span>
+        </div>
+    </div>
+
+    <div class="container">
+        <header>
+            <h1>📊 Spearity SEO Dashboard</h1>
+            <p class="subtitle">Real Google Search Console Data for www.spearity.com</p>
+            <div id="dataRangeInfo" style="margin-top: 15px; padding: 12px; background: #f8f9fa; border-radius: 8px; display: none;">
+                <strong>📅 Data Period:</strong> <span id="dateRangeText">Loading...</span>
+                <span style="margin-left: 15px; color: #666; font-size: 0.9rem;">ℹ️ Google Search Console data has a 2-3 day delay</span>
+            </div>
+            <div class="status-bar">
+                <div class="status-badge disconnected" id="gscStatus">
+                    <span class="loading"></span>
+                    <span>Connecting to Google Search Console...</span>
+                </div>
+                <button class="btn" id="connectBtn" onclick="initGoogleAuth()">Connect Google Account</button>
+            </div>
+        </header>
+
+        <!-- Setup Instructions (shown when not connected) -->
+        <div class="setup-card" id="setupCard">
+            <h2 class="chart-title">🚀 FREE SEO Dashboard - What You Get:</h2>
+
+            <div class="alert alert-info">
+                <strong>✅ 100% FREE Forever!</strong> This dashboard pulls real-time data directly from Google Search Console API - no paid services needed!
+            </div>
+
+            <div class="stats-grid" style="margin: 20px 0;">
+                <div class="stat-card">
+                    <div class="stat-label">📈 Keyword Rankings</div>
+                    <div class="stat-value">Top 1000</div>
+                    <p style="margin-top: 10px; color: #666; font-size: 0.9rem;">Track every keyword ranking for spearity.com with average position</p>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">👁️ Impressions & Clicks</div>
+                    <div class="stat-value">Real-time</div>
+                    <p style="margin-top: 10px; color: #666; font-size: 0.9rem;">See how many people see your site in Google search</p>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">📊 CTR Analysis</div>
+                    <div class="stat-value">Per Query</div>
+                    <p style="margin-top: 10px; color: #666; font-size: 0.9rem;">Which keywords drive the most clicks</p>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">🗓️ Historical Trends</div>
+                    <div class="stat-value">16 Months</div>
+                    <p style="margin-top: 10px; color: #666; font-size: 0.9rem;">Track your progress over time (Google's limit)</p>
+                </div>
+            </div>
+
+            <h3 style="margin: 30px 0 20px;">Quick Setup (5 minutes):</h3>
+
+            <ol class="setup-steps">
+                <li>
+                    <strong>Enable Google Search Console API</strong><br>
+                    Go to <a href="https://console.cloud.google.com/apis/library/searchconsole.googleapis.com" target="_blank">Google Cloud Console</a> and enable the Search Console API
+                </li>
+                <li>
+                    <strong>Create OAuth 2.0 Credentials</strong><br>
+                    Navigate to APIs & Services → Credentials → Create Credentials → OAuth client ID<br>
+                    Application type: Web application<br>
+                    Authorized redirect URIs: <code>http://localhost:3000/auth/callback</code>
+                </li>
+                <li>
+                    <strong>Download Credentials</strong><br>
+                    Save the JSON file as <code>google-credentials.json</code> in the project folder
+                </li>
+                <li>
+                    <strong>Start the Backend Server</strong><br>
+                    <div class="code-block">cd marketing-seo<br>npm install<br>node seo-api-server.js</div>
+                </li>
+                <li>
+                    <strong>Authorize Access</strong><br>
+                    Click "Connect Google Account" button above and grant permissions
+                </li>
+            </ol>
+
+            <div class="alert alert-warning">
+                <strong>📋 Quick Checklist:</strong><br>
+                □ Verify you own spearity.com in Google Search Console<br>
+                □ Enable Search Console API in Google Cloud<br>
+                □ Create OAuth 2.0 credentials<br>
+                □ Run backend server on port 3000
+            </div>
+        </div>
+
+        <!-- Dashboard Content (shown when connected) -->
+        <div id="dashboardContent" class="hidden">
+            <!-- Data Authenticity Badge -->
+            <div class="alert alert-info" style="margin-bottom: 20px;">
+                <strong>✅ 100% Real Data from Google Search Console API</strong><br>
+                This dashboard shows actual performance data for www.spearity.com directly from Google's servers.
+                All metrics (clicks, impressions, CTR, positions) are pulled from the official Google Search Console API.
+            </div>
+
+            <!-- Tabs Container -->
+            <div class="tabs-container">
+                <div class="tabs-nav">
+                    <button class="tab-button active" onclick="switchTab('overview')">📊 Overview</button>
+                    <button class="tab-button" onclick="switchTab('opportunities')">🎯 Opportunities</button>
+                    <button class="tab-button" onclick="switchTab('competitors')">🔍 Competitor Analysis</button>
+                    <button class="tab-button" onclick="switchTab('keywords')">🔑 All Keywords</button>
+                    <button class="tab-button" onclick="switchTab('seo-log')">📋 SEO Changes Log</button>
+                </div>
+
+                <!-- Tab 1: Overview -->
+                <div id="tab-overview" class="tab-content active">
+                    <!-- KPI Cards -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Total Clicks</div>
+                    <div class="stat-value" id="totalClicks">-</div>
+                    <div class="stat-change positive" id="clicksChange">
+                        <span>↑</span> <span>+0%</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Total Impressions</div>
+                    <div class="stat-value" id="totalImpressions">-</div>
+                    <div class="stat-change positive" id="impressionsChange">
+                        <span>↑</span> <span>+0%</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Average CTR</div>
+                    <div class="stat-value" id="avgCTR">-</div>
+                    <div class="stat-change" id="ctrChange">
+                        <span>↑</span> <span>+0%</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Average Position</div>
+                    <div class="stat-value" id="avgPosition">-</div>
+                    <div class="stat-change" id="positionChange">
+                        <span>↑</span> <span>+0%</span>
+                    </div>
+                </div>
+            </div>
+
+                    <!-- Charts -->
+                    <div class="chart-container">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                            <h2 class="chart-title" style="margin: 0;">📈 Traffic Trends (Last 30 Days)</h2>
+                            <span id="lastUpdated" style="color: #666; font-size: 0.85rem;">Last updated: <span id="updateTime">-</span></span>
+                        </div>
+                        <canvas id="trafficChart"></canvas>
+                    </div>
+
+                    <div class="chart-container">
+                        <h2 class="chart-title">🎯 Top 20 Keywords by Clicks</h2>
+                        <canvas id="keywordsChart"></canvas>
+                    </div>
+
+                            <!-- Priority Keywords Tracking -->
+                    <div class="keywords-table" style="margin-bottom: 30px;">
+                        <h2 class="chart-title">🎯 Priority Keywords Tracking</h2>
+                        <div class="alert alert-info">
+                            Track your most important target keywords and their progress over time
+                        </div>
+                        <table id="priorityKeywordsTable">
+                            <thead>
+                                <tr>
+                                    <th>Target Keyword</th>
+                                    <th>Current Position</th>
+                                    <th>Goal Position</th>
+                                    <th>Clicks (30d)</th>
+                                    <th>Impressions (30d)</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="priorityKeywordsBody">
+                                <tr>
+                                    <td><strong>executive coach milwaukee</strong></td>
+                                    <td id="execCoachPos"><span class="position other">Not Ranked</span></td>
+                                    <td><span class="position top3">#1-3</span></td>
+                                    <td id="execCoachClicks">0</td>
+                                    <td id="execCoachImpressions">0</td>
+                                    <td id="execCoachStatus">🔄 Optimizing (Just updated 10/14/2025)</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>business coach milwaukee</strong></td>
+                                    <td id="bizCoachPos">-</td>
+                                    <td><span class="position top3">#1-3</span></td>
+                                    <td id="bizCoachClicks">-</td>
+                                    <td id="bizCoachImpressions">-</td>
+                                    <td id="bizCoachStatus">📊 Monitoring</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>business coaching wisconsin</strong></td>
+                                    <td id="bizCoachWiPos">-</td>
+                                    <td><span class="position top3">#1-3</span></td>
+                                    <td id="bizCoachWiClicks">-</td>
+                                    <td id="bizCoachWiImpressions">-</td>
+                                    <td id="bizCoachWiStatus">📊 Monitoring</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Tab 2: Opportunities -->
+                <div id="tab-opportunities" class="tab-content">
+                    <div class="alert alert-info" style="margin-bottom: 20px;">
+                        <strong>💡 SEO Strategy Insights:</strong> These keywords have high potential for quick ranking improvements
+                    </div>
+                <div style="display: grid; gap: 15px;">
+                    <div style="padding: 15px; background: #d4edda; border-left: 4px solid #28a745; border-radius: 8px;">
+                        <strong>✅ October 14, 2025</strong><br>
+                        <span style="color: #155724;">Optimized "Executive Coach Milwaukee" page</span>
+                        <ul style="margin: 10px 0 0 20px; color: #155724;">
+                            <li>Fixed page 5975 slug: /executive-coaching/</li>
+                            <li>Updated page 6252 title & meta for target keyword</li>
+                            <li>Added Service + FAQ schema (5 questions)</li>
+                            <li>Expected impact: Page 1 rankings in 2-8 weeks</li>
+                        </ul>
+                    </div>
+                    <div style="padding: 15px; background: #d4edda; border-left: 4px solid #28a745; border-radius: 8px;">
+                        <strong>✅ October 6, 2025</strong><br>
+                        <span style="color: #155724;">Comprehensive SEO Overhaul</span>
+                        <ul style="margin: 10px 0 0 20px; color: #155724;">
+                            <li>44 pages optimized with SEO improvements</li>
+                            <li>42,998 spam URLs neutralized (410 status)</li>
+                            <li>11 duplicate page titles fixed</li>
+                            <li>34 pages with FAQ schema added</li>
+                            <li>15 new location-based pages created</li>
+                        </ul>
+                    </div>
+                    <div style="padding: 15px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 8px;">
+                        <strong>⏳ Pending Actions</strong><br>
+                        <span style="color: #856404;">Next steps to improve rankings</span>
+                        <ul style="margin: 10px 0 0 20px; color: #856404;">
+                            <li>Submit bulk removal request for 953 remaining spam URLs</li>
+                            <li>Delete 2 duplicate blog post URLs</li>
+                            <li>Block RSS feeds in robots.txt</li>
+                            <li>Submit updated sitemap to GSC</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Keyword Opportunities & Targets -->
+            <div class="keywords-table" style="margin-bottom: 30px;">
+                <h2 class="chart-title">🎯 Keyword Opportunities & What to Target</h2>
+                <div class="alert alert-info" style="margin-bottom: 20px;">
+                    <strong>💡 SEO Strategy Insights:</strong> These keywords have high potential for quick ranking improvements
+                </div>
+
+                <h3 style="margin: 20px 0 15px; color: #667eea; font-size: 1.1rem;">⚡ Quick Wins (Page 2-3 Keywords)</h3>
+                <p style="margin-bottom: 15px; color: #666;">Keywords ranking #11-30 that need a small push to reach page 1</p>
+                <table id="quickWinsTable">
+                    <thead>
+                        <tr>
+                            <th>Keyword</th>
+                            <th>Current Position</th>
+                            <th>Impressions</th>
+                            <th>Clicks</th>
+                            <th>Opportunity</th>
+                        </tr>
+                    </thead>
+                    <tbody id="quickWinsBody">
+                        <tr>
+                            <td colspan="5" style="text-align: center; padding: 20px; color: #666;">Loading opportunities...</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 style="margin: 30px 0 15px; color: #667eea; font-size: 1.1rem;">📈 High Impression, Low Click Keywords</h3>
+                <p style="margin-bottom: 15px; color: #666;">You're showing up in search but not getting clicks - improve titles/meta descriptions</p>
+                <table id="lowCtrTable">
+                    <thead>
+                        <tr>
+                            <th>Keyword</th>
+                            <th>Position</th>
+                            <th>Impressions</th>
+                            <th>Clicks</th>
+                            <th>CTR</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="lowCtrBody">
+                        <tr>
+                            <td colspan="6" style="text-align: center; padding: 20px; color: #666;">Loading opportunities...</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 style="margin: 30px 0 15px; color: #667eea; font-size: 1.1rem;">🔍 Competitor Keywords to Target</h3>
+                <p style="margin-bottom: 15px; color: #666;">Based on coaching industry analysis - keywords your competitors likely rank for</p>
+                <table id="competitorKeywordsTable">
+                    <thead>
+                        <tr>
+                            <th>Target Keyword</th>
+                            <th>Your Status</th>
+                            <th>Search Volume Est.</th>
+                            <th>Difficulty</th>
+                            <th>Action Plan</th>
+                        </tr>
+                    </thead>
+                    <tbody id="competitorKeywordsBody">
+                        <tr>
+                            <td><strong>executive coach milwaukee</strong></td>
+                            <td><span class="position other">Not ranking</span></td>
+                            <td>~170/month</td>
+                            <td><span style="background: #fff3cd; padding: 4px 8px; border-radius: 4px;">Medium</span></td>
+                            <td>✅ Page created, schema added (10/14/25)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>business coach milwaukee</strong></td>
+                            <td><span id="bizCoachPosComp">-</span></td>
+                            <td>~140/month</td>
+                            <td><span style="background: #d4edda; padding: 4px 8px; border-radius: 4px;">Low</span></td>
+                            <td>Create dedicated service page</td>
+                        </tr>
+                        <tr>
+                            <td><strong>leadership coaching milwaukee</strong></td>
+                            <td><span id="leadershipPos">-</span></td>
+                            <td>~90/month</td>
+                            <td><span style="background: #d4edda; padding: 4px 8px; border-radius: 4px;">Low</span></td>
+                            <td>Add to services, create blog content</td>
+                        </tr>
+                        <tr>
+                            <td><strong>career coach near me</strong></td>
+                            <td><span id="careerCoachPos">-</span></td>
+                            <td>~1000/month</td>
+                            <td><span style="background: #f8d7da; padding: 4px 8px; border-radius: 4px;">High</span></td>
+                            <td>Local SEO optimization needed</td>
+                        </tr>
+                        <tr>
+                            <td><strong>executive coaching certification</strong></td>
+                            <td><span id="certPos">-</span></td>
+                            <td>~400/month</td>
+                            <td><span style="background: #fff3cd; padding: 4px 8px; border-radius: 4px;">Medium</span></td>
+                            <td>Create certification/credentials page</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Keywords Table -->
+            <div class="keywords-table">
+                <h2 class="chart-title">🔑 All Keywords & Rankings</h2>
+                <table id="keywordsTable">
+                    <thead>
+                        <tr>
+                            <th>Keyword</th>
+                            <th>Position</th>
+                            <th>Clicks</th>
+                            <th>Impressions</th>
+                            <th>CTR</th>
+                        </tr>
+                    </thead>
+                    <tbody id="keywordsTableBody">
+                        <tr>
+                            <td colspan="5" style="text-align: center; padding: 30px;">
+                                <div class="loading" style="margin: 0 auto;"></div>
+                                <p style="margin-top: 15px; color: #666;">Loading keyword data...</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Use dynamic API URL based on current origin
+        const API_BASE = window.location.origin;
+
+        // Check connection status
+        async function checkConnection() {
+            try {
+                const response = await fetch(`${API_BASE}/api/gsc/status`);
+                const data = await response.json();
+
+                if (data.authenticated) {
+                    document.getElementById('gscStatus').className = 'status-badge connected';
+                    document.getElementById('gscStatus').innerHTML = '<span>✅</span> <span>Connected to Google Search Console</span>';
+                    document.getElementById('connectBtn').style.display = 'none';
+                    document.getElementById('setupCard').classList.add('hidden');
+                    document.getElementById('dashboardContent').classList.remove('hidden');
+                    loadDashboardData();
+                } else {
+                    document.getElementById('gscStatus').className = 'status-badge disconnected';
+                    document.getElementById('gscStatus').innerHTML = '<span>⚠️</span> <span>Not Connected</span>';
+                }
+            } catch (error) {
+                document.getElementById('gscStatus').className = 'status-badge disconnected';
+                document.getElementById('gscStatus').innerHTML = '<span>❌</span> <span>Server Not Running</span>';
+            }
+        }
+
+        function initGoogleAuth() {
+            window.open(`${API_BASE}/auth/google`, 'Google Auth', 'width=600,height=700');
+
+            // Check connection every 2 seconds
+            const interval = setInterval(async () => {
+                await checkConnection();
+                const status = document.getElementById('gscStatus');
+                if (status.className.includes('connected')) {
+                    clearInterval(interval);
+                }
+            }, 2000);
+        }
+
+        async function loadDashboardData() {
+            try {
+                // Fetch last 30 days data (accounting for GSC 2-3 day delay)
+                const endDate = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]; // 3 days ago
+                const startDate = new Date(Date.now() - 33 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]; // 33 days ago
+
+                // Display date range
+                document.getElementById('dataRangeInfo').style.display = 'block';
+                document.getElementById('dateRangeText').textContent = `${formatDate(startDate)} to ${formatDate(endDate)} (Last 30 Days)`;
+
+                const response = await fetch(`${API_BASE}/api/gsc/analytics?startDate=${startDate}&endDate=${endDate}`);
+                const data = await response.json();
+
+                updateKPIs(data, startDate, endDate);
+                createTrafficChart(data);
+                createKeywordsChart(data);
+                populateKeywordOpportunities(data);
+                populateKeywordsTable(data);
+
+                // Set last updated timestamp
+                const now = new Date();
+                document.getElementById('updateTime').textContent = now.toLocaleString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true
+                });
+
+            } catch (error) {
+                console.error('Failed to load dashboard data:', error);
+            }
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+
+        function updateKPIs(data) {
+            // Calculate totals
+            const totals = data.rows.reduce((acc, row) => ({
+                clicks: acc.clicks + row.clicks,
+                impressions: acc.impressions + row.impressions,
+                position: acc.position + row.position,
+                count: acc.count + 1
+            }), { clicks: 0, impressions: 0, position: 0, count: 0 });
+
+            document.getElementById('totalClicks').textContent = totals.clicks.toLocaleString();
+            document.getElementById('totalImpressions').textContent = totals.impressions.toLocaleString();
+            document.getElementById('avgCTR').textContent = ((totals.clicks / totals.impressions) * 100).toFixed(2) + '%';
+            document.getElementById('avgPosition').textContent = (totals.position / totals.count).toFixed(1);
+        }
+
+        function createTrafficChart(data) {
+            // Group by date
+            const dailyData = {};
+            data.rows.forEach(row => {
+                if (row.keys && row.keys[0]) {
+                    const date = row.keys[0];
+                    if (!dailyData[date]) {
+                        dailyData[date] = { clicks: 0, impressions: 0 };
+                    }
+                    dailyData[date].clicks += row.clicks;
+                    dailyData[date].impressions += row.impressions;
+                }
+            });
+
+            const dates = Object.keys(dailyData).sort();
+            const clicks = dates.map(d => dailyData[d].clicks);
+            const impressions = dates.map(d => dailyData[d].impressions);
+
+            const ctx = document.getElementById('trafficChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [{
+                        label: 'Clicks',
+                        data: clicks,
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        tension: 0.4
+                    }, {
+                        label: 'Impressions',
+                        data: impressions,
+                        borderColor: '#764ba2',
+                        backgroundColor: 'rgba(118, 75, 162, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { display: true, position: 'top' }
+                    },
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+
+        function createKeywordsChart(data) {
+            // Get top 20 keywords by clicks
+            const keywordData = data.rows
+                .filter(row => row.keys && row.keys.length > 0)
+                .sort((a, b) => b.clicks - a.clicks)
+                .slice(0, 20);
+
+            const ctx = document.getElementById('keywordsChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: keywordData.map(r => r.keys[r.keys.length - 1]),
+                    datasets: [{
+                        label: 'Clicks',
+                        data: keywordData.map(r => r.clicks),
+                        backgroundColor: '#667eea'
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+        }
+
+        function populateKeywordOpportunities(data) {
+            // Filter to only query dimension
+            const keywords = data.rows.filter(row => row.keys && row.keys.length > 0);
+
+            // 1. Quick Wins (Position 11-30 with decent impressions)
+            const quickWins = keywords
+                .filter(row => row.position > 10 && row.position <= 30 && row.impressions >= 10)
+                .sort((a, b) => b.impressions - a.impressions)
+                .slice(0, 10);
+
+            const quickWinsBody = document.getElementById('quickWinsBody');
+            quickWinsBody.innerHTML = '';
+
+            if (quickWins.length === 0) {
+                quickWinsBody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px; color: #666;">No quick win opportunities found in current data</td></tr>';
+            } else {
+                quickWins.forEach(row => {
+                    const keyword = row.keys[row.keys.length - 1];
+                    const position = row.position.toFixed(1);
+                    const positionsToPage1 = Math.ceil(position - 10);
+
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><strong>${keyword}</strong></td>
+                        <td><span class="position top20">#${position}</span></td>
+                        <td>${row.impressions.toLocaleString()}</td>
+                        <td>${row.clicks}</td>
+                        <td style="color: #28a745; font-weight: 600;">+${positionsToPage1} spots to page 1</td>
+                    `;
+                    quickWinsBody.appendChild(tr);
+                });
+            }
+
+            // 2. High Impression, Low CTR Keywords (position 1-20 but low CTR)
+            const lowCtr = keywords
+                .filter(row => {
+                    const expectedCtr = getExpectedCTR(row.position);
+                    return row.position <= 20 && row.impressions >= 20 && row.ctr < expectedCtr * 0.7;
+                })
+                .sort((a, b) => b.impressions - a.impressions)
+                .slice(0, 10);
+
+            const lowCtrBody = document.getElementById('lowCtrBody');
+            lowCtrBody.innerHTML = '';
+
+            if (lowCtr.length === 0) {
+                lowCtrBody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #666;">All keywords performing well for their position</td></tr>';
+            } else {
+                lowCtr.forEach(row => {
+                    const keyword = row.keys[row.keys.length - 1];
+                    const position = row.position.toFixed(1);
+                    const ctr = (row.ctr * 100).toFixed(2);
+                    const expectedCtr = (getExpectedCTR(row.position) * 100).toFixed(1);
+
+                    let positionClass = 'other';
+                    if (position <= 3) positionClass = 'top3';
+                    else if (position <= 10) positionClass = 'top10';
+                    else if (position <= 20) positionClass = 'top20';
+
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><strong>${keyword}</strong></td>
+                        <td><span class="position ${positionClass}">#${position}</span></td>
+                        <td>${row.impressions.toLocaleString()}</td>
+                        <td>${row.clicks}</td>
+                        <td>${ctr}% <span style="color: #dc3545;">(Expected: ${expectedCtr}%)</span></td>
+                        <td style="color: #667eea; font-weight: 600;">Improve title/meta</td>
+                    `;
+                    lowCtrBody.appendChild(tr);
+                });
+            }
+
+            // 3. Update competitor keyword status with actual data
+            const competitorKeywords = [
+                'executive coach milwaukee',
+                'business coach milwaukee',
+                'leadership coaching milwaukee',
+                'career coach near me',
+                'executive coaching certification'
+            ];
+
+            competitorKeywords.forEach(targetKeyword => {
+                const match = keywords.find(row => {
+                    const kw = row.keys[row.keys.length - 1].toLowerCase();
+                    return kw === targetKeyword.toLowerCase() || kw.includes(targetKeyword.toLowerCase());
+                });
+
+                const elemId = targetKeyword.replace(/\s+/g, '_').replace('executive_coach_milwaukee', 'execCoachPos')
+                    .replace('business_coach_milwaukee', 'bizCoachPosComp')
+                    .replace('leadership_coaching_milwaukee', 'leadershipPos')
+                    .replace('career_coach_near_me', 'careerCoachPos')
+                    .replace('executive_coaching_certification', 'certPos');
+
+                const elem = document.getElementById(elemId);
+                if (elem && match) {
+                    const position = match.position.toFixed(1);
+                    let positionClass = 'other';
+                    if (position <= 3) positionClass = 'top3';
+                    else if (position <= 10) positionClass = 'top10';
+                    else if (position <= 20) positionClass = 'top20';
+                    elem.innerHTML = `<span class="position ${positionClass}">#${position}</span>`;
+                } else if (elem) {
+                    elem.innerHTML = '<span class="position other">Not ranking</span>';
+                }
+            });
+        }
+
+        // Expected CTR by position (industry averages)
+        function getExpectedCTR(position) {
+            if (position <= 1) return 0.28;
+            if (position <= 2) return 0.15;
+            if (position <= 3) return 0.11;
+            if (position <= 4) return 0.08;
+            if (position <= 5) return 0.07;
+            if (position <= 6) return 0.05;
+            if (position <= 7) return 0.04;
+            if (position <= 8) return 0.03;
+            if (position <= 9) return 0.025;
+            if (position <= 10) return 0.02;
+            if (position <= 20) return 0.01;
+            return 0.005;
+        }
+
+        function populateKeywordsTable(data) {
+            const tbody = document.getElementById('keywordsTableBody');
+            tbody.innerHTML = '';
+
+            // Filter to only query dimension
+            const keywords = data.rows
+                .filter(row => row.keys && row.keys.length > 0)
+                .sort((a, b) => b.clicks - a.clicks)
+                .slice(0, 100); // Top 100
+
+            keywords.forEach(row => {
+                const keyword = row.keys[row.keys.length - 1];
+                const position = row.position.toFixed(1);
+                const ctr = (row.ctr * 100).toFixed(2);
+
+                let positionClass = 'other';
+                if (position <= 3) positionClass = 'top3';
+                else if (position <= 10) positionClass = 'top10';
+                else if (position <= 20) positionClass = 'top20';
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${keyword}</strong></td>
+                    <td><span class="position ${positionClass}">#${position}</span></td>
+                    <td>${row.clicks.toLocaleString()}</td>
+                    <td>${row.impressions.toLocaleString()}</td>
+                    <td>${ctr}%</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Check connection on load
+        checkConnection();
+    </script>
+</body>
+</html>

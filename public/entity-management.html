@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entity Management - Spearity Marketing</title>
+    
+    
+
+    <!-- Shared Sidebar Styles -->
+    <link rel="stylesheet" href="/sidebar.css">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f7fa;
+            min-height: 100vh;
+        }
+
+        .container {
+            margin-left: 260px;
+            padding: 30px;
+            max-width: calc(100% - 260px);
+        }
+
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            color: #1a202c;
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #718096;
+            font-size: 16px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            background: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .tab:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        }
+
+        .tab.active {
+            background: #f5f7fa;
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .card h2 {
+            color: #1a202c;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: #f5f7fa;
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .stat-card h3 {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+
+        .stat-card .value {
+            font-size: 36px;
+            font-weight: 700;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            color: #4a5568;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        
+
+        
+
+        
+
+        
+
+        .entity-list {
+            list-style: none;
+            margin-top: 20px;
+        }
+
+        .entity-item {
+            background: #f7fafc;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border-left: 4px solid #667eea;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .entity-info h4 {
+            color: #1a202c;
+            margin-bottom: 5px;
+        }
+
+        .entity-info p {
+            color: #718096;
+            font-size: 14px;
+        }
+
+        .entity-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .entity-actions button {
+            padding: 8px 15px;
+            font-size: 14px;
+        }
+
+        .cluster-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .cluster-card {
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s;
+        }
+
+        .cluster-card:hover {
+            border-color: #667eea;
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.2);
+        }
+
+        .cluster-card h3 {
+            color: #1a202c;
+            margin-bottom: 10px;
+        }
+
+        .cluster-card .subdomain {
+            color: #667eea;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .cluster-card .purpose {
+            color: #718096;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+
+        .cluster-stats {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .cluster-stat {
+            text-align: center;
+            flex: 1;
+        }
+
+        .cluster-stat .label {
+            font-size: 12px;
+            color: #718096;
+        }
+
+        .cluster-stat .value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #718096;
+        }
+
+        .spinner {
+            border: 3px solid #e2e8f0;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .result-box {
+            background: #f7fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .success {
+            background: #f0fdf4;
+            border-color: #86efac;
+            color: #166534;
+        }
+
+        .error {
+            background: #fef2f2;
+            border-color: #fca5a5;
+            color: #991b1b;
+        }
+
+        .back-link {
+            display: inline-block;
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+            margin-bottom: 20px;
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+        }
+
+        .back-link:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            background: #e0e7ff;
+            color: #4338ca;
+        }
+
+        .row {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .row .form-group {
+            flex: 1;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-secondary:hover {
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-danger:hover {
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/dashboard" class="back-link">← Back to Dashboard</a>
+
+        <div class="header">
+            <h1>🌐 Entity Management & Subdomain Clusters</h1>
+            <p>Manage entities, relationships, and subdomain architecture</p>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('clusters')">Subdomain Clusters</div>
+            <div class="tab" onclick="switchTab('entities')">Entities</div>
+            <div class="tab" onclick="switchTab('relationships')">Relationships</div>
+            <div class="tab" onclick="switchTab('create')">Create Entity</div>
+            <div class="tab" onclick="switchTab('analytics')">Analytics</div>
+        </div>
+
+        <!-- SUBDOMAIN CLUSTERS TAB -->
+        <div id="clusters-content" class="tab-content active">
+            <div class="card">
+                <h2>📊 Subdomain Cluster Overview</h2>
+                <div id="cluster-stats"></div>
+                <div id="cluster-grid" class="cluster-grid"></div>
+            </div>
+        </div>
+
+        <!-- ENTITIES TAB -->
+        <div id="entities-content" class="tab-content">
+            <div class="card">
+                <h2>📦 All Entities</h2>
+                <div class="form-group">
+                    <label>Filter by Type</label>
+                    <select id="entity-filter-type" onchange="loadEntities()">
+                        <option value="">All Types</option>
+                        <option value="Person">Person</option>
+                        <option value="Organization">Organization</option>
+                        <option value="Service">Service</option>
+                        <option value="Location">Location</option>
+                        <option value="Product">Product</option>
+                        <option value="Article">Article</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Filter by Subdomain</label>
+                    <select id="entity-filter-subdomain" onchange="loadEntities()">
+                        <option value="">All Subdomains</option>
+                        <option value="www">www</option>
+                        <option value="coaching">coaching</option>
+                        <option value="resources">resources</option>
+                        <option value="team">team</option>
+                        <option value="locations">locations</option>
+                    </select>
+                </div>
+                <ul id="entity-list" class="entity-list"></ul>
+            </div>
+        </div>
+
+        <!-- RELATIONSHIPS TAB -->
+        <div id="relationships-content" class="tab-content">
+            <div class="card">
+                <h2>🔗 Entity Relationships</h2>
+                <button class="btn btn-secondary" onclick="showCreateRelationship()">+ Create Relationship</button>
+                <div id="relationship-list" class="entity-list"></div>
+            </div>
+        </div>
+
+        <!-- CREATE ENTITY TAB -->
+        <div id="create-content" class="tab-content">
+            <div class="card">
+                <h2>➕ Create New Entity</h2>
+
+                <div class="row">
+                    <div class="form-group">
+                        <label>Entity ID</label>
+                        <input type="text" id="new-entity-id" placeholder="unique-id" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Entity Type</label>
+                        <select id="new-entity-type" required>
+                            <option value="Person">Person</option>
+                            <option value="Organization">Organization</option>
+                            <option value="Service">Service</option>
+                            <option value="Location">Location</option>
+                            <option value="Product">Product</option>
+                            <option value="Article">Article</option>
+                            <option value="FAQPage">FAQ Page</option>
+                            <option value="HowTo">How-To</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Name</label>
+                    <input type="text" id="new-entity-name" placeholder="Entity name" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="new-entity-description" rows="3" placeholder="Brief description"></textarea>
+                </div>
+
+                <div class="row">
+                    <div class="form-group">
+                        <label>Subdomain</label>
+                        <select id="new-entity-subdomain">
+                            <option value="www">www (Main Site)</option>
+                            <option value="coaching">coaching (Services)</option>
+                            <option value="resources">resources (Content)</option>
+                            <option value="team">team (People)</option>
+                            <option value="locations">locations (Places)</option>
+                            <option value="shop">shop (Products)</option>
+                            <option value="help">help (Support)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>URL (optional)</label>
+                        <input type="text" id="new-entity-url" placeholder="https://...">
+                    </div>
+                </div>
+
+                <button class="btn" onclick="createEntity()">Create Entity</button>
+                <div id="create-result"></div>
+            </div>
+        </div>
+
+        <!-- ANALYTICS TAB -->
+        <div id="analytics-content" class="tab-content">
+            <div class="card">
+                <h2>📈 Entity Graph Analytics</h2>
+                <button class="btn" onclick="loadAnalytics()">Refresh Analytics</button>
+                <div id="analytics-stats"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab Switching
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+            event.target.classList.add('active');
+            document.getElementById(tabName + '-content').classList.add('active');
+
+            // Load data for specific tabs
+            if (tabName === 'clusters') loadClusters();
+            if (tabName === 'entities') loadEntities();
+            if (tabName === 'relationships') loadRelationships();
+            if (tabName === 'analytics') loadAnalytics();
+        }
+
+        // Load Clusters
+        async function loadClusters() {
+            document.getElementById('cluster-grid').innerHTML = '<div class="loading"><div class="spinner"></div><p>Loading clusters...</p></div>';
+
+            try {
+                const response = await fetch('/api/entity/cluster-report');
+                const data = await response.json();
+
+                if (data.success && data.report) {
+                    const summary = data.report.summary || {
+                        totalClusters: 0,
+                        activeClusters: 0,
+                        totalEntities: 0,
+                        totalCrossLinks: 0
+                    };
+                    document.getElementById('cluster-stats').innerHTML = `
+                        <div class="grid">
+                            <div class="stat-card">
+                                <h3>Total Clusters</h3>
+                                <div class="value">${summary.totalClusters || 0}</div>
+                            </div>
+                            <div class="stat-card" style="background: #f5f7fa;">
+                                <h3>Active Clusters</h3>
+                                <div class="value">${summary.activeClusters || 0}</div>
+                            </div>
+                            <div class="stat-card" style="background: #f5f7fa;">
+                                <h3>Total Entities</h3>
+                                <div class="value">${summary.totalEntities || 0}</div>
+                            </div>
+                            <div class="stat-card" style="background: #f5f7fa;">
+                                <h3>Cross-Links</h3>
+                                <div class="value">${summary.totalCrossLinks || 0}</div>
+                            </div>
+                        </div>
+                    `;
+
+                    const clusterHtml = (data.report.clusters || []).map(cluster => `
+                        <div class="cluster-card">
+                            <h3>${cluster.name}</h3>
+                            <div class="subdomain">${cluster.subdomain}.spearity.com</div>
+                            <div class="purpose">${cluster.purpose}</div>
+                            <div class="cluster-stats">
+                                <div class="cluster-stat">
+                                    <div class="label">Entities</div>
+                                    <div class="value">${cluster.health.entityCount}</div>
+                                </div>
+                                <div class="cluster-stat">
+                                    <div class="label">Links</div>
+                                    <div class="value">${cluster.crossLinks.total}</div>
+                                </div>
+                                <div class="cluster-stat">
+                                    <div class="label">Avg Links</div>
+                                    <div class="value">${cluster.health.avgInterlinksPerEntity}</div>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+
+                    document.getElementById('cluster-grid').innerHTML = clusterHtml;
+                }
+            } catch (error) {
+                document.getElementById('cluster-grid').innerHTML = `<div class="result-box error">Error: ${error.message}</div>`;
+            }
+        }
+
+        // Load Entities
+        async function loadEntities() {
+            const type = document.getElementById('entity-filter-type').value;
+            const subdomain = document.getElementById('entity-filter-subdomain').value;
+
+            let url = '/api/entity/list?';
+            if (type) url += `type=${type}&`;
+            if (subdomain) url += `subdomain=${subdomain}`;
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (data.success && data.entities) {
+                    const entities = Array.isArray(data.entities) ? data.entities : (data.entities.entities || []);
+                    const entityHtml = entities.map(entity => `
+                        <li class="entity-item">
+                            <div class="entity-info">
+                                <h4>${entity.name} <span class="badge">${entity.type}</span></h4>
+                                <p>${entity.subdomain}.spearity.com/${entity.id}</p>
+                            </div>
+                            <div class="entity-actions">
+                                <button class="btn btn-secondary" onclick="viewEntity('${entity.id}')">View</button>
+                                <button class="btn btn-danger" onclick="deleteEntity('${entity.id}')">Delete</button>
+                            </div>
+                        </li>
+                    `).join('');
+
+                    document.getElementById('entity-list').innerHTML = entityHtml || '<p>No entities found.</p>';
+                } else {
+                    document.getElementById('entity-list').innerHTML = '<p>No entities found.</p>';
+                }
+            } catch (error) {
+                document.getElementById('entity-list').innerHTML = `<div class="result-box error">Error: ${error.message}</div>`;
+            }
+        }
+
+        // Create Entity
+        async function createEntity() {
+            const entityData = {
+                id: document.getElementById('new-entity-id').value,
+                type: document.getElementById('new-entity-type').value,
+                name: document.getElementById('new-entity-name').value,
+                description: document.getElementById('new-entity-description').value,
+                subdomain: document.getElementById('new-entity-subdomain').value,
+                url: document.getElementById('new-entity-url').value
+            };
+
+            try {
+                const response = await fetch('/api/entity/create', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(entityData)
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    document.getElementById('create-result').innerHTML = `
+                        <div class="result-box success">
+                            <strong>✅ Entity Created!</strong><br><br>
+                            ID: ${data.entity.entity.id}<br>
+                            URL: ${data.entity.entity.url}<br>
+                            Type: ${data.entity.entity.type}
+                        </div>
+                    `;
+
+                    // Clear form
+                    document.getElementById('new-entity-id').value = '';
+                    document.getElementById('new-entity-name').value = '';
+                    document.getElementById('new-entity-description').value = '';
+                    document.getElementById('new-entity-url').value = '';
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                document.getElementById('create-result').innerHTML = `
+                    <div class="result-box error">
+                        <strong>❌ Error:</strong> ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        // View Entity
+        async function viewEntity(entityId) {
+            alert(`Entity details for: ${entityId}\n\nFull entity viewer coming soon!`);
+        }
+
+        // Delete Entity
+        async function deleteEntity(entityId) {
+            if (!confirm(`Are you sure you want to delete entity: ${entityId}?`)) return;
+
+            try {
+                const response = await fetch(`/api/entity/${entityId}`, {
+                    method: 'DELETE'
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('✅ Entity deleted successfully!');
+                    loadEntities();
+                }
+            } catch (error) {
+                alert(`❌ Error: ${error.message}`);
+            }
+        }
+
+        // Load Analytics
+        async function loadAnalytics() {
+            document.getElementById('analytics-stats').innerHTML = '<div class="loading"><div class="spinner"></div><p>Loading analytics...</p></div>';
+
+            try {
+                const response = await fetch('/api/entity/stats');
+                const data = await response.json();
+
+                if (data.success) {
+                    const stats = data.stats;
+
+                    const typeBreakdown = Object.entries(stats.entityTypes).map(([type, count]) => `
+                        <li>${type}: ${count}</li>
+                    `).join('');
+
+                    const subdomainBreakdown = Object.entries(stats.subdomains).map(([subdomain, count]) => `
+                        <li>${subdomain}: ${count}</li>
+                    `).join('');
+
+                    document.getElementById('analytics-stats').innerHTML = `
+                        <div class="grid">
+                            <div class="stat-card">
+                                <h3>Total Entities</h3>
+                                <div class="value">${stats.totalEntities}</div>
+                            </div>
+                            <div class="stat-card" style="background: #f5f7fa;">
+                                <h3>Relationships</h3>
+                                <div class="value">${stats.totalRelationships}</div>
+                            </div>
+                            <div class="stat-card" style="background: #f5f7fa;">
+                                <h3>Avg Relations</h3>
+                                <div class="value">${stats.avgRelationshipsPerEntity.toFixed(1)}</div>
+                            </div>
+                        </div>
+
+                        <div class="row" style="margin-top: 30px;">
+                            <div class="card">
+                                <h3>Entity Types</h3>
+                                <ul>${typeBreakdown}</ul>
+                            </div>
+                            <div class="card">
+                                <h3>Subdomains</h3>
+                                <ul>${subdomainBreakdown}</ul>
+                            </div>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                document.getElementById('analytics-stats').innerHTML = `<div class="result-box error">Error: ${error.message}</div>`;
+            }
+        }
+
+        // Load relationships
+        function loadRelationships() {
+            document.getElementById('relationship-list').innerHTML = '<p>Relationship management coming soon!</p>';
+        }
+
+        function showCreateRelationship() {
+            alert('Relationship creation UI coming soon!');
+        }
+
+        // Load clusters on page load
+        window.addEventListener('load', () => {
+            loadClusters();
+        });
+    </script>
+
+    <!-- Sidebar Integration -->
+    <script src="/sidebar.js"></script>
+    <script>
+        window.addEventListener('load', () => {
+            initSidebar('/entity-management');
+        });
+    </script>
+</body>
+</html>

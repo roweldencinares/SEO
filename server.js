@@ -1,13 +1,20 @@
 /**
- * SEO Agents Server
- * Multi-site SEO Dashboard with Google Search Console integration
+ * SEO Agents Dashboard - Multi-Site Server
+ * Full SEO automation platform with Google Search Console & Analytics integration
  */
 
 import express from 'express';
+import { google } from 'googleapis';
 import cors from 'cors';
+import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import dotenv from 'dotenv';
 import fetch from 'node-fetch';
+import * as cheerio from 'cheerio';
+import rateLimit from 'express-rate-limit';
+
+dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -15,252 +22,401 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Rate limiting
+const apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+    message: 'Too many requests, please try again later.'
+});
+
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use('/api/', apiLimiter);
+
+// Disable caching for development
+app.use((req, res, next) => {
+    res.set('Cache-Control', 'no-store');
+    next();
+});
+
+// Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ============================================================
-// PAGES
+// MULTI-SITE CONFIGURATION
 // ============================================================
 
-app.get('/', (req, res) => {
-    res.redirect('/seo-agents');
+// Sites are stored in memory (use database for production)
+let siteConfigs = {};
+
+// Helper to get site URL for GSC (handles domain property format)
+function getGSCSiteUrl(siteUrl) {
+    try {
+        const url = new URL(siteUrl);
+        // Return domain property format for GSC
+        return `sc-domain:${url.hostname.replace('www.', '')}`;
+    } catch {
+        return siteUrl;
+    }
+}
+
+// ============================================================
+// OAUTH CONFIGURATION
+// ============================================================
+
+let oauth2Client = null;
+
+try {
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+    const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+    const redirectUri = process.env.GOOGLE_REDIRECT_URI || `http://localhost:${PORT}/auth/callback`;
+
+    if (clientId && clientSecret) {
+        oauth2Client = new google.auth.OAuth2(clientId, clientSecret, redirectUri);
+        console.log('✅ OAuth configured');
+
+        // Load tokens from file if exists
+        const tokenPath = path.join(__dirname, 'google-tokens.json');
+        if (fs.existsSync(tokenPath)) {
+            const tokens = JSON.parse(fs.readFileSync(tokenPath, 'utf-8'));
+            oauth2Client.setCredentials(tokens);
+            console.log('✅ Loaded saved tokens');
+        }
+    }
+} catch (error) {
+    console.log('⚠️ OAuth not configured:', error.message);
+}
+
+// Helper to ensure valid token
+async function ensureValidToken() {
+    if (!oauth2Client) throw new Error('OAuth not configured');
+
+    const tokens = oauth2Client.credentials;
+    if (!tokens.access_token) throw new Error('Not authenticated');
+
+    // Check expiry
+    if (tokens.expiry_date && tokens.expiry_date < Date.now() + 300000) {
+        const { credentials } = await oauth2Client.refreshAccessToken();
+        oauth2Client.setCredentials(credentials);
+
+        // Save refreshed tokens
+        const tokenPath = path.join(__dirname, 'google-tokens.json');
+        fs.writeFileSync(tokenPath, JSON.stringify(credentials, null, 2));
+    }
+
+    return oauth2Client;
+}
+
+// Helper function for date calculations
+function getDateDaysAgo(days) {
+    const date = new Date();
+    date.setDate(date.getDate() - days);
+    return date.toISOString().split('T')[0];
+}
+
+// ============================================================
+// PAGE ROUTES
+// ============================================================
+
+app.get('/', (req, res) => res.redirect('/seo-agents'));
+app.get('/dashboard', (req, res) => res.sendFile(path.join(__dirname, 'public', 'seo-dashboard.html')));
+app.get('/seo', (req, res) => res.sendFile(path.join(__dirname, 'public', 'seo-dashboard.html')));
+app.get('/seo-agents', (req, res) => res.sendFile(path.join(__dirname, 'public', 'seo-agents.html')));
+app.get('/keywords', (req, res) => res.sendFile(path.join(__dirname, 'public', 'keywords-live.html')));
+app.get('/keywords-live', (req, res) => res.sendFile(path.join(__dirname, 'public', 'keywords-live.html')));
+app.get('/website-audit', (req, res) => res.sendFile(path.join(__dirname, 'public', 'website-audit.html')));
+app.get('/indexation-control', (req, res) => res.sendFile(path.join(__dirname, 'public', 'indexation-control.html')));
+app.get('/deindex-recovery', (req, res) => res.sendFile(path.join(__dirname, 'public', 'deindex-recovery.html')));
+app.get('/sitemap-automation', (req, res) => res.sendFile(path.join(__dirname, 'public', 'sitemap-automation.html')));
+app.get('/entity-management', (req, res) => res.sendFile(path.join(__dirname, 'public', 'entity-management.html')));
+app.get('/actions', (req, res) => res.sendFile(path.join(__dirname, 'public', 'action-plan.html')));
+app.get('/progress', (req, res) => res.sendFile(path.join(__dirname, 'public', 'progress.html')));
+app.get('/universal-audit', (req, res) => res.sendFile(path.join(__dirname, 'public', 'universal-audit.html')));
+
+// ============================================================
+// AUTH ROUTES
+// ============================================================
+
+app.get('/auth/google', (req, res) => {
+    if (!oauth2Client) {
+        return res.status(500).send('OAuth not configured. Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET.');
+    }
+
+    const authUrl = oauth2Client.generateAuthUrl({
+        access_type: 'offline',
+        scope: [
+            'https://www.googleapis.com/auth/webmasters.readonly',
+            'https://www.googleapis.com/auth/webmasters'
+        ],
+        prompt: 'consent'
+    });
+
+    res.redirect(authUrl);
 });
 
-app.get('/seo-agents', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'seo-agents.html'));
+app.get('/auth/callback', async (req, res) => {
+    const { code } = req.query;
+    if (!code) return res.status(400).send('No code provided');
+
+    try {
+        const { tokens } = await oauth2Client.getToken(code);
+        oauth2Client.setCredentials(tokens);
+
+        // Save tokens
+        const tokenPath = path.join(__dirname, 'google-tokens.json');
+        fs.writeFileSync(tokenPath, JSON.stringify(tokens, null, 2));
+
+        res.send(`
+            <html>
+            <body style="font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background: linear-gradient(135deg, #667eea, #764ba2);">
+                <div style="background: white; padding: 40px; border-radius: 15px; text-align: center;">
+                    <h1 style="color: #28a745;">✅ Authentication Successful!</h1>
+                    <p>Redirecting to dashboard...</p>
+                </div>
+                <script>setTimeout(() => window.location.href = '/seo-agents', 1500);</script>
+            </body>
+            </html>
+        `);
+    } catch (error) {
+        res.status(500).send(`Authentication failed: ${error.message}`);
+    }
 });
 
 // ============================================================
-// SEO AGENTS API
+// GSC API ROUTES (Multi-Site)
 // ============================================================
 
-// Health Score
+app.get('/api/gsc/status', (req, res) => {
+    if (!oauth2Client) {
+        return res.json({ authenticated: false, message: 'OAuth not configured' });
+    }
+    const tokens = oauth2Client.credentials;
+    res.json({
+        authenticated: !!tokens?.access_token,
+        expiryDate: tokens?.expiry_date
+    });
+});
+
+app.get('/api/gsc/sites', async (req, res) => {
+    try {
+        await ensureValidToken();
+        const searchconsole = google.searchconsole({ version: 'v1', auth: oauth2Client });
+        const response = await searchconsole.sites.list();
+        res.json({ success: true, sites: response.data.siteEntry || [] });
+    } catch (error) {
+        res.json({ success: false, error: error.message, sites: [] });
+    }
+});
+
+app.get('/api/gsc/summary', async (req, res) => {
+    try {
+        await ensureValidToken();
+
+        const site = req.query.site || req.query.gsc;
+        if (!site) {
+            return res.json({ authenticated: true, success: false, error: 'Site parameter required' });
+        }
+
+        const siteUrl = getGSCSiteUrl(site);
+        const searchconsole = google.searchconsole({ version: 'v1', auth: oauth2Client });
+
+        const response = await searchconsole.searchanalytics.query({
+            siteUrl,
+            requestBody: {
+                startDate: getDateDaysAgo(30),
+                endDate: getDateDaysAgo(0),
+                dimensions: ['query'],
+                rowLimit: 25000
+            }
+        });
+
+        const rows = response.data.rows || [];
+        let totalClicks = 0, totalImpressions = 0, totalPosition = 0, top10Count = 0;
+
+        rows.forEach(row => {
+            totalClicks += row.clicks || 0;
+            totalImpressions += row.impressions || 0;
+            totalPosition += row.position || 0;
+            if (row.position <= 10) top10Count++;
+        });
+
+        res.json({
+            authenticated: true,
+            success: true,
+            site: siteUrl,
+            summary: {
+                keywordsTracked: rows.length,
+                top10Rankings: top10Count,
+                avgPosition: rows.length > 0 ? (totalPosition / rows.length).toFixed(1) : 0,
+                totalClicks,
+                totalImpressions,
+                avgCTR: totalImpressions > 0 ? ((totalClicks / totalImpressions) * 100).toFixed(2) : 0
+            }
+        });
+    } catch (error) {
+        res.json({ authenticated: false, error: error.message, summary: null });
+    }
+});
+
+app.get('/api/gsc/keywords', async (req, res) => {
+    try {
+        await ensureValidToken();
+
+        const site = req.query.site || req.query.gsc;
+        const limit = parseInt(req.query.limit) || 100;
+
+        if (!site) {
+            return res.json({ success: false, error: 'Site parameter required' });
+        }
+
+        const siteUrl = getGSCSiteUrl(site);
+        const searchconsole = google.searchconsole({ version: 'v1', auth: oauth2Client });
+
+        const response = await searchconsole.searchanalytics.query({
+            siteUrl,
+            requestBody: {
+                startDate: getDateDaysAgo(30),
+                endDate: getDateDaysAgo(0),
+                dimensions: ['query'],
+                rowLimit: 25000
+            }
+        });
+
+        const keywords = (response.data.rows || [])
+            .map(row => ({
+                keyword: row.keys[0],
+                clicks: row.clicks || 0,
+                impressions: row.impressions || 0,
+                ctr: ((row.ctr || 0) * 100).toFixed(2),
+                position: (row.position || 0).toFixed(1)
+            }))
+            .sort((a, b) => parseFloat(a.position) - parseFloat(b.position))
+            .slice(0, limit);
+
+        res.json({ authenticated: true, success: true, count: keywords.length, keywords });
+    } catch (error) {
+        res.json({ authenticated: false, error: error.message, keywords: [] });
+    }
+});
+
+app.get('/api/gsc/pages', async (req, res) => {
+    try {
+        await ensureValidToken();
+
+        const site = req.query.site || req.query.gsc;
+        const limit = parseInt(req.query.limit) || 10;
+
+        if (!site) {
+            return res.json({ success: false, error: 'Site parameter required' });
+        }
+
+        const siteUrl = getGSCSiteUrl(site);
+        const searchconsole = google.searchconsole({ version: 'v1', auth: oauth2Client });
+
+        const response = await searchconsole.searchanalytics.query({
+            siteUrl,
+            requestBody: {
+                startDate: getDateDaysAgo(30),
+                endDate: getDateDaysAgo(0),
+                dimensions: ['page'],
+                rowLimit: limit
+            }
+        });
+
+        const pages = (response.data.rows || []).map(row => ({
+            page: row.keys[0],
+            clicks: row.clicks || 0,
+            impressions: row.impressions || 0,
+            ctr: ((row.ctr || 0) * 100).toFixed(2),
+            position: (row.position || 0).toFixed(1)
+        }));
+
+        res.json({ authenticated: true, success: true, count: pages.length, pages });
+    } catch (error) {
+        res.json({ authenticated: false, error: error.message, pages: [] });
+    }
+});
+
+// ============================================================
+// SEO AGENTS API ROUTES
+// ============================================================
+
 app.get('/api/seo-agents/health', async (req, res) => {
     const siteUrl = req.query.site || 'https://example.com';
 
     try {
-        // Run quick audit to estimate health
         let score = 50;
         const issues = [];
+        const checks = { robots: false, sitemap: false, https: false, title: false, meta: false };
+
+        // Check HTTPS
+        if (siteUrl.startsWith('https://')) {
+            score += 10;
+            checks.https = true;
+        } else {
+            issues.push({ type: 'security', message: 'Site not using HTTPS', severity: 'high' });
+        }
 
         // Check robots.txt
         try {
             const robotsRes = await fetch(`${siteUrl}/robots.txt`, { timeout: 5000 });
             if (robotsRes.ok) {
-                score += 15;
-                const text = await robotsRes.text();
-                if (text.includes('Sitemap:')) score += 5;
-            } else {
-                issues.push('robots.txt not found');
+                score += 10;
+                checks.robots = true;
             }
         } catch (e) {
-            issues.push('Could not access robots.txt');
+            issues.push({ type: 'technical', message: 'robots.txt not accessible', severity: 'medium' });
         }
 
         // Check sitemap
         try {
             const sitemapRes = await fetch(`${siteUrl}/sitemap.xml`, { timeout: 5000 });
-            if (sitemapRes.ok) score += 15;
-            else issues.push('sitemap.xml not found');
-        } catch (e) {
-            issues.push('Could not access sitemap');
-        }
-
-        // Check HTTPS
-        if (siteUrl.startsWith('https://')) score += 15;
-        else issues.push('Not using HTTPS');
-
-        const overall = Math.min(score, 100);
-        const grade = overall >= 90 ? 'A+' : overall >= 80 ? 'A' : overall >= 70 ? 'B' : overall >= 60 ? 'C' : overall >= 50 ? 'D' : 'F';
-
-        res.json({
-            success: true,
-            data: {
-                overall,
-                grade,
-                breakdown: {
-                    indexation: score >= 70 ? 80 : 60,
-                    ctr: 50,
-                    rankings: 60,
-                    traffic: 50
-                },
-                summary: {
-                    totalPages: '--',
-                    indexedPages: '--',
-                    totalClicks: '--',
-                    avgPosition: '--'
-                },
-                issues,
-                note: 'Connect GSC for accurate data'
-            }
-        });
-    } catch (error) {
-        res.json({
-            success: false,
-            error: error.message
-        });
-    }
-});
-
-// Technical Audit
-app.get('/api/seo-agents/audit', async (req, res) => {
-    const url = req.query.url || 'https://example.com';
-
-    try {
-        const issues = [];
-        const passed = [];
-
-        // Check robots.txt
-        try {
-            const robotsRes = await fetch(`${url}/robots.txt`, { timeout: 5000 });
-            if (robotsRes.ok) {
-                const robotsTxt = await robotsRes.text();
-                passed.push({ check: 'robots.txt', status: 'EXISTS' });
-                if (!robotsTxt.includes('Sitemap:')) {
-                    issues.push({ severity: 'HIGH', type: 'robots.txt', issue: 'Missing sitemap reference', fix: `Add: Sitemap: ${url}/sitemap.xml` });
-                } else {
-                    passed.push({ check: 'Sitemap in robots.txt', status: 'PRESENT' });
-                }
-                if (robotsTxt.includes('Disallow: /') && !robotsTxt.includes('Disallow: /wp-admin')) {
-                    issues.push({ severity: 'CRITICAL', type: 'robots.txt', issue: 'May be blocking search engines', fix: 'Review Disallow rules' });
-                }
-            } else {
-                issues.push({ severity: 'HIGH', type: 'robots.txt', issue: 'robots.txt not found', fix: 'Create robots.txt file' });
-            }
-        } catch (e) {
-            issues.push({ severity: 'MEDIUM', type: 'robots.txt', issue: 'Could not access robots.txt', fix: 'Verify server accessibility' });
-        }
-
-        // Check sitemap
-        try {
-            const sitemapRes = await fetch(`${url}/sitemap.xml`, { timeout: 5000 });
             if (sitemapRes.ok) {
-                passed.push({ check: 'sitemap.xml', status: 'EXISTS' });
-                const sitemapText = await sitemapRes.text();
-                const urlCount = (sitemapText.match(/<loc>/g) || []).length;
-                passed.push({ check: 'Sitemap URLs', status: `${urlCount} URLs found` });
-            } else {
-                // Try sitemap_index.xml
-                const indexRes = await fetch(`${url}/sitemap_index.xml`, { timeout: 5000 });
-                if (indexRes.ok) {
-                    passed.push({ check: 'sitemap_index.xml', status: 'EXISTS' });
-                } else {
-                    issues.push({ severity: 'HIGH', type: 'sitemap', issue: 'sitemap.xml not found', fix: 'Generate XML sitemap' });
-                }
+                score += 10;
+                checks.sitemap = true;
             }
         } catch (e) {
-            issues.push({ severity: 'MEDIUM', type: 'sitemap', issue: 'Could not access sitemap', fix: 'Verify sitemap URL' });
-        }
-
-        // Check HTTPS
-        if (url.startsWith('https://')) {
-            passed.push({ check: 'HTTPS', status: 'ENABLED' });
-        } else {
-            issues.push({ severity: 'CRITICAL', type: 'security', issue: 'Not using HTTPS', fix: 'Install SSL certificate' });
+            issues.push({ type: 'technical', message: 'sitemap.xml not found', severity: 'medium' });
         }
 
         // Check homepage
         try {
-            const homeRes = await fetch(url, { timeout: 10000 });
-            if (homeRes.ok) {
-                passed.push({ check: 'Homepage', status: 'ACCESSIBLE' });
-                const html = await homeRes.text();
+            const homeRes = await fetch(siteUrl, { timeout: 10000 });
+            const html = await homeRes.text();
+            const $ = cheerio.load(html);
 
-                // Check title
-                const titleMatch = html.match(/<title>(.*?)<\/title>/i);
-                if (titleMatch) {
-                    const title = titleMatch[1];
-                    if (title.length > 60) {
-                        issues.push({ severity: 'MEDIUM', type: 'on-page', issue: `Title too long (${title.length} chars)`, fix: 'Shorten to 50-60 characters' });
-                    } else if (title.length < 30) {
-                        issues.push({ severity: 'MEDIUM', type: 'on-page', issue: `Title too short (${title.length} chars)`, fix: 'Expand with keywords' });
-                    } else {
-                        passed.push({ check: 'Title tag', status: `OK (${title.length} chars)` });
-                    }
-                } else {
-                    issues.push({ severity: 'CRITICAL', type: 'on-page', issue: 'Missing title tag', fix: 'Add title tag' });
-                }
-
-                // Check meta description
-                const metaMatch = html.match(/<meta name="description" content="(.*?)"/i);
-                if (metaMatch) {
-                    const meta = metaMatch[1];
-                    if (meta.length > 160) {
-                        issues.push({ severity: 'MEDIUM', type: 'on-page', issue: `Meta description too long (${meta.length} chars)`, fix: 'Shorten to 150-160 characters' });
-                    } else {
-                        passed.push({ check: 'Meta description', status: `OK (${meta.length} chars)` });
-                    }
-                } else {
-                    issues.push({ severity: 'HIGH', type: 'on-page', issue: 'Missing meta description', fix: 'Add meta description' });
-                }
-
-                // Check H1
-                const h1Matches = html.match(/<h1[^>]*>(.*?)<\/h1>/gi) || [];
-                if (h1Matches.length === 0) {
-                    issues.push({ severity: 'HIGH', type: 'on-page', issue: 'No H1 tag found', fix: 'Add H1 with primary keyword' });
-                } else if (h1Matches.length > 1) {
-                    issues.push({ severity: 'MEDIUM', type: 'on-page', issue: `Multiple H1 tags (${h1Matches.length})`, fix: 'Use only one H1 per page' });
-                } else {
-                    passed.push({ check: 'H1 tag', status: 'OK (1 found)' });
-                }
-
-                // Check viewport
-                if (html.includes('viewport')) {
-                    passed.push({ check: 'Viewport meta', status: 'PRESENT' });
-                } else {
-                    issues.push({ severity: 'HIGH', type: 'mobile', issue: 'Missing viewport meta tag', fix: 'Add viewport meta for mobile' });
-                }
-
-                // Check schema
-                const schemaCount = (html.match(/application\/ld\+json/g) || []).length;
-                if (schemaCount > 0) {
-                    passed.push({ check: 'Schema markup', status: `${schemaCount} found` });
-                } else {
-                    issues.push({ severity: 'MEDIUM', type: 'schema', issue: 'No structured data found', fix: 'Add JSON-LD schema' });
-                }
-
-                // Check canonical
-                if (html.includes('rel="canonical"')) {
-                    passed.push({ check: 'Canonical tag', status: 'PRESENT' });
-                } else {
-                    issues.push({ severity: 'MEDIUM', type: 'on-page', issue: 'Missing canonical tag', fix: 'Add self-referencing canonical' });
-                }
-
+            if ($('title').length && $('title').text().trim()) {
+                score += 10;
+                checks.title = true;
             } else {
-                issues.push({ severity: 'CRITICAL', type: 'accessibility', issue: `Homepage returned ${homeRes.status}`, fix: 'Fix server errors' });
+                issues.push({ type: 'content', message: 'Missing or empty title tag', severity: 'high' });
+            }
+
+            if ($('meta[name="description"]').length) {
+                score += 10;
+                checks.meta = true;
+            } else {
+                issues.push({ type: 'content', message: 'Missing meta description', severity: 'medium' });
             }
         } catch (e) {
-            issues.push({ severity: 'CRITICAL', type: 'accessibility', issue: 'Could not access homepage', fix: 'Verify site is online' });
+            issues.push({ type: 'technical', message: 'Could not fetch homepage', severity: 'high' });
         }
 
-        // Calculate score
-        const criticalCount = issues.filter(i => i.severity === 'CRITICAL').length;
-        const highCount = issues.filter(i => i.severity === 'HIGH').length;
-        const mediumCount = issues.filter(i => i.severity === 'MEDIUM').length;
-        const score = Math.max(0, 100 - (criticalCount * 25) - (highCount * 10) - (mediumCount * 5));
-        const grade = score >= 90 ? 'A+' : score >= 80 ? 'A' : score >= 70 ? 'B' : score >= 60 ? 'C' : score >= 50 ? 'D' : 'F';
+        const grade = score >= 90 ? 'A+' : score >= 80 ? 'A' : score >= 70 ? 'B' : score >= 60 ? 'C' : 'D';
 
         res.json({
             success: true,
             data: {
-                siteUrl: url,
-                score,
+                overall: Math.min(score, 100),
                 grade,
-                summary: {
-                    passed: passed.length,
-                    issues: issues.length,
-                    critical: criticalCount,
-                    high: highCount,
-                    medium: mediumCount
+                breakdown: {
+                    technical: checks.robots && checks.sitemap ? 80 : 40,
+                    security: checks.https ? 100 : 20,
+                    content: checks.title && checks.meta ? 80 : 40
                 },
-                passed,
-                issues: issues.sort((a, b) => {
-                    const order = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3 };
-                    return order[a.severity] - order[b.severity];
-                }),
-                auditedAt: new Date().toISOString()
+                checks,
+                issues
             }
         });
     } catch (error) {
@@ -268,84 +424,95 @@ app.get('/api/seo-agents/audit', async (req, res) => {
     }
 });
 
-// Opportunities
-app.get('/api/seo-agents/opportunities', async (req, res) => {
-    res.json({
-        success: true,
-        data: {
-            ctrOpportunities: { count: 0, pages: [] },
-            pageTwoKeywords: { count: 0, keywords: [] },
-            priorityActions: [
-                { type: 'SETUP', action: 'Connect Google Search Console for real data', impact: 'HIGH' },
-                { type: 'AUDIT', action: 'Run full technical audit', impact: 'HIGH' },
-                { type: 'CONTENT', action: 'Add schema markup to pages', impact: 'MEDIUM' }
-            ],
-            note: 'Connect GSC to see CTR and ranking opportunities'
-        }
-    });
-});
-
-// Page Analyzer
-app.get('/api/seo-agents/analyze-page', async (req, res) => {
-    const url = req.query.url;
-    if (!url) {
-        return res.status(400).json({ success: false, error: 'URL required' });
-    }
+app.get('/api/seo-agents/audit', async (req, res) => {
+    const url = req.query.url || req.query.site || 'https://example.com';
 
     try {
-        const response = await fetch(url, { timeout: 10000 });
+        const results = {
+            url,
+            timestamp: new Date().toISOString(),
+            checks: [],
+            score: 0,
+            maxScore: 0
+        };
+
+        const addCheck = (name, passed, weight = 1, details = '') => {
+            results.checks.push({ name, passed, weight, details });
+            results.maxScore += weight * 10;
+            if (passed) results.score += weight * 10;
+        };
+
+        // HTTPS Check
+        addCheck('HTTPS', url.startsWith('https://'), 2, url.startsWith('https://') ? 'Site uses HTTPS' : 'Site not using HTTPS');
+
+        // Fetch page
+        const response = await fetch(url, { timeout: 15000 });
         const html = await response.text();
+        const $ = cheerio.load(html);
 
-        // Parse SEO elements
-        const titleMatch = html.match(/<title>(.*?)<\/title>/i);
-        const metaMatch = html.match(/<meta name="description" content="(.*?)"/i);
-        const h1Matches = html.match(/<h1[^>]*>(.*?)<\/h1>/gi) || [];
-        const schemaMatches = html.match(/<script type="application\/ld\+json">/gi) || [];
-        const canonicalMatch = html.match(/<link rel="canonical" href="(.*?)"/i);
-        const ogTitleMatch = html.match(/<meta property="og:title" content="(.*?)"/i);
+        // Title
+        const title = $('title').text().trim();
+        addCheck('Title Tag', !!title && title.length > 0, 2, title ? `Title: "${title.substring(0, 60)}..."` : 'Missing title');
+        addCheck('Title Length', title.length >= 30 && title.length <= 60, 1, `Length: ${title.length} chars`);
 
-        const title = titleMatch ? titleMatch[1] : null;
-        const meta = metaMatch ? metaMatch[1] : null;
-        const h1 = h1Matches[0]?.replace(/<[^>]+>/g, '').trim() || null;
+        // Meta Description
+        const metaDesc = $('meta[name="description"]').attr('content') || '';
+        addCheck('Meta Description', !!metaDesc, 2, metaDesc ? `Description: "${metaDesc.substring(0, 80)}..."` : 'Missing');
+        addCheck('Meta Description Length', metaDesc.length >= 120 && metaDesc.length <= 160, 1, `Length: ${metaDesc.length} chars`);
 
-        const recommendations = [];
+        // H1
+        const h1Count = $('h1').length;
+        addCheck('H1 Tag', h1Count === 1, 2, `Found ${h1Count} H1 tag(s)`);
 
-        if (!title) recommendations.push('Add title tag');
-        else if (title.length > 60) recommendations.push(`Shorten title from ${title.length} to 60 chars`);
-        else if (title.length < 30) recommendations.push('Expand title with more keywords');
+        // Viewport
+        addCheck('Viewport Meta', $('meta[name="viewport"]').length > 0, 1, 'Mobile viewport configured');
 
-        if (!meta) recommendations.push('Add meta description');
-        else if (meta.length > 160) recommendations.push(`Shorten meta description from ${meta.length} to 160 chars`);
-        else if (meta.length < 120) recommendations.push('Expand meta description for better CTR');
+        // Canonical
+        const canonical = $('link[rel="canonical"]').attr('href');
+        addCheck('Canonical URL', !!canonical, 1, canonical ? `Canonical: ${canonical}` : 'Missing canonical');
 
-        if (h1Matches.length === 0) recommendations.push('Add H1 tag');
-        else if (h1Matches.length > 1) recommendations.push('Use only one H1 per page');
+        // Schema/JSON-LD
+        const hasSchema = $('script[type="application/ld+json"]').length > 0;
+        addCheck('Schema Markup', hasSchema, 1, hasSchema ? 'JSON-LD schema found' : 'No schema markup');
 
-        if (schemaMatches.length === 0) recommendations.push('Add structured data (JSON-LD)');
-        if (!canonicalMatch) recommendations.push('Add canonical tag');
-        if (!ogTitleMatch) recommendations.push('Add Open Graph tags for social sharing');
+        // Images alt text
+        const images = $('img');
+        const imagesWithAlt = $('img[alt]').length;
+        addCheck('Image Alt Text', imagesWithAlt >= images.length * 0.8, 1, `${imagesWithAlt}/${images.length} images have alt text`);
 
-        const score = Math.max(0, 100 - (recommendations.length * 12));
+        // robots.txt
+        try {
+            const robotsRes = await fetch(`${new URL(url).origin}/robots.txt`, { timeout: 5000 });
+            addCheck('robots.txt', robotsRes.ok, 1, robotsRes.ok ? 'robots.txt accessible' : 'Not found');
+        } catch {
+            addCheck('robots.txt', false, 1, 'Could not check');
+        }
+
+        // sitemap.xml
+        try {
+            const sitemapRes = await fetch(`${new URL(url).origin}/sitemap.xml`, { timeout: 5000 });
+            addCheck('sitemap.xml', sitemapRes.ok, 1, sitemapRes.ok ? 'sitemap.xml found' : 'Not found');
+        } catch {
+            addCheck('sitemap.xml', false, 1, 'Could not check');
+        }
+
+        const percentage = Math.round((results.score / results.maxScore) * 100);
+        const grade = percentage >= 90 ? 'A+' : percentage >= 80 ? 'A' : percentage >= 70 ? 'B' : percentage >= 60 ? 'C' : 'D';
 
         res.json({
             success: true,
             data: {
                 url,
-                indexation: { indexed: true, clicks: '--', position: '--' },
-                onPage: {
-                    title,
-                    titleLength: title?.length || 0,
-                    metaDescription: meta,
-                    metaLength: meta?.length || 0,
-                    h1,
-                    h1Count: h1Matches.length,
-                    hasSchema: schemaMatches.length > 0,
-                    schemaCount: schemaMatches.length,
-                    hasCanonical: !!canonicalMatch,
-                    hasOpenGraph: !!ogTitleMatch
-                },
-                recommendations,
-                score
+                score: percentage,
+                grade,
+                passed: results.checks.filter(c => c.passed).length,
+                total: results.checks.length,
+                checks: results.checks,
+                issues: results.checks.filter(c => !c.passed).map(c => ({
+                    name: c.name,
+                    severity: c.weight >= 2 ? 'high' : 'medium',
+                    details: c.details
+                }))
             }
         });
     } catch (error) {
@@ -353,7 +520,61 @@ app.get('/api/seo-agents/analyze-page', async (req, res) => {
     }
 });
 
-// Bulk Check
+app.get('/api/seo-agents/analyze-page', async (req, res) => {
+    const url = req.query.url;
+    if (!url) {
+        return res.status(400).json({ success: false, error: 'URL parameter required' });
+    }
+
+    try {
+        const response = await fetch(url, { timeout: 15000 });
+        const html = await response.text();
+        const $ = cheerio.load(html);
+
+        const analysis = {
+            url,
+            title: $('title').text().trim(),
+            metaDescription: $('meta[name="description"]').attr('content') || '',
+            h1: $('h1').first().text().trim(),
+            h2Count: $('h2').length,
+            h3Count: $('h3').length,
+            wordCount: $('body').text().split(/\s+/).filter(w => w.length > 0).length,
+            imageCount: $('img').length,
+            imagesWithAlt: $('img[alt]').length,
+            internalLinks: $('a[href^="/"], a[href^="' + new URL(url).origin + '"]').length,
+            externalLinks: $('a[href^="http"]').not('a[href^="' + new URL(url).origin + '"]').length,
+            hasSchema: $('script[type="application/ld+json"]').length > 0,
+            canonical: $('link[rel="canonical"]').attr('href') || null,
+            ogTitle: $('meta[property="og:title"]').attr('content') || null,
+            ogDescription: $('meta[property="og:description"]').attr('content') || null,
+            ogImage: $('meta[property="og:image"]').attr('content') || null
+        };
+
+        // Generate recommendations
+        const recommendations = [];
+        if (!analysis.title) recommendations.push('Add a title tag');
+        if (analysis.title && analysis.title.length < 30) recommendations.push('Title too short - aim for 50-60 characters');
+        if (!analysis.metaDescription) recommendations.push('Add a meta description');
+        if (analysis.metaDescription && analysis.metaDescription.length < 120) recommendations.push('Meta description too short - aim for 150-160 characters');
+        if (!analysis.h1) recommendations.push('Add an H1 heading');
+        if (analysis.wordCount < 300) recommendations.push('Content may be too thin - consider adding more text');
+        if (analysis.imagesWithAlt < analysis.imageCount) recommendations.push(`Add alt text to ${analysis.imageCount - analysis.imagesWithAlt} images`);
+        if (!analysis.hasSchema) recommendations.push('Add structured data (JSON-LD schema)');
+        if (!analysis.canonical) recommendations.push('Add a canonical URL');
+
+        res.json({
+            success: true,
+            data: {
+                ...analysis,
+                recommendations,
+                score: Math.max(0, 100 - (recommendations.length * 10))
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 app.post('/api/seo-agents/bulk-check', async (req, res) => {
     const { urls } = req.body || {};
     if (!urls || !Array.isArray(urls)) {
@@ -361,14 +582,14 @@ app.post('/api/seo-agents/bulk-check', async (req, res) => {
     }
 
     const results = [];
-    let indexed = 0;
+    let accessible = 0;
 
     for (const url of urls.slice(0, 50)) {
         try {
             const response = await fetch(url, { method: 'HEAD', timeout: 5000 });
-            const isAccessible = response.ok;
-            if (isAccessible) indexed++;
-            results.push({ url, accessible: isAccessible, status: response.status });
+            const ok = response.ok;
+            if (ok) accessible++;
+            results.push({ url, accessible: ok, status: response.status });
         } catch (e) {
             results.push({ url, accessible: false, error: e.message });
         }
@@ -379,15 +600,30 @@ app.post('/api/seo-agents/bulk-check', async (req, res) => {
         data: {
             total: urls.length,
             checked: results.length,
-            indexed,
-            notIndexed: results.length - indexed,
-            indexRate: Math.round((indexed / results.length) * 100) + '%',
+            accessible,
+            notAccessible: results.length - accessible,
+            accessRate: Math.round((accessible / results.length) * 100) + '%',
             results
         }
     });
 });
 
-// Terminal Command
+app.get('/api/seo-agents/opportunities', async (req, res) => {
+    const site = req.query.site;
+
+    // Return sample opportunities (would integrate with GSC for real data)
+    res.json({
+        success: true,
+        data: {
+            opportunities: [
+                { type: 'quick-win', title: 'Improve meta descriptions', impact: 'medium', effort: 'low' },
+                { type: 'technical', title: 'Add schema markup', impact: 'high', effort: 'medium' },
+                { type: 'content', title: 'Create FAQ content', impact: 'high', effort: 'medium' }
+            ]
+        }
+    });
+});
+
 app.post('/api/seo-agents/command', async (req, res) => {
     const { command, site } = req.body || {};
     if (!command) {
@@ -398,87 +634,119 @@ app.post('/api/seo-agents/command', async (req, res) => {
     const cmd = parts[0];
     const args = parts.slice(1);
 
-    switch (cmd) {
-        case 'help':
-            res.json({
-                success: true,
-                data: {
-                    commands: [
-                        'seo audit [url] - Run technical SEO audit',
-                        'seo health [url] - Get health score',
-                        's1 check [url] - Technical check',
-                        's2 schema [url] - Check schema markup',
-                        's3 content [url] - Analyze content',
-                        's4 gsc - GSC status (requires setup)',
-                        's5 wp - WordPress status',
-                        's6 index [url] - Check indexation',
-                        'help - Show this help'
-                    ]
-                }
-            });
-            break;
-        case 'seo':
-            if (args[0] === 'audit') {
-                res.json({ success: true, data: { message: `Running audit for ${args[1] || site || 'default site'}...`, action: 'Use the Audit tab for full results' } });
-            } else if (args[0] === 'health') {
-                res.json({ success: true, data: { message: `Checking health for ${args[1] || site || 'default site'}...`, action: 'See Dashboard tab' } });
-            } else {
-                res.json({ success: true, data: { agent: 'SEO Orchestrator', status: 'Active', site: site || 'none' } });
+    const agentNames = {
+        seo: 'SEO Orchestrator',
+        s1: 'Technical SEO',
+        s2: 'Schema',
+        s3: 'Content',
+        s4: 'GSC',
+        s5: 'WordPress',
+        s6: 'Indexation'
+    };
+
+    if (cmd === 'help') {
+        return res.json({
+            success: true,
+            data: {
+                commands: [
+                    'seo audit [url] - Run full SEO audit',
+                    'seo health - Get site health score',
+                    's1 check [url] - Technical analysis',
+                    's2 schema [url] - Check schema markup',
+                    's3 content [url] - Analyze content',
+                    's4 gsc - GSC status',
+                    's5 wp - WordPress status',
+                    's6 index [url] - Check indexation',
+                    'help - Show commands'
+                ]
             }
-            break;
-        case 's1':
-        case 's2':
-        case 's3':
-        case 's4':
-        case 's5':
-        case 's6':
-            const agentNames = { s1: 'Technical SEO', s2: 'Schema', s3: 'Content', s4: 'GSC', s5: 'WordPress', s6: 'Indexation' };
-            res.json({ success: true, data: { agent: agentNames[cmd], status: 'Activated', command: args.join(' '), site: site || 'none' } });
-            break;
-        default:
-            res.json({ success: true, data: { message: `Unknown command: ${cmd}`, hint: "Type 'help' for available commands" } });
+        });
+    }
+
+    if (agentNames[cmd]) {
+        return res.json({
+            success: true,
+            data: {
+                agent: agentNames[cmd],
+                status: 'Activated',
+                command: args.join(' ') || 'ready',
+                site: site || 'none'
+            }
+        });
+    }
+
+    res.json({
+        success: true,
+        data: { message: `Unknown: ${cmd}`, hint: "Type 'help'" }
+    });
+});
+
+// ============================================================
+// WEBSITE AUDIT API
+// ============================================================
+
+app.post('/api/seo-audit', async (req, res) => {
+    const { url } = req.body;
+    if (!url) {
+        return res.status(400).json({ success: false, error: 'URL required' });
+    }
+
+    try {
+        // Reuse the audit logic
+        const auditResponse = await fetch(`http://localhost:${PORT}/api/seo-agents/audit?url=${encodeURIComponent(url)}`);
+        const auditData = await auditResponse.json();
+        res.json(auditData);
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
     }
 });
 
-// GSC Placeholder routes
-app.get('/api/gsc/summary', (req, res) => {
-    res.json({
-        success: true,
-        message: 'GSC not configured',
-        totalClicks: 0,
-        totalImpressions: 0,
-        averageCTR: 0,
-        averagePosition: 0,
-        note: 'Add Google Search Console credentials to enable'
-    });
-});
+// ============================================================
+// CORE WEB VITALS (Simulated)
+// ============================================================
 
-app.get('/api/gsc/pages', (req, res) => {
+app.get('/api/web-vitals', async (req, res) => {
+    const url = req.query.url;
+    if (!url) {
+        return res.json({ success: false, error: 'URL required' });
+    }
+
+    // Simulated Web Vitals (would use PageSpeed Insights API in production)
     res.json({
         success: true,
-        message: 'GSC not configured',
-        pages: [],
-        note: 'Add Google Search Console credentials to enable'
+        url,
+        vitals: {
+            LCP: { value: 2.1, rating: 'good', unit: 's' },
+            FID: { value: 45, rating: 'good', unit: 'ms' },
+            CLS: { value: 0.05, rating: 'good', unit: '' },
+            TTFB: { value: 0.8, rating: 'good', unit: 's' },
+            FCP: { value: 1.2, rating: 'good', unit: 's' }
+        },
+        score: 85,
+        note: 'Connect Google PageSpeed Insights API for real data'
     });
 });
 
 // ============================================================
-// START SERVER
+// SERVER START
 // ============================================================
 
-// For Vercel serverless deployment
 export default app;
 
-// For local development
 if (process.env.NODE_ENV !== 'production') {
     app.listen(PORT, () => {
         console.log(`
-╔════════════════════════════════════════════════════════╗
-║   🤖 SEO Agents Dashboard Running                      ║
-╚════════════════════════════════════════════════════════╝
+╔════════════════════════════════════════════════════════════╗
+║   🤖 SEO Agents Dashboard - Multi-Site Platform           ║
+╚════════════════════════════════════════════════════════════╝
 
-🌐 Dashboard:  http://localhost:${PORT}/seo-agents
-📊 API:        http://localhost:${PORT}/api/seo-agents/health
+📊 Dashboard:      http://localhost:${PORT}/
+🤖 SEO Agents:     http://localhost:${PORT}/seo-agents
+🔍 Website Audit:  http://localhost:${PORT}/website-audit
+📈 Keywords:       http://localhost:${PORT}/keywords
+🛡️ Indexation:     http://localhost:${PORT}/indexation-control
+
+🔑 GSC Auth:       http://localhost:${PORT}/auth/google
 
 Press Ctrl+C to stop
         `);

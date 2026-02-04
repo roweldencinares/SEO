@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Progress Tracking - Spearity Marketing</title>
+
+    
+    
+
+    <!-- Shared Sidebar Styles -->
+    <link rel="stylesheet" href="/sidebar.css">
+
+    <!-- Chart.js for visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fa;
+            min-height: 100vh;
+        }
+
+        .main-content {
+            margin-left: 280px;
+            padding: 30px;
+        }
+
+        .page-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px 30px;
+            border-radius: 20px;
+            margin-bottom: 30px;
+            color: white;
+            box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3);
+        }
+
+        .page-header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            opacity: 0.95;
+            font-size: 1.1rem;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .metric-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .metric-label {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+        }
+
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .metric-change {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .metric-change.positive {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .metric-change.negative {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .metric-change.neutral {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .section {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            color: #333;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .actions-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .actions-table th {
+            text-align: left;
+            padding: 15px;
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #666;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .actions-table td {
+            padding: 15px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .actions-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .status-not-started {
+            background: #f0f0f0;
+            color: #666;
+        }
+
+        .status-in-progress {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-completed {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-verified {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .before-after {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .before-after-item {
+            flex: 1;
+        }
+
+        .before-after-label {
+            font-size: 0.85rem;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .before-after-value {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .arrow {
+            color: #28a745;
+            font-size: 1.5rem;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-verify {
+            background: #0dcaf0;
+            color: white;
+        }
+
+        .btn-verify:hover {
+            background: #0aa2c0;
+        }
+
+        .btn-done {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-done:hover {
+            background: #218838;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-top: 20px;
+        }
+
+        .roi-summary {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-top: 30px;
+        }
+
+        .roi-summary h3 {
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+        }
+
+        .roi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .roi-item {
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        .roi-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+
+        .roi-value {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar injected by sidebar.js -->
+
+    <div class="main-content">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1>📊 Progress Tracking Dashboard</h1>
+            <p class="subtitle">Track your marketing improvements with automated before/after verification</p>
+        </div>
+
+        <!-- Key Metrics -->
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-label">Actions Completed</div>
+                <div class="metric-value" id="completedActions">0</div>
+                <div class="metric-change positive">
+                    <span>↑</span>
+                    <span id="completedChange">+0 this week</span>
+                </div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-label">Average Ranking Improvement</div>
+                <div class="metric-value" id="rankingImprovement">+0</div>
+                <div class="metric-change positive">
+                    <span>↑</span>
+                    <span id="rankingChange">positions</span>
+                </div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-label">Local Presence Score</div>
+                <div class="metric-value" id="presenceScore">0%</div>
+                <div class="metric-change positive">
+                    <span>↑</span>
+                    <span id="presenceChange">+0% from baseline</span>
+                </div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-label">Estimated Monthly Revenue Impact</div>
+                <div class="metric-value" id="revenueImpact">$0</div>
+                <div class="metric-change positive">
+                    <span>↑</span>
+                    <span id="revenueChange">from actions</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Progress Over Time Chart -->
+        <div class="section">
+            <h2 class="section-title">
+                <span>📈</span>
+                <span>Progress Over Time</span>
+            </h2>
+            <div class="chart-container">
+                <canvas id="progressChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Actions Tracking Table -->
+        <div class="section">
+            <h2 class="section-title">
+                <span>✅</span>
+                <span>Action Progress & Verification</span>
+            </h2>
+            <table class="actions-table" id="actionsTable">
+                <thead>
+                    <tr>
+                        <th>Action</th>
+                        <th>Status</th>
+                        <th>Before → After</th>
+                        <th>Impact</th>
+                        <th>Last Verified</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="actionsTableBody">
+                    <!-- Actions will be populated here -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- ROI Summary -->
+        <div class="roi-summary">
+            <h3>💰 Return on Investment Summary</h3>
+            <p>Estimated business impact from completed actions</p>
+            <div class="roi-grid">
+                <div class="roi-item">
+                    <div class="roi-label">New Leads/Month</div>
+                    <div class="roi-value" id="roiLeads">0</div>
+                </div>
+                <div class="roi-item">
+                    <div class="roi-label">Traffic Increase</div>
+                    <div class="roi-value" id="roiTraffic">+0%</div>
+                </div>
+                <div class="roi-item">
+                    <div class="roi-label">Revenue Potential</div>
+                    <div class="roi-value" id="roiRevenue">$0/mo</div>
+                </div>
+                <div class="roi-item">
+                    <div class="roi-label">Time Saved</div>
+                    <div class="roi-value" id="roiTime">0 hrs</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sample data - will be replaced with real API calls
+        const trackingData = {
+            actions: [
+                {
+                    id: 1,
+                    name: 'Create "Business Coach Milwaukee" Landing Page',
+                    status: 'completed',
+                    before: { ranking: null, traffic: 0 },
+                    after: { ranking: 3, traffic: 145 },
+                    impact: '+145 visits/month',
+                    lastVerified: '2025-11-03',
+                    category: 'keywords'
+                },
+                {
+                    id: 2,
+                    name: 'Claim Google Business Profile',
+                    status: 'verified',
+                    before: { presence: false, impressions: 0 },
+                    after: { presence: true, impressions: 1200 },
+                    impact: '+1,200 impressions/month',
+                    lastVerified: '2025-11-03',
+                    category: 'local-listing'
+                },
+                {
+                    id: 5,
+                    name: 'Fix Missing Meta Descriptions (SEO)',
+                    status: 'completed',
+                    before: { pages: 212, metaDesc: 0 },
+                    after: { pages: 212, metaDesc: 211 },
+                    impact: '211 pages improved (99.5% success)',
+                    lastVerified: '2025-11-13',
+                    category: 'seo-technical'
+                },
+                {
+                    id: 6,
+                    name: 'Fix Title Tags Too Long (SEO)',
+                    status: 'completed',
+                    before: { pages: 268, optimized: 0 },
+                    after: { pages: 268, optimized: 25 },
+                    impact: '25 titles shortened to <60 chars',
+                    lastVerified: '2025-11-13',
+                    category: 'seo-technical'
+                },
+                {
+                    id: 7,
+                    name: 'Deploy FAQ Schema (Rich Snippets)',
+                    status: 'verified',
+                    before: { pages: 0, questions: 0 },
+                    after: { pages: 308, questions: 1024 },
+                    impact: '1,024 FAQ questions across 308 pages (100% rich snippet eligible)',
+                    lastVerified: '2025-11-24',
+                    category: 'seo-technical'
+                },
+                {
+                    id: 3,
+                    name: 'Fix AI visibility in ChatGPT',
+                    status: 'in-progress',
+                    before: { visible: false },
+                    after: { visible: null },
+                    impact: 'Pending verification',
+                    lastVerified: null,
+                    category: 'ai-discovery'
+                },
+                {
+                    id: 4,
+                    name: 'Launch Madison expansion',
+                    status: 'not-started',
+                    before: null,
+                    after: null,
+                    impact: 'Not started',
+                    lastVerified: null,
+                    category: 'keywords'
+                }
+            ],
+            weeklyProgress: [
+                { week: 'Week 1', completed: 0, score: 27 },
+                { week: 'Week 2', completed: 1, score: 40 },
+                { week: 'Week 3', completed: 2, score: 55 },
+                { week: 'Week 4', completed: 4, score: 73 },
+                { week: 'Week 5', completed: 6, score: 85 },
+                { week: 'Week 6', completed: 7, score: 95 }
+            ]
+        };
+
+        window.addEventListener('load', () => {
+            loadDashboard();
+            initializeChart();
+        });
+
+        function loadDashboard() {
+            // Update metrics
+            const completed = trackingData.actions.filter(a => a.status === 'completed' || a.status === 'verified').length;
+            document.getElementById('completedActions').textContent = completed;
+            document.getElementById('completedChange').textContent = `+${completed} this week`;
+
+            document.getElementById('rankingImprovement').textContent = '+2.5';
+            document.getElementById('presenceScore').textContent = '73%';
+            document.getElementById('presenceChange').textContent = '+46% from baseline';
+            document.getElementById('revenueImpact').textContent = '$12K';
+
+            // ROI metrics
+            document.getElementById('roiLeads').textContent = '25';
+            document.getElementById('roiTraffic').textContent = '+180%';
+            document.getElementById('roiRevenue').textContent = '$12K/mo';
+            document.getElementById('roiTime').textContent = '45 hrs';
+
+            // Populate actions table
+            renderActionsTable();
+        }
+
+        function renderActionsTable() {
+            const tbody = document.getElementById('actionsTableBody');
+            tbody.innerHTML = trackingData.actions.map(action => `
+                <tr>
+                    <td><strong>${action.name}</strong></td>
+                    <td><span class="status-badge status-${action.status.replace('_', '-')}">${formatStatus(action.status)}</span></td>
+                    <td>${formatBeforeAfter(action)}</td>
+                    <td>${action.impact}</td>
+                    <td>${action.lastVerified || 'Not yet'}</td>
+                    <td>
+                        <div class="action-buttons">
+                            ${action.status !== 'verified' ? `
+                                <button class="btn btn-verify" onclick="verifyAction(${action.id})">
+                                    🔄 Verify
+                                </button>
+                            ` : ''}
+                            ${action.status === 'not-started' ? `
+                                <button class="btn btn-done" onclick="markDone(${action.id})">
+                                    ✓ Start
+                                </button>
+                            ` : ''}
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function formatStatus(status) {
+            return status.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+        }
+
+        function formatBeforeAfter(action) {
+            if (!action.before && !action.after) {
+                return '<span style="color: #999;">No data</span>';
+            }
+
+            if (action.category === 'keywords' && action.after?.ranking) {
+                return `<div class="before-after">
+                    <div class="before-after-item">
+                        <div class="before-after-label">Before</div>
+                        <div class="before-after-value">Not ranked</div>
+                    </div>
+                    <div class="arrow">→</div>
+                    <div class="before-after-item">
+                        <div class="before-after-label">After</div>
+                        <div class="before-after-value">#${action.after.ranking}</div>
+                    </div>
+                </div>`;
+            }
+
+            if (action.category === 'local-listing') {
+                return `<div class="before-after">
+                    <div class="before-after-item">
+                        <div class="before-after-label">Before</div>
+                        <div class="before-after-value">${action.before.impressions || 0}</div>
+                    </div>
+                    <div class="arrow">→</div>
+                    <div class="before-after-item">
+                        <div class="before-after-label">After</div>
+                        <div class="before-after-value">${action.after.impressions || 0}</div>
+                    </div>
+                </div>`;
+            }
+
+            if (action.category === 'seo-technical') {
+                const beforeValue = action.before.metaDesc !== undefined ? action.before.metaDesc : action.before.optimized;
+                const afterValue = action.after.metaDesc !== undefined ? action.after.metaDesc : action.after.optimized;
+                return `<div class="before-after">
+                    <div class="before-after-item">
+                        <div class="before-after-label">Before</div>
+                        <div class="before-after-value">${beforeValue} pages</div>
+                    </div>
+                    <div class="arrow">→</div>
+                    <div class="before-after-item">
+                        <div class="before-after-label">After</div>
+                        <div class="before-after-value">${afterValue} pages</div>
+                    </div>
+                </div>`;
+            }
+
+            return '<span style="color: #999;">Pending</span>';
+        }
+
+        function initializeChart() {
+            const ctx = document.getElementById('progressChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: trackingData.weeklyProgress.map(w => w.week),
+                    datasets: [
+                        {
+                            label: 'Actions Completed',
+                            data: trackingData.weeklyProgress.map(w => w.completed),
+                            borderColor: '#667eea',
+                            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Overall Score',
+                            data: trackingData.weeklyProgress.map(w => w.score),
+                            borderColor: '#28a745',
+                            backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                            tension: 0.4,
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Actions Completed'
+                            }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'Overall Score (%)'
+                            },
+                            grid: {
+                                drawOnChartArea: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        async function verifyAction(actionId) {
+            alert(`🤖 AI Verification Started!\n\nGemini is re-scanning to verify this action...\nThis will take ~10 seconds.`);
+
+            // Simulate API call
+            setTimeout(() => {
+                alert(`✅ Verification Complete!\n\nAction verified successfully.\nMetrics have been updated.`);
+                location.reload();
+            }, 2000);
+        }
+
+        function markDone(actionId) {
+            alert(`Action marked as started!\nClick "Verify" when complete to measure impact.`);
+            location.reload();
+        }
+    </script>
+
+    <!-- Sidebar Component -->
+    <script src="/sidebar.js"></script>
+    <script>
+        initSidebar('/progress');
+    </script>
+</body>
+</html>
