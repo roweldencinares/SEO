@@ -99,8 +99,8 @@ function initSidebar(activePage = '/dashboard') {
     // Initialize collapsible sections
     initCollapsibleSections();
 
-    // Initialize Clerk auth
-    initializeAuth();
+    // Initialize user display (no auth required)
+    initializeUser();
 }
 
 function initCollapsibleSections() {
@@ -136,74 +136,28 @@ function initCollapsibleSections() {
     });
 }
 
-async function initializeAuth() {
-    try {
-        const clerk = window.Clerk;
+function initializeUser() {
+    // Set default user info (no authentication required)
+    const userNameEl = document.getElementById('userName');
+    const userEmailEl = document.getElementById('userEmail');
+    const userInitialsEl = document.getElementById('userInitials');
 
-        if (!clerk) {
-            console.error('Clerk not loaded');
-            setTimeout(initializeAuth, 100);
-            return;
-        }
+    if (userNameEl) {
+        userNameEl.textContent = 'SEO User';
+    }
 
-        await clerk.load();
+    if (userEmailEl) {
+        userEmailEl.textContent = 'seo@agents.local';
+    }
 
-        // Check if user is authenticated
-        if (!clerk.user) {
-            // Not signed in, redirect to sign-in page
-            window.location.href = '/sign-in';
-            return;
-        }
+    if (userInitialsEl) {
+        userInitialsEl.textContent = 'SE';
+    }
 
-        // User is authenticated
-        const user = clerk.user;
-        console.log('Authenticated as:', user.primaryEmailAddress?.emailAddress);
-
-        // Update user info in sidebar
-        const userName = user.firstName || user.emailAddresses[0]?.emailAddress || 'User';
-        const userEmail = user.primaryEmailAddress?.emailAddress || user.emailAddresses[0]?.emailAddress || '';
-        const userImageUrl = user.imageUrl;
-
-        const userNameEl = document.getElementById('userName');
-        const userEmailEl = document.getElementById('userEmail');
-        const userImageEl = document.getElementById('userImage');
-        const userInitialsEl = document.getElementById('userInitials');
-
-        if (userNameEl) {
-            userNameEl.textContent = userName;
-        }
-
-        if (userEmailEl) {
-            userEmailEl.textContent = userEmail;
-        }
-
-        // Display user image or initials
-        if (userImageUrl && userImageEl && userInitialsEl) {
-            userImageEl.src = userImageUrl;
-            userImageEl.style.display = 'block';
-            userInitialsEl.style.display = 'none';
-        } else if (userInitialsEl) {
-            const initials = userName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-            userInitialsEl.textContent = initials;
-        }
-
-        // Sign out button functionality
-        const signOutBtn = document.getElementById('signOutBtn');
-        if (signOutBtn) {
-            signOutBtn.addEventListener('click', async () => {
-                try {
-                    await clerk.signOut();
-                    window.location.href = '/sign-in';
-                } catch (err) {
-                    console.error('Error signing out:', err);
-                    alert('Failed to sign out. Please try again.');
-                }
-            });
-        }
-    } catch (err) {
-        console.error('Error loading Clerk:', err);
-        // On error, redirect to sign-in
-        window.location.href = '/sign-in';
+    // Hide sign out button (no auth)
+    const signOutBtn = document.getElementById('signOutBtn');
+    if (signOutBtn) {
+        signOutBtn.style.display = 'none';
     }
 }
 
