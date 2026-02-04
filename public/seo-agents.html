@@ -1,0 +1,1734 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SEO Agents - Multi-Site Dashboard</title>
+
+    <!-- Clerk Authentication -->
+    <script
+      async
+      crossorigin="anonymous"
+      data-clerk-publishable-key="pk_live_Y2xlcmsubWFya2V0aW5nLnNwZWFyaXR5LmNvbSQ"
+      data-clerk-frontend-api="clerk.marketing.spearity.com"
+      src="https://clerk.marketing.spearity.com/npm/@clerk/clerk-js@latest/dist/clerk.browser.js"
+      type="text/javascript"
+    ></script>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Shared Sidebar Styles -->
+    <link rel="stylesheet" href="/sidebar.css">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f7fa;
+            min-height: 100vh;
+        }
+
+        .container {
+            margin-left: 260px;
+            padding: 30px;
+            max-width: calc(100% - 260px);
+        }
+
+        /* Site Selector */
+        .site-selector {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .site-selector-label {
+            font-weight: 600;
+            color: #4a5568;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .site-dropdown {
+            flex: 1;
+            min-width: 300px;
+            padding: 12px 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+
+        .site-dropdown:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .add-site-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .add-site-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .site-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 10px 15px;
+            background: #f7fafc;
+            border-radius: 8px;
+        }
+
+        .site-favicon {
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+        }
+
+        .site-url {
+            font-size: 14px;
+            color: #667eea;
+            font-weight: 500;
+        }
+
+        .site-status {
+            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            background: #c6f6d5;
+            color: #276749;
+        }
+
+        .site-status.disconnected {
+            background: #fed7d7;
+            color: #c53030;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .modal h2 {
+            margin-bottom: 20px;
+            color: #1a202c;
+        }
+
+        .modal-close {
+            float: right;
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #718096;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            padding: 30px;
+            border-radius: 16px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(102, 126, 234, 0.3) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header p {
+            color: rgba(255,255,255,0.8);
+            font-size: 14px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .current-site-display {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .current-site-display img {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            background: white;
+        }
+
+        .current-site-display span {
+            color: #a0aec0;
+            font-size: 14px;
+        }
+
+        .header-stats {
+            display: flex;
+            gap: 30px;
+            margin-top: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header-stat {
+            text-align: center;
+        }
+
+        .header-stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-stat-label {
+            font-size: 11px;
+            color: rgba(255,255,255,0.7);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Agent Grid */
+        .agent-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .agent-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .agent-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+        }
+
+        .agent-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .agent-card.active::before {
+            height: 100%;
+            opacity: 0.05;
+        }
+
+        .agent-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            margin-bottom: 12px;
+        }
+
+        .agent-icon.orchestrator { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .agent-icon.technical { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .agent-icon.schema { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+        .agent-icon.content { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
+        .agent-icon.gsc { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
+        .agent-icon.wordpress { background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); }
+        .agent-icon.indexation { background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%); }
+
+        .agent-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #1a202c;
+            margin-bottom: 6px;
+        }
+
+        .agent-shortcut {
+            display: inline-block;
+            background: #f0f0f0;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-family: monospace;
+            color: #667eea;
+            margin-bottom: 8px;
+        }
+
+        .agent-description {
+            font-size: 13px;
+            color: #718096;
+            line-height: 1.4;
+        }
+
+        .agent-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 12px;
+            font-size: 11px;
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #48bb78;
+        }
+
+        .status-dot.warning { background: #ecc94b; }
+        .status-dot.error { background: #f56565; }
+
+        /* Navigation Tabs */
+        .nav-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+
+        .nav-tab {
+            background: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+            transition: all 0.3s;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+            border: none;
+        }
+
+        .nav-tab:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .nav-tab.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .panel {
+            display: none;
+            animation: fadeIn 0.3s;
+        }
+
+        .panel.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+            margin-bottom: 20px;
+        }
+
+        .card h2 {
+            color: #1a202c;
+            font-size: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Health Score */
+        .health-score-container {
+            display: flex;
+            align-items: center;
+            gap: 40px;
+            padding: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .health-circle {
+            width: 160px;
+            height: 160px;
+            border-radius: 50%;
+            background: conic-gradient(
+                #48bb78 0deg calc(var(--score) * 3.6deg),
+                #e2e8f0 calc(var(--score) * 3.6deg) 360deg
+            );
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .health-circle-inner {
+            width: 125px;
+            height: 125px;
+            border-radius: 50%;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .health-score-value {
+            font-size: 42px;
+            font-weight: 700;
+            color: #1a202c;
+        }
+
+        .health-grade {
+            font-size: 16px;
+            font-weight: 600;
+            color: #48bb78;
+        }
+
+        .health-breakdown {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .health-metric {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .health-metric-label {
+            width: 100px;
+            font-size: 13px;
+            color: #718096;
+        }
+
+        .health-metric-bar {
+            flex: 1;
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 0 12px;
+        }
+
+        .health-metric-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        .health-metric-value {
+            width: 40px;
+            text-align: right;
+            font-weight: 600;
+            color: #1a202c;
+            font-size: 13px;
+        }
+
+        /* Quick Actions */
+        .quick-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 25px;
+        }
+
+        .quick-action {
+            background: white;
+            padding: 10px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.3s;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            border: 2px solid transparent;
+        }
+
+        .quick-action:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+        }
+
+        /* Form Styles */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            color: #4a5568;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-group small {
+            display: block;
+            margin-top: 5px;
+            color: #718096;
+            font-size: 12px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+
+        .btn-danger {
+            background: #fc8181;
+            color: white;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        /* Results */
+        .result-box {
+            background: #f7fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 350px;
+            overflow-y: auto;
+        }
+
+        .result-box.success {
+            background: #f0fdf4;
+            border-color: #86efac;
+        }
+
+        .result-box.error {
+            background: #fef2f2;
+            border-color: #fca5a5;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 10px;
+            padding: 18px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+        }
+
+        .stat-icon {
+            font-size: 20px;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1a202c;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #718096;
+        }
+
+        /* Table */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 10px 12px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .data-table th {
+            background: #f7fafc;
+            font-weight: 600;
+            color: #4a5568;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .data-table tr:hover {
+            background: #f7fafc;
+        }
+
+        /* Loading */
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 30px;
+            color: #718096;
+            font-size: 14px;
+        }
+
+        .spinner {
+            width: 24px;
+            height: 24px;
+            border: 3px solid #e2e8f0;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 12px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Terminal */
+        .terminal {
+            background: #1a202c;
+            border-radius: 8px;
+            padding: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: #68d391;
+            max-height: 350px;
+            overflow-y: auto;
+        }
+
+        .terminal-line {
+            margin-bottom: 4px;
+        }
+
+        .terminal-prompt { color: #667eea; }
+        .terminal-output { color: #a0aec0; }
+        .terminal-success { color: #68d391; }
+        .terminal-error { color: #fc8181; }
+
+        /* Opportunity Cards */
+        .opportunity-card {
+            background: #f7fafc;
+            border-radius: 10px;
+            padding: 18px;
+            margin-bottom: 12px;
+            border-left: 4px solid #667eea;
+            transition: all 0.3s;
+        }
+
+        .opportunity-card:hover {
+            background: #edf2f7;
+        }
+
+        .opportunity-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .opportunity-type {
+            font-size: 11px;
+            font-weight: 600;
+            color: #667eea;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .opportunity-impact {
+            font-size: 11px;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+
+        .impact-high { background: #fed7d7; color: #c53030; }
+        .impact-medium { background: #feebc8; color: #c05621; }
+
+        .opportunity-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1a202c;
+            margin-bottom: 6px;
+        }
+
+        .opportunity-description {
+            font-size: 13px;
+            color: #718096;
+        }
+
+        /* Sites Management */
+        .sites-list {
+            display: grid;
+            gap: 12px;
+        }
+
+        .site-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px;
+            background: #f7fafc;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .site-item:hover {
+            background: #edf2f7;
+        }
+
+        .site-item-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .site-item-favicon {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            background: #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .site-item-details h4 {
+            font-size: 14px;
+            margin-bottom: 2px;
+        }
+
+        .site-item-details span {
+            font-size: 12px;
+            color: #718096;
+        }
+
+        .site-item-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .site-item-actions button {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar will be injected here -->
+
+    <!-- Add Site Modal -->
+    <div class="modal-overlay" id="addSiteModal">
+        <div class="modal">
+            <button class="modal-close" onclick="closeModal()">&times;</button>
+            <h2>➕ Add New Site</h2>
+            <div class="form-group">
+                <label>Website URL</label>
+                <input type="text" id="newSiteUrl" placeholder="https://beachhydrovac.com">
+                <small>Enter the full URL including https://</small>
+            </div>
+            <div class="form-group">
+                <label>Site Name (optional)</label>
+                <input type="text" id="newSiteName" placeholder="Beach Hydrovac">
+            </div>
+            <div class="form-group">
+                <label>GSC Property (optional)</label>
+                <input type="text" id="newSiteGSC" placeholder="sc-domain:beachhydrovac.com">
+                <small>Google Search Console property ID</small>
+            </div>
+            <div class="btn-group">
+                <button class="btn btn-primary" onclick="addSite()">Add Site</button>
+                <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Site Selector -->
+        <div class="site-selector">
+            <span class="site-selector-label">🌐 Active Site:</span>
+            <select class="site-dropdown" id="siteSelector" onchange="changeSite()">
+                <!-- Sites will be populated here -->
+            </select>
+            <button class="add-site-btn" onclick="openAddSiteModal()">
+                <span>➕</span> Add Site
+            </button>
+            <div class="site-info" id="siteInfo">
+                <img class="site-favicon" id="siteFavicon" src="" alt="">
+                <span class="site-url" id="siteUrlDisplay">--</span>
+                <span class="site-status" id="siteStatus">Connected</span>
+            </div>
+        </div>
+
+        <!-- Header -->
+        <div class="header">
+            <h1>🤖 SEO Agents Dashboard</h1>
+            <p>AI-powered SEO automation for any website</p>
+            <div class="current-site-display">
+                <img id="headerFavicon" src="" alt="">
+                <span id="headerSiteUrl">Select a site to begin</span>
+            </div>
+            <div class="header-stats">
+                <div class="header-stat">
+                    <div class="header-stat-value" id="healthScore">--</div>
+                    <div class="header-stat-label">Health Score</div>
+                </div>
+                <div class="header-stat">
+                    <div class="header-stat-value" id="indexedPages">--</div>
+                    <div class="header-stat-label">Indexed</div>
+                </div>
+                <div class="header-stat">
+                    <div class="header-stat-value" id="totalClicks">--</div>
+                    <div class="header-stat-label">Clicks</div>
+                </div>
+                <div class="header-stat">
+                    <div class="header-stat-value" id="avgPosition">--</div>
+                    <div class="header-stat-label">Avg Pos</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="quick-actions">
+            <div class="quick-action" onclick="runQuickAction('audit')">🔍 Full Audit</div>
+            <div class="quick-action" onclick="runQuickAction('health')">💚 Health Check</div>
+            <div class="quick-action" onclick="runQuickAction('opportunities')">🚀 Opportunities</div>
+            <div class="quick-action" onclick="runQuickAction('coverage')">📊 Coverage</div>
+            <div class="quick-action" onclick="runQuickAction('ctr')">👆 CTR Opps</div>
+        </div>
+
+        <!-- Agent Cards -->
+        <div class="agent-grid">
+            <div class="agent-card" onclick="selectAgent('orchestrator')">
+                <div class="agent-icon orchestrator">🎯</div>
+                <span class="agent-shortcut">seo</span>
+                <div class="agent-title">SEO Orchestrator</div>
+                <div class="agent-description">Master coordinator for full audits and strategy</div>
+                <div class="agent-status"><span class="status-dot"></span><span>Ready</span></div>
+            </div>
+            <div class="agent-card" onclick="selectAgent('technical')">
+                <div class="agent-icon technical">⚙️</div>
+                <span class="agent-shortcut">s1</span>
+                <div class="agent-title">Technical SEO</div>
+                <div class="agent-description">Crawl, audit, robots.txt, sitemap, speed</div>
+                <div class="agent-status"><span class="status-dot"></span><span>Ready</span></div>
+            </div>
+            <div class="agent-card" onclick="selectAgent('schema')">
+                <div class="agent-icon schema">📋</div>
+                <span class="agent-shortcut">s2</span>
+                <div class="agent-title">Schema Agent</div>
+                <div class="agent-description">JSON-LD, FAQ, Organization schemas</div>
+                <div class="agent-status"><span class="status-dot"></span><span>Ready</span></div>
+            </div>
+            <div class="agent-card" onclick="selectAgent('content')">
+                <div class="agent-icon content">✍️</div>
+                <span class="agent-shortcut">s3</span>
+                <div class="agent-title">Content Agent</div>
+                <div class="agent-description">Titles, meta descriptions, headings</div>
+                <div class="agent-status"><span class="status-dot"></span><span>Ready</span></div>
+            </div>
+            <div class="agent-card" onclick="selectAgent('gsc')">
+                <div class="agent-icon gsc">📈</div>
+                <span class="agent-shortcut">s4</span>
+                <div class="agent-title">GSC Agent</div>
+                <div class="agent-description">Search Console data & indexation</div>
+                <div class="agent-status"><span class="status-dot"></span><span>Connected</span></div>
+            </div>
+            <div class="agent-card" onclick="selectAgent('wordpress')">
+                <div class="agent-icon wordpress">🌐</div>
+                <span class="agent-shortcut">s5</span>
+                <div class="agent-title">WordPress Agent</div>
+                <div class="agent-description">CMS operations & Yoast SEO</div>
+                <div class="agent-status"><span class="status-dot"></span><span>Ready</span></div>
+            </div>
+            <div class="agent-card" onclick="selectAgent('indexation')">
+                <div class="agent-icon indexation">🛡️</div>
+                <span class="agent-shortcut">s6</span>
+                <div class="agent-title">Indexation Agent</div>
+                <div class="agent-description">Index control & deindex recovery</div>
+                <div class="agent-status"><span class="status-dot"></span><span>Ready</span></div>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="showPanel('dashboard')">📊 Dashboard</button>
+            <button class="nav-tab" onclick="showPanel('audit')">🔍 Audit</button>
+            <button class="nav-tab" onclick="showPanel('opportunities')">🚀 Opportunities</button>
+            <button class="nav-tab" onclick="showPanel('page-analyzer')">📄 Page Analyzer</button>
+            <button class="nav-tab" onclick="showPanel('bulk-check')">📋 Bulk Check</button>
+            <button class="nav-tab" onclick="showPanel('sites')">🌐 Manage Sites</button>
+            <button class="nav-tab" onclick="showPanel('terminal')">💻 Terminal</button>
+        </div>
+
+        <!-- Dashboard Panel -->
+        <div id="panel-dashboard" class="panel active">
+            <div class="card">
+                <h2>📊 SEO Health Overview</h2>
+                <div class="health-score-container">
+                    <div class="health-circle" id="healthCircle" style="--score: 0">
+                        <div class="health-circle-inner">
+                            <div class="health-score-value" id="healthScoreMain">--</div>
+                            <div class="health-grade" id="healthGrade">--</div>
+                        </div>
+                    </div>
+                    <div class="health-breakdown">
+                        <div class="health-metric">
+                            <span class="health-metric-label">Indexation</span>
+                            <div class="health-metric-bar"><div class="health-metric-fill" id="indexationBar" style="width: 0%"></div></div>
+                            <span class="health-metric-value" id="indexationValue">--</span>
+                        </div>
+                        <div class="health-metric">
+                            <span class="health-metric-label">CTR</span>
+                            <div class="health-metric-bar"><div class="health-metric-fill" id="ctrBar" style="width: 0%"></div></div>
+                            <span class="health-metric-value" id="ctrValue">--</span>
+                        </div>
+                        <div class="health-metric">
+                            <span class="health-metric-label">Rankings</span>
+                            <div class="health-metric-bar"><div class="health-metric-fill" id="rankingsBar" style="width: 0%"></div></div>
+                            <span class="health-metric-value" id="rankingsValue">--</span>
+                        </div>
+                        <div class="health-metric">
+                            <span class="health-metric-label">Traffic</span>
+                            <div class="health-metric-bar"><div class="health-metric-fill" id="trafficBar" style="width: 0%"></div></div>
+                            <span class="health-metric-value" id="trafficValue">--</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">🔍</div>
+                    <div class="stat-value" id="statImpressions">--</div>
+                    <div class="stat-label">Impressions (28d)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">👆</div>
+                    <div class="stat-value" id="statCTR">--</div>
+                    <div class="stat-label">Average CTR</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🏆</div>
+                    <div class="stat-value" id="statTop10">--</div>
+                    <div class="stat-label">Top 10 Rankings</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">📄</div>
+                    <div class="stat-value" id="statKeywords">--</div>
+                    <div class="stat-label">Keywords</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>📈 Top Performing Pages</h2>
+                <div id="topPagesLoading" class="loading"><div class="spinner"></div>Loading...</div>
+                <table class="data-table" id="topPagesTable" style="display: none;">
+                    <thead>
+                        <tr><th>Page</th><th>Clicks</th><th>Impressions</th><th>CTR</th><th>Position</th></tr>
+                    </thead>
+                    <tbody id="topPagesBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Audit Panel -->
+        <div id="panel-audit" class="panel">
+            <div class="card">
+                <h2>🔍 Technical SEO Audit</h2>
+                <div class="form-group">
+                    <label>Website URL</label>
+                    <input type="text" id="auditUrl" placeholder="https://beachhydrovac.com">
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-primary" onclick="runAudit()" id="auditBtn">Run Full Audit</button>
+                    <button class="btn btn-secondary" onclick="useCurrentSite('auditUrl')">Use Current Site</button>
+                </div>
+                <div id="auditResults" class="result-box" style="display: none;"></div>
+            </div>
+            <div class="card" id="auditDetailsCard" style="display: none;">
+                <h2>📋 Audit Results</h2>
+                <div id="auditIssues"></div>
+            </div>
+        </div>
+
+        <!-- Opportunities Panel -->
+        <div id="panel-opportunities" class="panel">
+            <div class="card">
+                <h2>🚀 Growth Opportunities</h2>
+                <p style="color: #718096; margin-bottom: 20px;">AI-identified opportunities for <strong id="oppsCurrentSite">current site</strong></p>
+                <div id="opportunitiesLoading" class="loading"><div class="spinner"></div>Finding opportunities...</div>
+                <div id="opportunitiesList" style="display: none;"></div>
+            </div>
+        </div>
+
+        <!-- Page Analyzer Panel -->
+        <div id="panel-page-analyzer" class="panel">
+            <div class="card">
+                <h2>📄 Page SEO Analyzer</h2>
+                <div class="form-group">
+                    <label>Page URL</label>
+                    <input type="text" id="analyzeUrl" placeholder="https://beachhydrovac.com/services/">
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-primary" onclick="analyzePage()">Analyze Page</button>
+                </div>
+                <div id="pageAnalysisResults" style="display: none;"></div>
+            </div>
+        </div>
+
+        <!-- Bulk Check Panel -->
+        <div id="panel-bulk-check" class="panel">
+            <div class="card">
+                <h2>📋 Bulk URL Index Check</h2>
+                <div class="form-group">
+                    <label>URLs (one per line)</label>
+                    <textarea id="bulkUrls" rows="8" placeholder="https://beachhydrovac.com/page1/
+https://beachhydrovac.com/page2/"></textarea>
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-primary" onclick="bulkCheck()">Check All URLs</button>
+                </div>
+                <div id="bulkResults" style="display: none;"></div>
+            </div>
+        </div>
+
+        <!-- Sites Management Panel -->
+        <div id="panel-sites" class="panel">
+            <div class="card">
+                <h2>🌐 Manage Sites</h2>
+                <p style="color: #718096; margin-bottom: 20px;">Add and manage websites for SEO monitoring</p>
+                <button class="btn btn-primary" onclick="openAddSiteModal()" style="margin-bottom: 20px;">➕ Add New Site</button>
+                <div class="sites-list" id="sitesList"></div>
+            </div>
+        </div>
+
+        <!-- Terminal Panel -->
+        <div id="panel-terminal" class="panel">
+            <div class="card">
+                <h2>💻 SEO Agent Terminal</h2>
+                <p style="color: #718096; margin-bottom: 15px;">Run commands for <strong id="terminalCurrentSite">current site</strong></p>
+                <div class="form-group">
+                    <input type="text" id="terminalInput" placeholder="seo audit" onkeypress="handleTerminalEnter(event)">
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-primary" onclick="runTerminalCommand()">Execute</button>
+                    <button class="btn btn-secondary" onclick="clearTerminal()">Clear</button>
+                </div>
+                <div class="terminal" id="terminalOutput">
+                    <div class="terminal-line terminal-success">SEO Agents Terminal v1.0</div>
+                    <div class="terminal-line terminal-output">Type a command and press Enter</div>
+                    <div class="terminal-line">&nbsp;</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Shared Sidebar Script -->
+    <script src="/sidebar.js"></script>
+
+    <script>
+        // ==============================================
+        // SITES MANAGEMENT
+        // ==============================================
+
+        const DEFAULT_SITES = [
+            { id: 'spearity', name: 'Spearity', url: 'https://www.spearity.com', gsc: 'sc-domain:spearity.com', connected: true },
+            { id: 'beachhydrovac', name: 'Beach Hydrovac', url: 'https://beachhydrovac.com', gsc: '', connected: false }
+        ];
+
+        let sites = [];
+        let currentSite = null;
+
+        function loadSites() {
+            const saved = localStorage.getItem('seo-agents-sites');
+            sites = saved ? JSON.parse(saved) : DEFAULT_SITES;
+            updateSiteSelector();
+
+            // Select first site or saved selection
+            const lastSite = localStorage.getItem('seo-agents-current-site');
+            const siteToSelect = lastSite ? sites.find(s => s.id === lastSite) : sites[0];
+            if (siteToSelect) {
+                selectSite(siteToSelect.id);
+            }
+        }
+
+        function saveSites() {
+            localStorage.setItem('seo-agents-sites', JSON.stringify(sites));
+        }
+
+        function updateSiteSelector() {
+            const selector = document.getElementById('siteSelector');
+            selector.innerHTML = sites.map(site =>
+                `<option value="${site.id}">${site.name} - ${site.url}</option>`
+            ).join('');
+        }
+
+        function selectSite(siteId) {
+            currentSite = sites.find(s => s.id === siteId);
+            if (!currentSite) return;
+
+            localStorage.setItem('seo-agents-current-site', siteId);
+            document.getElementById('siteSelector').value = siteId;
+
+            // Update UI
+            const favicon = `https://www.google.com/s2/favicons?domain=${currentSite.url}&sz=32`;
+            document.getElementById('siteFavicon').src = favicon;
+            document.getElementById('headerFavicon').src = favicon;
+            document.getElementById('siteUrlDisplay').textContent = currentSite.url;
+            document.getElementById('headerSiteUrl').textContent = currentSite.url;
+            document.getElementById('siteStatus').textContent = currentSite.connected ? 'Connected' : 'Manual';
+            document.getElementById('siteStatus').className = 'site-status' + (currentSite.connected ? '' : ' disconnected');
+
+            // Update form defaults
+            document.getElementById('auditUrl').value = currentSite.url;
+            document.getElementById('oppsCurrentSite').textContent = currentSite.name;
+            document.getElementById('terminalCurrentSite').textContent = currentSite.name;
+
+            // Reload dashboard data
+            loadDashboardData();
+        }
+
+        function changeSite() {
+            const siteId = document.getElementById('siteSelector').value;
+            selectSite(siteId);
+        }
+
+        function openAddSiteModal() {
+            document.getElementById('addSiteModal').classList.add('active');
+            document.getElementById('newSiteUrl').value = '';
+            document.getElementById('newSiteName').value = '';
+            document.getElementById('newSiteGSC').value = '';
+        }
+
+        function closeModal() {
+            document.getElementById('addSiteModal').classList.remove('active');
+        }
+
+        function addSite() {
+            const url = document.getElementById('newSiteUrl').value.trim();
+            let name = document.getElementById('newSiteName').value.trim();
+            const gsc = document.getElementById('newSiteGSC').value.trim();
+
+            if (!url) {
+                alert('Please enter a URL');
+                return;
+            }
+
+            // Generate name from URL if not provided
+            if (!name) {
+                try {
+                    const urlObj = new URL(url);
+                    name = urlObj.hostname.replace('www.', '').split('.')[0];
+                    name = name.charAt(0).toUpperCase() + name.slice(1);
+                } catch (e) {
+                    name = 'New Site';
+                }
+            }
+
+            // Generate ID
+            const id = name.toLowerCase().replace(/[^a-z0-9]/g, '-') + '-' + Date.now();
+
+            const newSite = {
+                id,
+                name,
+                url: url.endsWith('/') ? url.slice(0, -1) : url,
+                gsc,
+                connected: !!gsc
+            };
+
+            sites.push(newSite);
+            saveSites();
+            updateSiteSelector();
+            selectSite(id);
+            closeModal();
+            renderSitesList();
+        }
+
+        function removeSite(siteId) {
+            if (!confirm('Remove this site?')) return;
+            sites = sites.filter(s => s.id !== siteId);
+            saveSites();
+            updateSiteSelector();
+            renderSitesList();
+            if (currentSite?.id === siteId && sites.length > 0) {
+                selectSite(sites[0].id);
+            }
+        }
+
+        function renderSitesList() {
+            const list = document.getElementById('sitesList');
+            list.innerHTML = sites.map(site => `
+                <div class="site-item">
+                    <div class="site-item-info">
+                        <div class="site-item-favicon">
+                            <img src="https://www.google.com/s2/favicons?domain=${site.url}&sz=32" alt="" style="width:24px;height:24px;">
+                        </div>
+                        <div class="site-item-details">
+                            <h4>${site.name}</h4>
+                            <span>${site.url}</span>
+                        </div>
+                    </div>
+                    <div class="site-item-actions">
+                        <button class="btn btn-secondary" onclick="selectSite('${site.id}')">Select</button>
+                        <button class="btn btn-danger" onclick="removeSite('${site.id}')">Remove</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function useCurrentSite(inputId) {
+            if (currentSite) {
+                document.getElementById(inputId).value = currentSite.url;
+            }
+        }
+
+        // ==============================================
+        // DASHBOARD
+        // ==============================================
+
+        function showPanel(panelId) {
+            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(`panel-${panelId}`).classList.add('active');
+            event.target.classList.add('active');
+
+            if (panelId === 'opportunities') loadOpportunities();
+            if (panelId === 'sites') renderSitesList();
+        }
+
+        async function loadDashboardData() {
+            if (!currentSite) return;
+
+            try {
+                const siteParam = encodeURIComponent(currentSite.url);
+                const gscParam = currentSite.gsc ? `&gsc=${encodeURIComponent(currentSite.gsc)}` : '';
+
+                // Load health score
+                const healthRes = await fetch(`/api/seo-agents/health?site=${siteParam}${gscParam}`);
+                const health = await healthRes.json();
+
+                if (health.success && health.data) {
+                    const data = health.data;
+                    document.getElementById('healthScore').textContent = data.overall || '--';
+                    document.getElementById('healthScoreMain').textContent = data.overall || '--';
+                    document.getElementById('healthGrade').textContent = data.grade || '--';
+                    document.getElementById('healthCircle').style.setProperty('--score', data.overall || 0);
+
+                    if (data.breakdown) {
+                        updateHealthBar('indexation', data.breakdown.indexation);
+                        updateHealthBar('ctr', data.breakdown.ctr);
+                        updateHealthBar('rankings', data.breakdown.rankings);
+                        updateHealthBar('traffic', data.breakdown.traffic);
+                    }
+
+                    if (data.summary) {
+                        document.getElementById('indexedPages').textContent = data.summary.indexedPages || '--';
+                        document.getElementById('totalClicks').textContent = formatNumber(data.summary.totalClicks);
+                        document.getElementById('avgPosition').textContent = data.summary.avgPosition || '--';
+                    }
+                }
+
+                // Load stats
+                if (currentSite.connected && currentSite.gsc) {
+                    const summaryRes = await fetch(`/api/gsc/summary?site=${encodeURIComponent(currentSite.gsc)}`);
+                    const summary = await summaryRes.json();
+                    if (summary.totalImpressions !== undefined) {
+                        document.getElementById('statImpressions').textContent = formatNumber(summary.totalImpressions);
+                        document.getElementById('statCTR').textContent = ((summary.averageCTR || 0) * 100).toFixed(2) + '%';
+                        document.getElementById('statTop10').textContent = summary.top10Rankings || '--';
+                        document.getElementById('statKeywords').textContent = summary.keywordsTracked || '--';
+                    }
+                }
+
+                loadTopPages();
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+            }
+        }
+
+        function updateHealthBar(metric, value) {
+            document.getElementById(`${metric}Bar`).style.width = `${value}%`;
+            document.getElementById(`${metric}Value`).textContent = value;
+        }
+
+        function formatNumber(num) {
+            if (!num) return '--';
+            if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+            if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+            return num.toString();
+        }
+
+        async function loadTopPages() {
+            if (!currentSite?.connected) {
+                document.getElementById('topPagesLoading').innerHTML = '<p style="color:#718096;">Connect GSC to see top pages</p>';
+                return;
+            }
+
+            try {
+                const res = await fetch(`/api/gsc/pages?limit=10&site=${encodeURIComponent(currentSite.gsc)}`);
+                const data = await res.json();
+
+                document.getElementById('topPagesLoading').style.display = 'none';
+                document.getElementById('topPagesTable').style.display = 'table';
+
+                const tbody = document.getElementById('topPagesBody');
+                tbody.innerHTML = '';
+
+                const pages = data.pages || data || [];
+                pages.slice(0, 10).forEach(page => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td><a href="${page.page || page.url}" target="_blank" style="color:#667eea;">${truncateUrl(page.page || page.url)}</a></td>
+                        <td>${page.clicks || 0}</td>
+                        <td>${formatNumber(page.impressions)}</td>
+                        <td>${((page.ctr || 0) * 100).toFixed(2)}%</td>
+                        <td>${(page.position || 0).toFixed(1)}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Error loading top pages:', error);
+            }
+        }
+
+        function truncateUrl(url) {
+            if (!url) return '--';
+            const path = url.replace(/^https?:\/\/[^\/]+/, '');
+            return path.length > 40 ? path.substring(0, 40) + '...' : path || '/';
+        }
+
+        // ==============================================
+        // AUDIT
+        // ==============================================
+
+        async function runAudit() {
+            const url = document.getElementById('auditUrl').value || currentSite?.url;
+            if (!url) { alert('Please enter a URL'); return; }
+
+            const btn = document.getElementById('auditBtn');
+            const results = document.getElementById('auditResults');
+
+            btn.disabled = true;
+            btn.textContent = 'Running...';
+            results.style.display = 'block';
+            results.className = 'result-box';
+            results.textContent = `Running SEO audit for ${url}...\n`;
+
+            try {
+                const res = await fetch(`/api/seo-agents/audit?url=${encodeURIComponent(url)}`);
+                const data = await res.json();
+
+                if (data.success) {
+                    results.className = 'result-box success';
+                    results.textContent = JSON.stringify(data.data, null, 2);
+                    if (data.data) showAuditDetails(data.data);
+                } else {
+                    results.className = 'result-box error';
+                    results.textContent = 'Error: ' + (data.error || 'Unknown error');
+                }
+            } catch (error) {
+                results.className = 'result-box error';
+                results.textContent = 'Error: ' + error.message;
+            }
+
+            btn.disabled = false;
+            btn.textContent = 'Run Full Audit';
+        }
+
+        function showAuditDetails(data) {
+            const card = document.getElementById('auditDetailsCard');
+            const issues = document.getElementById('auditIssues');
+            card.style.display = 'block';
+            issues.innerHTML = '';
+
+            if (data.issues?.length > 0) {
+                data.issues.forEach(issue => {
+                    const el = document.createElement('div');
+                    el.className = 'opportunity-card';
+                    el.innerHTML = `
+                        <div class="opportunity-header">
+                            <span class="opportunity-type">${issue.type}</span>
+                            <span class="opportunity-impact impact-${(issue.severity || 'high').toLowerCase()}">${issue.severity}</span>
+                        </div>
+                        <div class="opportunity-title">${issue.issue}</div>
+                        <div class="opportunity-description">Fix: ${issue.fix}</div>
+                    `;
+                    issues.appendChild(el);
+                });
+            } else {
+                issues.innerHTML = '<p style="color:#48bb78;">✅ No issues found!</p>';
+            }
+        }
+
+        // ==============================================
+        // OPPORTUNITIES
+        // ==============================================
+
+        async function loadOpportunities() {
+            const loading = document.getElementById('opportunitiesLoading');
+            const list = document.getElementById('opportunitiesList');
+            loading.style.display = 'flex';
+            list.style.display = 'none';
+
+            try {
+                const siteParam = currentSite ? `?site=${encodeURIComponent(currentSite.url)}` : '';
+                const res = await fetch(`/api/seo-agents/opportunities${siteParam}`);
+                const data = await res.json();
+
+                loading.style.display = 'none';
+                list.style.display = 'block';
+                list.innerHTML = '';
+
+                if (data.success && data.data) {
+                    if (data.data.ctrOpportunities?.pages?.length > 0) {
+                        list.appendChild(createOpportunitySection('CTR Opportunities', data.data.ctrOpportunities.pages, 'ctr'));
+                    }
+                    if (data.data.pageTwoKeywords?.keywords?.length > 0) {
+                        list.appendChild(createOpportunitySection('Page 2 Keywords', data.data.pageTwoKeywords.keywords, 'ranking'));
+                    }
+                    if (data.data.priorityActions?.length > 0) {
+                        list.appendChild(createOpportunitySection('Priority Actions', data.data.priorityActions, 'priority'));
+                    }
+                    if (list.innerHTML === '') {
+                        list.innerHTML = '<p style="color:#718096;">No opportunities found. Connect GSC for more insights.</p>';
+                    }
+                }
+            } catch (error) {
+                loading.style.display = 'none';
+                list.innerHTML = '<p style="color:#f56565;">Error: ' + error.message + '</p>';
+                list.style.display = 'block';
+            }
+        }
+
+        function createOpportunitySection(title, items, type) {
+            const section = document.createElement('div');
+            section.innerHTML = `<h3 style="margin-bottom:15px;">${title}</h3>`;
+            items.slice(0, 5).forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'opportunity-card';
+                card.innerHTML = `
+                    <div class="opportunity-header">
+                        <span class="opportunity-type">${type.toUpperCase()}</span>
+                        <span class="opportunity-impact impact-${(item.impact || 'high').toLowerCase()}">${item.impact || 'HIGH'}</span>
+                    </div>
+                    <div class="opportunity-title">${item.url || item.keyword || item.action || '--'}</div>
+                    <div class="opportunity-description">${item.recommendation || item.action || ''}</div>
+                `;
+                section.appendChild(card);
+            });
+            return section;
+        }
+
+        // ==============================================
+        // PAGE ANALYZER
+        // ==============================================
+
+        async function analyzePage() {
+            const url = document.getElementById('analyzeUrl').value;
+            if (!url) { alert('Please enter a URL'); return; }
+
+            const results = document.getElementById('pageAnalysisResults');
+            results.style.display = 'block';
+            results.innerHTML = '<div class="loading"><div class="spinner"></div>Analyzing...</div>';
+
+            try {
+                const res = await fetch(`/api/seo-agents/analyze-page?url=${encodeURIComponent(url)}`);
+                const data = await res.json();
+
+                if (data.success && data.data) {
+                    results.innerHTML = `
+                        <div class="card" style="margin-top:20px;">
+                            <h3>📄 ${data.data.url}</h3>
+                            <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:15px;margin-top:15px;">
+                                <div><strong>Indexed:</strong> ${data.data.indexation?.indexed ? '✅ Yes' : '❌ No'}</div>
+                                <div><strong>Score:</strong> ${data.data.score || '--'}/100</div>
+                                <div><strong>Title:</strong> ${data.data.onPage?.title || 'Missing'} (${data.data.onPage?.titleLength || 0} chars)</div>
+                                <div><strong>H1 Tags:</strong> ${data.data.onPage?.h1Count || 0}</div>
+                                <div><strong>Meta:</strong> ${data.data.onPage?.metaLength || 0} chars</div>
+                                <div><strong>Schema:</strong> ${data.data.onPage?.hasSchema ? '✅' : '❌'}</div>
+                            </div>
+                            ${data.data.recommendations?.length > 0 ? `
+                                <h4 style="margin-top:20px;">Recommendations:</h4>
+                                <ul style="margin-top:10px;color:#718096;font-size:13px;">
+                                    ${data.data.recommendations.map(r => `<li>${r}</li>`).join('')}
+                                </ul>
+                            ` : ''}
+                        </div>
+                    `;
+                } else {
+                    results.innerHTML = `<div class="result-box error">Error: ${data.error}</div>`;
+                }
+            } catch (error) {
+                results.innerHTML = `<div class="result-box error">Error: ${error.message}</div>`;
+            }
+        }
+
+        // ==============================================
+        // BULK CHECK
+        // ==============================================
+
+        async function bulkCheck() {
+            const urlsText = document.getElementById('bulkUrls').value;
+            const urls = urlsText.split('\n').filter(u => u.trim());
+            if (urls.length === 0) { alert('Please enter URLs'); return; }
+
+            const results = document.getElementById('bulkResults');
+            results.style.display = 'block';
+            results.innerHTML = '<div class="loading"><div class="spinner"></div>Checking...</div>';
+
+            try {
+                const res = await fetch('/api/seo-agents/bulk-check', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ urls })
+                });
+                const data = await res.json();
+
+                if (data.success && data.data) {
+                    results.innerHTML = `
+                        <div class="card" style="margin-top:20px;">
+                            <h3>📊 Results</h3>
+                            <div class="stats-grid" style="margin-top:15px;">
+                                <div class="stat-card"><div class="stat-value">${data.data.total}</div><div class="stat-label">Total</div></div>
+                                <div class="stat-card"><div class="stat-value" style="color:#48bb78;">${data.data.indexed}</div><div class="stat-label">Indexed</div></div>
+                                <div class="stat-card"><div class="stat-value" style="color:#f56565;">${data.data.notIndexed}</div><div class="stat-label">Not Indexed</div></div>
+                                <div class="stat-card"><div class="stat-value">${data.data.indexRate}</div><div class="stat-label">Rate</div></div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    results.innerHTML = `<div class="result-box error">Error: ${data.error}</div>`;
+                }
+            } catch (error) {
+                results.innerHTML = `<div class="result-box error">Error: ${error.message}</div>`;
+            }
+        }
+
+        // ==============================================
+        // TERMINAL
+        // ==============================================
+
+        function handleTerminalEnter(event) {
+            if (event.key === 'Enter') runTerminalCommand();
+        }
+
+        async function runTerminalCommand() {
+            const input = document.getElementById('terminalInput');
+            const output = document.getElementById('terminalOutput');
+            const command = input.value.trim();
+            if (!command) return;
+
+            output.innerHTML += `<div class="terminal-line"><span class="terminal-prompt">$ </span>${command}</div>`;
+            input.value = '';
+
+            try {
+                const siteParam = currentSite ? `&site=${encodeURIComponent(currentSite.url)}` : '';
+                const res = await fetch('/api/seo-agents/command', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ command, site: currentSite?.url })
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    output.innerHTML += `<div class="terminal-line terminal-success">${JSON.stringify(data.data, null, 2)}</div>`;
+                } else {
+                    output.innerHTML += `<div class="terminal-line terminal-error">Error: ${data.error}</div>`;
+                }
+            } catch (error) {
+                output.innerHTML += `<div class="terminal-line terminal-error">Error: ${error.message}</div>`;
+            }
+
+            output.innerHTML += '<div class="terminal-line">&nbsp;</div>';
+            output.scrollTop = output.scrollHeight;
+        }
+
+        function clearTerminal() {
+            document.getElementById('terminalOutput').innerHTML = `
+                <div class="terminal-line terminal-success">SEO Agents Terminal v1.0</div>
+                <div class="terminal-line terminal-output">Terminal cleared</div>
+                <div class="terminal-line">&nbsp;</div>
+            `;
+        }
+
+        // ==============================================
+        // QUICK ACTIONS & AGENTS
+        // ==============================================
+
+        function runQuickAction(action) {
+            switch (action) {
+                case 'audit': showPanel('audit'); setTimeout(runAudit, 100); break;
+                case 'health': loadDashboardData(); break;
+                case 'opportunities': showPanel('opportunities'); break;
+                case 'coverage': window.location.href = '/indexation-control'; break;
+                case 'ctr': showPanel('opportunities'); break;
+            }
+        }
+
+        function selectAgent(agent) {
+            document.querySelectorAll('.agent-card').forEach(c => c.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+
+            const panels = {
+                orchestrator: 'dashboard',
+                technical: 'audit',
+                schema: 'page-analyzer',
+                content: 'page-analyzer',
+                gsc: 'dashboard',
+                wordpress: 'terminal',
+                indexation: 'bulk-check'
+            };
+
+            const panel = panels[agent] || 'dashboard';
+            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+            document.getElementById(`panel-${panel}`).classList.add('active');
+        }
+
+        // ==============================================
+        // INIT
+        // ==============================================
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initSidebar('/seo-agents');
+            loadSites();
+        });
+    </script>
+</body>
+</html>
