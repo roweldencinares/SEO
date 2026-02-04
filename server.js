@@ -50,12 +50,20 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Sites are stored in memory (use database for production)
 let siteConfigs = {};
 
-// Helper to get site URL for GSC (handles domain property format)
+// Helper to get site URL for GSC
+// GSC accepts either: "https://example.com/" (URL property) or "sc-domain:example.com" (domain property)
 function getGSCSiteUrl(siteUrl) {
+    if (!siteUrl) return siteUrl;
+
+    // If already sc-domain format, keep it
+    if (siteUrl.startsWith('sc-domain:')) {
+        return siteUrl;
+    }
+
+    // Otherwise, ensure URL has trailing slash (required by GSC API for URL properties)
     try {
         const url = new URL(siteUrl);
-        // Return domain property format for GSC
-        return `sc-domain:${url.hostname.replace('www.', '')}`;
+        return url.origin + '/';
     } catch {
         return siteUrl;
     }
