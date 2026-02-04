@@ -67,6 +67,48 @@ function getGSCSiteUrl(siteUrl) {
 
 let oauth2Client = null;
 
+// Use /tmp on Vercel (writable) or local directory
+const isVercel = process.env.VERCEL === '1';
+const tokenPath = isVercel ? '/tmp/google-tokens.json' : path.join(__dirname, 'google-tokens.json');
+
+// Helper to save tokens safely
+function saveTokens(tokens) {
+    try {
+        fs.writeFileSync(tokenPath, JSON.stringify(tokens, null, 2));
+        console.log('✅ Tokens saved to', tokenPath);
+        return true;
+    } catch (error) {
+        console.log('⚠️ Could not save tokens to file:', error.message);
+        return false;
+    }
+}
+
+// Helper to load tokens
+function loadTokens() {
+    // Try environment variable first (for Vercel persistence)
+    if (process.env.GOOGLE_REFRESH_TOKEN) {
+        console.log('✅ Loading tokens from environment');
+        return {
+            refresh_token: process.env.GOOGLE_REFRESH_TOKEN,
+            access_token: process.env.GOOGLE_ACCESS_TOKEN || null,
+            expiry_date: parseInt(process.env.GOOGLE_TOKEN_EXPIRY) || 0
+        };
+    }
+
+    // Try file
+    try {
+        if (fs.existsSync(tokenPath)) {
+            const tokens = JSON.parse(fs.readFileSync(tokenPath, 'utf-8'));
+            console.log('✅ Loaded tokens from file');
+            return tokens;
+        }
+    } catch (error) {
+        console.log('⚠️ Could not load tokens from file:', error.message);
+    }
+
+    return null;
+}
+
 try {
     const clientId = process.env.GOOGLE_CLIENT_ID;
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
@@ -76,12 +118,10 @@ try {
         oauth2Client = new google.auth.OAuth2(clientId, clientSecret, redirectUri);
         console.log('✅ OAuth configured');
 
-        // Load tokens from file if exists
-        const tokenPath = path.join(__dirname, 'google-tokens.json');
-        if (fs.existsSync(tokenPath)) {
-            const tokens = JSON.parse(fs.readFileSync(tokenPath, 'utf-8'));
+        // Load existing tokens
+        const tokens = loadTokens();
+        if (tokens) {
             oauth2Client.setCredentials(tokens);
-            console.log('✅ Loaded saved tokens');
         }
     }
 } catch (error) {
@@ -93,16 +133,17 @@ async function ensureValidToken() {
     if (!oauth2Client) throw new Error('OAuth not configured');
 
     const tokens = oauth2Client.credentials;
-    if (!tokens.access_token) throw new Error('Not authenticated');
+    if (!tokens.access_token && !tokens.refresh_token) throw new Error('Not authenticated. Please go to /auth/google to connect.');
 
-    // Check expiry
-    if (tokens.expiry_date && tokens.expiry_date < Date.now() + 300000) {
-        const { credentials } = await oauth2Client.refreshAccessToken();
-        oauth2Client.setCredentials(credentials);
-
-        // Save refreshed tokens
-        const tokenPath = path.join(__dirname, 'google-tokens.json');
-        fs.writeFileSync(tokenPath, JSON.stringify(credentials, null, 2));
+    // Check expiry and refresh if needed
+    if (!tokens.access_token || (tokens.expiry_date && tokens.expiry_date < Date.now() + 300000)) {
+        try {
+            const { credentials } = await oauth2Client.refreshAccessToken();
+            oauth2Client.setCredentials(credentials);
+            saveTokens(credentials);
+        } catch (error) {
+            throw new Error('Token refresh failed. Please re-authenticate at /auth/google');
+        }
     }
 
     return oauth2Client;
@@ -163,21 +204,49 @@ app.get('/auth/callback', async (req, res) => {
         const { tokens } = await oauth2Client.getToken(code);
         oauth2Client.setCredentials(tokens);
 
-        // Save tokens
-        const tokenPath = path.join(__dirname, 'google-tokens.json');
-        fs.writeFileSync(tokenPath, JSON.stringify(tokens, null, 2));
+        // Save tokens using helper function
+        const saved = saveTokens(tokens);
 
-        res.send(`
-            <html>
-            <body style="font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background: linear-gradient(135deg, #667eea, #764ba2);">
-                <div style="background: white; padding: 40px; border-radius: 15px; text-align: center;">
-                    <h1 style="color: #28a745;">✅ Authentication Successful!</h1>
-                    <p>Redirecting to dashboard...</p>
-                </div>
-                <script>setTimeout(() => window.location.href = '/seo-agents', 1500);</script>
-            </body>
-            </html>
-        `);
+        // On Vercel, show the refresh token so user can add it as env var for persistence
+        if (isVercel && tokens.refresh_token) {
+            res.send(`
+                <html>
+                <body style="font-family: sans-serif; padding: 40px; background: linear-gradient(135deg, #667eea, #764ba2); min-height: 100vh;">
+                    <div style="background: white; padding: 40px; border-radius: 15px; max-width: 700px; margin: 0 auto;">
+                        <h1 style="color: #28a745;">✅ Authentication Successful!</h1>
+                        <p style="color: #666; margin: 20px 0;">Your Google Search Console is now connected for this session.</p>
+
+                        <div style="background: #fff3cd; padding: 20px; border-radius: 10px; margin: 20px 0;">
+                            <h3 style="color: #856404; margin-bottom: 10px;">⚠️ For Persistent Access</h3>
+                            <p style="color: #856404; margin-bottom: 15px;">Add this refresh token to Vercel environment variables to stay connected:</p>
+                            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; word-break: break-all; font-family: monospace; font-size: 12px;">
+                                GOOGLE_REFRESH_TOKEN=${tokens.refresh_token}
+                            </div>
+                            <p style="color: #666; font-size: 12px; margin-top: 10px;">
+                                Go to Vercel → Project Settings → Environment Variables → Add this variable → Redeploy
+                            </p>
+                        </div>
+
+                        <a href="/seo-agents" style="display: inline-block; background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 15px 30px; border-radius: 8px; text-decoration: none; font-weight: 600; margin-top: 20px;">
+                            Go to Dashboard →
+                        </a>
+                    </div>
+                </body>
+                </html>
+            `);
+        } else {
+            res.send(`
+                <html>
+                <body style="font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background: linear-gradient(135deg, #667eea, #764ba2);">
+                    <div style="background: white; padding: 40px; border-radius: 15px; text-align: center;">
+                        <h1 style="color: #28a745;">✅ Authentication Successful!</h1>
+                        <p>Redirecting to dashboard...</p>
+                    </div>
+                    <script>setTimeout(() => window.location.href = '/seo-agents', 1500);</script>
+                </body>
+                </html>
+            `);
+        }
     } catch (error) {
         res.status(500).send(`Authentication failed: ${error.message}`);
     }
