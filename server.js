@@ -466,8 +466,13 @@ app.get('/api/gsc/pages', (req, res) => {
 // START SERVER
 // ============================================================
 
-app.listen(PORT, () => {
-    console.log(`
+// For Vercel serverless deployment
+export default app;
+
+// For local development
+if (process.env.NODE_ENV !== 'production') {
+    app.listen(PORT, () => {
+        console.log(`
 ╔════════════════════════════════════════════════════════╗
 ║   🤖 SEO Agents Dashboard Running                      ║
 ╚════════════════════════════════════════════════════════╝
@@ -476,5 +481,6 @@ app.listen(PORT, () => {
 📊 API:        http://localhost:${PORT}/api/seo-agents/health
 
 Press Ctrl+C to stop
-    `);
-});
+        `);
+    });
+}
