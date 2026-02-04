@@ -1162,17 +1162,45 @@ https://beachhydrovac.com/page2/"></textarea>
         // SITES MANAGEMENT
         // ==============================================
 
-        const DEFAULT_SITES = [
-            { id: 'spearity', name: 'Your Site', url: 'https://www.example.com', gsc: 'sc-domain:example.com', connected: true },
-            { id: 'beachhydrovac', name: 'Beach Hydrovac', url: 'https://beachhydrovac.com', gsc: '', connected: false }
-        ];
+        const DEFAULT_SITES = [];
 
         let sites = [];
         let currentSite = null;
 
-        function loadSites() {
+        async function loadSites() {
+            // Try to load from localStorage first
             const saved = localStorage.getItem('seo-agents-sites');
-            sites = saved ? JSON.parse(saved) : DEFAULT_SITES;
+            sites = saved ? JSON.parse(saved) : [];
+
+            // Fetch sites from GSC if connected and no saved sites
+            if (sites.length === 0) {
+                try {
+                    const response = await fetch('/api/gsc/sites');
+                    const data = await response.json();
+                    if (data.success && data.sites && data.sites.length > 0) {
+                        sites = data.sites.map((site, index) => {
+                            const url = site.siteUrl.replace(/\/$/, '');
+                            const hostname = url.replace('https://', '').replace('http://', '').replace('sc-domain:', '');
+                            return {
+                                id: 'gsc-' + index,
+                                name: hostname,
+                                url: url.startsWith('sc-domain:') ? 'https://' + hostname : url,
+                                gsc: site.siteUrl.startsWith('sc-domain:') ? site.siteUrl : 'sc-domain:' + hostname,
+                                connected: true
+                            };
+                        });
+                        saveSites();
+                    }
+                } catch (e) {
+                    console.log('Could not fetch GSC sites:', e);
+                }
+            }
+
+            // If still no sites, show a prompt
+            if (sites.length === 0) {
+                sites = [{ id: 'demo', name: 'Add Your Site', url: 'https://your-site.com', gsc: '', connected: false }];
+            }
+
             updateSiteSelector();
 
             // Select first site or saved selection
@@ -1359,15 +1387,20 @@ https://beachhydrovac.com/page2/"></textarea>
                     }
                 }
 
-                // Load stats
-                if (currentSite.connected && currentSite.gsc) {
-                    const summaryRes = await fetch(`/api/gsc/summary?site=${encodeURIComponent(currentSite.gsc)}`);
-                    const summary = await summaryRes.json();
-                    if (summary.totalImpressions !== undefined) {
-                        document.getElementById('statImpressions').textContent = formatNumber(summary.totalImpressions);
-                        document.getElementById('statCTR').textContent = ((summary.averageCTR || 0) * 100).toFixed(2) + '%';
-                        document.getElementById('statTop10').textContent = summary.top10Rankings || '--';
-                        document.getElementById('statKeywords').textContent = summary.keywordsTracked || '--';
+                // Load stats from GSC
+                if (currentSite.gsc) {
+                    try {
+                        const summaryRes = await fetch(`/api/gsc/summary?site=${encodeURIComponent(currentSite.url)}&gsc=${encodeURIComponent(currentSite.gsc)}`);
+                        const data = await summaryRes.json();
+                        const summary = data.summary || data;
+                        if (summary && summary.totalImpressions !== undefined) {
+                            document.getElementById('statImpressions').textContent = formatNumber(summary.totalImpressions);
+                            document.getElementById('statCTR').textContent = summary.avgCTR + '%';
+                            document.getElementById('statTop10').textContent = summary.top10Rankings || '--';
+                            document.getElementById('statKeywords').textContent = summary.keywordsTracked || '--';
+                        }
+                    } catch (e) {
+                        console.log('GSC summary error:', e);
                     }
                 }
 
@@ -1390,13 +1423,13 @@ https://beachhydrovac.com/page2/"></textarea>
         }
 
         async function loadTopPages() {
-            if (!currentSite?.connected) {
-                document.getElementById('topPagesLoading').innerHTML = '<p style="color:#718096;">Connect GSC to see top pages</p>';
+            if (!currentSite?.gsc) {
+                document.getElementById('topPagesLoading').innerHTML = '<p style="color:#718096;">Add a site with GSC to see top pages</p>';
                 return;
             }
 
             try {
-                const res = await fetch(`/api/gsc/pages?limit=10&site=${encodeURIComponent(currentSite.gsc)}`);
+                const res = await fetch(`/api/gsc/pages?limit=10&site=${encodeURIComponent(currentSite.url)}&gsc=${encodeURIComponent(currentSite.gsc)}`);
                 const data = await res.json();
 
                 document.getElementById('topPagesLoading').style.display = 'none';
