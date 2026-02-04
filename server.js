@@ -338,6 +338,112 @@ app.get('/api/gsc/pages', async (req, res) => {
     }
 });
 
+app.get('/api/gsc/analytics', async (req, res) => {
+    try {
+        await ensureValidToken();
+
+        const site = req.query.site || req.query.gsc;
+        const { startDate, endDate, dimensions = 'query' } = req.query;
+
+        if (!site) {
+            return res.json({ success: false, error: 'Site parameter required' });
+        }
+
+        const siteUrl = getGSCSiteUrl(site);
+        const searchconsole = google.searchconsole({ version: 'v1', auth: oauth2Client });
+
+        const response = await searchconsole.searchanalytics.query({
+            siteUrl,
+            requestBody: {
+                startDate: startDate || getDateDaysAgo(30),
+                endDate: endDate || getDateDaysAgo(0),
+                dimensions: dimensions.split(','),
+                rowLimit: 25000
+            }
+        });
+
+        res.json({
+            success: true,
+            siteUrl,
+            dateRange: { startDate, endDate },
+            dimensions: dimensions.split(','),
+            rowCount: (response.data.rows || []).length,
+            rows: response.data.rows || []
+        });
+    } catch (error) {
+        res.json({ authenticated: false, error: error.message, rows: [] });
+    }
+});
+
+app.get('/api/gsc/rankings', async (req, res) => {
+    try {
+        await ensureValidToken();
+
+        const site = req.query.site || req.query.gsc;
+        if (!site) {
+            return res.json({ success: false, error: 'Site parameter required' });
+        }
+
+        const siteUrl = getGSCSiteUrl(site);
+        const searchconsole = google.searchconsole({ version: 'v1', auth: oauth2Client });
+
+        // Current week
+        const currentData = await searchconsole.searchanalytics.query({
+            siteUrl,
+            requestBody: {
+                startDate: getDateDaysAgo(7),
+                endDate: getDateDaysAgo(0),
+                dimensions: ['query'],
+                rowLimit: 25000
+            }
+        });
+
+        // Previous week for comparison
+        const previousData = await searchconsole.searchanalytics.query({
+            siteUrl,
+            requestBody: {
+                startDate: getDateDaysAgo(14),
+                endDate: getDateDaysAgo(7),
+                dimensions: ['query'],
+                rowLimit: 25000
+            }
+        });
+
+        const currentMap = new Map();
+        (currentData.data.rows || []).forEach(row => {
+            currentMap.set(row.keys[0], row);
+        });
+
+        const previousMap = new Map();
+        (previousData.data.rows || []).forEach(row => {
+            previousMap.set(row.keys[0], row);
+        });
+
+        const rankings = Array.from(currentMap.entries()).map(([keyword, current]) => {
+            const previous = previousMap.get(keyword);
+            const positionChange = previous ? previous.position - current.position : 0;
+
+            return {
+                keyword,
+                position: current.position,
+                clicks: current.clicks,
+                impressions: current.impressions,
+                ctr: current.ctr,
+                positionChange,
+                trend: positionChange > 0 ? 'up' : positionChange < 0 ? 'down' : 'stable'
+            };
+        }).sort((a, b) => b.clicks - a.clicks);
+
+        res.json({
+            success: true,
+            totalKeywords: rankings.length,
+            rankings
+        });
+    } catch (error) {
+        res.json({ authenticated: false, error: error.message, rankings: [] });
+    }
+});
+
 // ============================================================
 // SEO AGENTS API ROUTES
 // ============================================================

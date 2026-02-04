@@ -3,78 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Spearity SEO Dashboard - Live Rankings & Analytics</title>
+    <title>SEO Agents - Live Rankings & Analytics</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="/site-manager.js"></script>
 
-    <!-- LocalBusiness Schema Markup -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "ProfessionalService",
-      "name": "Spearity",
-      "image": "https://www.spearity.com/logo.png",
-      "description": "AI-powered business coaching and leadership training for Milwaukee businesses. Helping companies achieve 30% revenue growth through strategic planning, executive coaching, and data-driven insights.",
-      "@id": "https://www.spearity.com",
-      "url": "https://www.spearity.com",
-      "telephone": "(414) 265-5755",
-      "email": "support@spearity.com",
-      "address": {
-        "@type": "PostalAddress",
-        "streetAddress": "313 N Plankinton Ave Ste 207",
-        "addressLocality": "Milwaukee",
-        "addressRegion": "WI",
-        "postalCode": "53203",
-        "addressCountry": "US"
-      },
-      "geo": {
-        "@type": "GeoCoordinates",
-        "latitude": 43.0389,
-        "longitude": -87.9065
-      },
-      "openingHoursSpecification": [
-        {
-          "@type": "OpeningHoursSpecification",
-          "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
-          "opens": "09:00",
-          "closes": "17:00"
-        }
-      ],
-      "sameAs": [
-        "https://www.linkedin.com/company/spearity"
-      ],
-      "aggregateRating": {
-        "@type": "AggregateRating",
-        "ratingValue": "5.0",
-        "reviewCount": "28",
-        "bestRating": "5",
-        "worstRating": "1"
-      },
-      "priceRange": "$$$$",
-      "serviceType": [
-        "Business Coaching",
-        "Executive Coaching",
-        "Leadership Training",
-        "Strategic Planning",
-        "Business Consulting"
-      ],
-      "areaServed": {
-        "@type": "GeoCircle",
-        "geoMidpoint": {
-          "@type": "GeoCoordinates",
-          "latitude": 43.0389,
-          "longitude": -87.9065
-        },
-        "geoRadius": "50000"
-      },
-      "knowsAbout": [
-        "Business Strategy",
-        "Leadership Development",
-        "Revenue Growth",
-        "AI-Powered Analytics",
-        "Executive Coaching"
-      ]
-    }
-    </script>
     <style>
         * {
             margin: 0;
@@ -493,8 +425,8 @@
 
     <div class="container">
         <header>
-            <h1>📊 Spearity SEO Dashboard</h1>
-            <p class="subtitle">Real Google Search Console Data for www.spearity.com</p>
+            <h1>📊 SEO Agents Dashboard</h1>
+            <p class="subtitle">Real Google Search Console Data for www.example.com</p>
             <div id="dataRangeInfo" style="margin-top: 15px; padding: 12px; background: #f8f9fa; border-radius: 8px; display: none;">
                 <strong>📅 Data Period:</strong> <span id="dateRangeText">Loading...</span>
                 <span style="margin-left: 15px; color: #666; font-size: 0.9rem;">ℹ️ Google Search Console data has a 2-3 day delay</span>
@@ -520,7 +452,7 @@
                 <div class="stat-card">
                     <div class="stat-label">📈 Keyword Rankings</div>
                     <div class="stat-value">Top 1000</div>
-                    <p style="margin-top: 10px; color: #666; font-size: 0.9rem;">Track every keyword ranking for spearity.com with average position</p>
+                    <p style="margin-top: 10px; color: #666; font-size: 0.9rem;">Track every keyword ranking for example.com with average position</p>
                 </div>
                 <div class="stat-card">
                     <div class="stat-label">👁️ Impressions & Clicks</div>
@@ -568,7 +500,7 @@
 
             <div class="alert alert-warning">
                 <strong>📋 Quick Checklist:</strong><br>
-                □ Verify you own spearity.com in Google Search Console<br>
+                □ Verify you own example.com in Google Search Console<br>
                 □ Enable Search Console API in Google Cloud<br>
                 □ Create OAuth 2.0 credentials<br>
                 □ Run backend server on port 3000
@@ -580,7 +512,7 @@
             <!-- Data Authenticity Badge -->
             <div class="alert alert-info" style="margin-bottom: 20px;">
                 <strong>✅ 100% Real Data from Google Search Console API</strong><br>
-                This dashboard shows actual performance data for www.spearity.com directly from Google's servers.
+                This dashboard shows actual performance data for www.example.com directly from Google's servers.
                 All metrics (clicks, impressions, CTR, positions) are pulled from the official Google Search Console API.
             </div>
 
@@ -857,6 +789,31 @@
         // Use dynamic API URL based on current origin
         const API_BASE = window.location.origin;
 
+        // Initialize Site Manager
+        document.addEventListener('DOMContentLoaded', () => {
+            // Add site selector before the dashboard
+            const header = document.querySelector('header');
+            if (header) {
+                const siteSelector = document.createElement('div');
+                siteSelector.id = 'site-selector-container';
+                siteSelector.style.cssText = 'background: white; padding: 20px; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 5px 20px rgba(0,0,0,0.08);';
+                header.parentNode.insertBefore(siteSelector, header);
+
+                SiteManager.createSiteSelector('site-selector-container', {
+                    showRefresh: true,
+                    onSiteChange: () => window.location.reload(),
+                    onRefresh: () => loadDashboardData()
+                });
+            }
+            checkConnection();
+        });
+
+        // Get current site for API calls
+        function getCurrentSiteParam() {
+            const site = SiteManager.getCurrentSite();
+            return site ? `&site=${encodeURIComponent(site.url)}&gsc=${encodeURIComponent(site.gscProperty)}` : '';
+        }
+
         // Check connection status
         async function checkConnection() {
             try {
@@ -903,7 +860,7 @@
                 document.getElementById('dataRangeInfo').style.display = 'block';
                 document.getElementById('dateRangeText').textContent = `${formatDate(startDate)} to ${formatDate(endDate)} (Last 30 Days)`;
 
-                const response = await fetch(`${API_BASE}/api/gsc/analytics?startDate=${startDate}&endDate=${endDate}`);
+                const response = await fetch(`${API_BASE}/api/gsc/analytics?startDate=${startDate}&endDate=${endDate}${getCurrentSiteParam()}`);
                 const data = await response.json();
 
                 updateKPIs(data, startDate, endDate);

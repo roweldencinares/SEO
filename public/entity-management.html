@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Entity Management - Spearity Marketing</title>
+    <script src="/site-manager.js"></script>
+    <title>Entity Management - Your Site Marketing</title>
     
     
 
@@ -568,7 +569,7 @@
                     const clusterHtml = (data.report.clusters || []).map(cluster => `
                         <div class="cluster-card">
                             <h3>${cluster.name}</h3>
-                            <div class="subdomain">${cluster.subdomain}.spearity.com</div>
+                            <div class="subdomain">${cluster.subdomain}.example.com</div>
                             <div class="purpose">${cluster.purpose}</div>
                             <div class="cluster-stats">
                                 <div class="cluster-stat">
@@ -613,7 +614,7 @@
                         <li class="entity-item">
                             <div class="entity-info">
                                 <h4>${entity.name} <span class="badge">${entity.type}</span></h4>
-                                <p>${entity.subdomain}.spearity.com/${entity.id}</p>
+                                <p>${entity.subdomain}.example.com/${entity.id}</p>
                             </div>
                             <div class="entity-actions">
                                 <button class="btn btn-secondary" onclick="viewEntity('${entity.id}')">View</button>
