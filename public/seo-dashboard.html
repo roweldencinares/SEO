@@ -517,9 +517,7 @@
                 <div class="tabs-nav">
                     <button class="tab-button active" onclick="switchTab('overview')">📊 Overview</button>
                     <button class="tab-button" onclick="switchTab('opportunities')">🎯 Opportunities</button>
-                    <button class="tab-button" onclick="switchTab('competitors')">🔍 Competitor Analysis</button>
                     <button class="tab-button" onclick="switchTab('keywords')">🔑 All Keywords</button>
-                    <button class="tab-button" onclick="switchTab('seo-log')">📋 SEO Changes Log</button>
                 </div>
 
                 <!-- Tab 1: Overview -->
@@ -570,47 +568,26 @@
                         <canvas id="keywordsChart"></canvas>
                     </div>
 
-                            <!-- Priority Keywords Tracking -->
+                            <!-- Top Performing Keywords -->
                     <div class="keywords-table" style="margin-bottom: 30px;">
-                        <h2 class="chart-title">🎯 Priority Keywords Tracking</h2>
+                        <h2 class="chart-title">🎯 Top Performing Keywords</h2>
                         <div class="alert alert-info">
-                            Track your most important target keywords and their progress over time
+                            Your best-performing keywords by clicks and impressions
                         </div>
                         <table id="priorityKeywordsTable">
                             <thead>
                                 <tr>
-                                    <th>Target Keyword</th>
-                                    <th>Current Position</th>
-                                    <th>Goal Position</th>
+                                    <th>Keyword</th>
+                                    <th>Position</th>
                                     <th>Clicks (30d)</th>
                                     <th>Impressions (30d)</th>
+                                    <th>CTR</th>
                                     <th>Status</th>
                                 </tr>
                             </thead>
                             <tbody id="priorityKeywordsBody">
                                 <tr>
-                                    <td><strong>your target keyword</strong></td>
-                                    <td id="execCoachPos"><span class="position other">Not Ranked</span></td>
-                                    <td><span class="position top3">#1-3</span></td>
-                                    <td id="execCoachClicks">0</td>
-                                    <td id="execCoachImpressions">0</td>
-                                    <td id="execCoachStatus">🔄 Optimizing (Just updated 10/14/2025)</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>your target keyword</strong></td>
-                                    <td id="bizCoachPos">-</td>
-                                    <td><span class="position top3">#1-3</span></td>
-                                    <td id="bizCoachClicks">-</td>
-                                    <td id="bizCoachImpressions">-</td>
-                                    <td id="bizCoachStatus">📊 Monitoring</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>business business wisconsin</strong></td>
-                                    <td id="bizCoachWiPos">-</td>
-                                    <td><span class="position top3">#1-3</span></td>
-                                    <td id="bizCoachWiClicks">-</td>
-                                    <td id="bizCoachWiImpressions">-</td>
-                                    <td id="bizCoachWiStatus">📊 Monitoring</td>
+                                    <td colspan="6" style="text-align: center; padding: 20px; color: #666;">Loading top keywords...</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -622,164 +599,111 @@
                     <div class="alert alert-info" style="margin-bottom: 20px;">
                         <strong>💡 SEO Strategy Insights:</strong> These keywords have high potential for quick ranking improvements
                     </div>
-                <div style="display: grid; gap: 15px;">
-                    <div style="padding: 15px; background: #d4edda; border-left: 4px solid #28a745; border-radius: 8px;">
-                        <strong>✅ October 14, 2025</strong><br>
-                        <span style="color: #155724;">Optimized "your target keyword" page</span>
-                        <ul style="margin: 10px 0 0 20px; color: #155724;">
-                            <li>Fixed page 5975 slug: /executive-business/</li>
-                            <li>Updated page 6252 title & meta for target keyword</li>
-                            <li>Added Service + FAQ schema (5 questions)</li>
-                            <li>Expected impact: Page 1 rankings in 2-8 weeks</li>
-                        </ul>
+                    <div id="opportunitiesSummary" style="display: grid; gap: 15px; margin-bottom: 30px;">
+                        <div style="padding: 15px; background: #d1ecf1; border-left: 4px solid #17a2b8; border-radius: 8px;">
+                            <strong>📊 Analysis in Progress</strong><br>
+                            <span style="color: #0c5460;">Connect to Google Search Console to see keyword opportunities</span>
+                        </div>
                     </div>
-                    <div style="padding: 15px; background: #d4edda; border-left: 4px solid #28a745; border-radius: 8px;">
-                        <strong>✅ October 6, 2025</strong><br>
-                        <span style="color: #155724;">Comprehensive SEO Overhaul</span>
-                        <ul style="margin: 10px 0 0 20px; color: #155724;">
-                            <li>44 pages optimized with SEO improvements</li>
-                            <li>42,998 spam URLs neutralized (410 status)</li>
-                            <li>11 duplicate page titles fixed</li>
-                            <li>34 pages with FAQ schema added</li>
-                            <li>15 new location-based pages created</li>
-                        </ul>
+
+                    <!-- Quick Wins -->
+                    <div class="keywords-table" style="margin-bottom: 30px;">
+                        <h3 style="margin: 0 0 15px; color: #667eea; font-size: 1.1rem;">⚡ Quick Wins (Page 2-3 Keywords)</h3>
+                        <p style="margin-bottom: 15px; color: #666;">Keywords ranking #11-30 that need a small push to reach page 1</p>
+                        <table id="quickWinsTable">
+                            <thead>
+                                <tr>
+                                    <th>Keyword</th>
+                                    <th>Current Position</th>
+                                    <th>Impressions</th>
+                                    <th>Clicks</th>
+                                    <th>Opportunity</th>
+                                </tr>
+                            </thead>
+                            <tbody id="quickWinsBody">
+                                <tr>
+                                    <td colspan="5" style="text-align: center; padding: 20px; color: #666;">Loading opportunities...</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
-                    <div style="padding: 15px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 8px;">
-                        <strong>⏳ Pending Actions</strong><br>
-                        <span style="color: #856404;">Next steps to improve rankings</span>
-                        <ul style="margin: 10px 0 0 20px; color: #856404;">
-                            <li>Submit bulk removal request for 953 remaining spam URLs</li>
-                            <li>Delete 2 duplicate blog post URLs</li>
-                            <li>Block RSS feeds in robots.txt</li>
-                            <li>Submit updated sitemap to GSC</li>
-                        </ul>
+
+                    <!-- Low CTR Keywords -->
+                    <div class="keywords-table" style="margin-bottom: 30px;">
+                        <h3 style="margin: 0 0 15px; color: #667eea; font-size: 1.1rem;">📈 High Impression, Low Click Keywords</h3>
+                        <p style="margin-bottom: 15px; color: #666;">You're showing up in search but not getting clicks - improve titles/meta descriptions</p>
+                        <table id="lowCtrTable">
+                            <thead>
+                                <tr>
+                                    <th>Keyword</th>
+                                    <th>Position</th>
+                                    <th>Impressions</th>
+                                    <th>Clicks</th>
+                                    <th>CTR</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lowCtrBody">
+                                <tr>
+                                    <td colspan="6" style="text-align: center; padding: 20px; color: #666;">Loading opportunities...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Keywords Close to Page 1 -->
+                    <div class="keywords-table">
+                        <h3 style="margin: 0 0 15px; color: #667eea; font-size: 1.1rem;">📈 Keywords Close to Page 1</h3>
+                        <p style="margin-bottom: 15px; color: #666;">Keywords ranking #11-20 that are close to reaching Google's first page</p>
+                        <table id="competitorKeywordsTable">
+                            <thead>
+                                <tr>
+                                    <th>Keyword</th>
+                                    <th>Current Position</th>
+                                    <th>Impressions</th>
+                                    <th>Clicks</th>
+                                    <th>Opportunity</th>
+                                </tr>
+                            </thead>
+                            <tbody id="competitorKeywordsBody">
+                                <tr>
+                                    <td colspan="5" style="text-align: center; padding: 20px; color: #666;">Loading page 2 opportunities...</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
-            </div>
 
-            <!-- Keyword Opportunities & Targets -->
-            <div class="keywords-table" style="margin-bottom: 30px;">
-                <h2 class="chart-title">🎯 Keyword Opportunities & What to Target</h2>
-                <div class="alert alert-info" style="margin-bottom: 20px;">
-                    <strong>💡 SEO Strategy Insights:</strong> These keywords have high potential for quick ranking improvements
+                <!-- Tab 3: All Keywords -->
+                <div id="tab-keywords" class="tab-content">
+                    <div class="keywords-table">
+                        <h2 class="chart-title">🔑 All Keywords & Rankings</h2>
+                        <p style="margin-bottom: 20px; color: #666;">Complete list of all keywords your site ranks for in Google Search</p>
+                        <table id="keywordsTable">
+                            <thead>
+                                <tr>
+                                    <th>Keyword</th>
+                                    <th>Position</th>
+                                    <th>Clicks</th>
+                                    <th>Impressions</th>
+                                    <th>CTR</th>
+                                </tr>
+                            </thead>
+                            <tbody id="keywordsTableBody">
+                                <tr>
+                                    <td colspan="5" style="text-align: center; padding: 30px;">
+                                        <div class="loading" style="margin: 0 auto;"></div>
+                                        <p style="margin-top: 15px; color: #666;">Loading keyword data...</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
 
-                <h3 style="margin: 20px 0 15px; color: #667eea; font-size: 1.1rem;">⚡ Quick Wins (Page 2-3 Keywords)</h3>
-                <p style="margin-bottom: 15px; color: #666;">Keywords ranking #11-30 that need a small push to reach page 1</p>
-                <table id="quickWinsTable">
-                    <thead>
-                        <tr>
-                            <th>Keyword</th>
-                            <th>Current Position</th>
-                            <th>Impressions</th>
-                            <th>Clicks</th>
-                            <th>Opportunity</th>
-                        </tr>
-                    </thead>
-                    <tbody id="quickWinsBody">
-                        <tr>
-                            <td colspan="5" style="text-align: center; padding: 20px; color: #666;">Loading opportunities...</td>
-                        </tr>
-                    </tbody>
-                </table>
-
-                <h3 style="margin: 30px 0 15px; color: #667eea; font-size: 1.1rem;">📈 High Impression, Low Click Keywords</h3>
-                <p style="margin-bottom: 15px; color: #666;">You're showing up in search but not getting clicks - improve titles/meta descriptions</p>
-                <table id="lowCtrTable">
-                    <thead>
-                        <tr>
-                            <th>Keyword</th>
-                            <th>Position</th>
-                            <th>Impressions</th>
-                            <th>Clicks</th>
-                            <th>CTR</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="lowCtrBody">
-                        <tr>
-                            <td colspan="6" style="text-align: center; padding: 20px; color: #666;">Loading opportunities...</td>
-                        </tr>
-                    </tbody>
-                </table>
-
-                <h3 style="margin: 30px 0 15px; color: #667eea; font-size: 1.1rem;">🔍 Competitor Keywords to Target</h3>
-                <p style="margin-bottom: 15px; color: #666;">Based on business industry analysis - keywords your competitors likely rank for</p>
-                <table id="competitorKeywordsTable">
-                    <thead>
-                        <tr>
-                            <th>Target Keyword</th>
-                            <th>Your Status</th>
-                            <th>Search Volume Est.</th>
-                            <th>Difficulty</th>
-                            <th>Action Plan</th>
-                        </tr>
-                    </thead>
-                    <tbody id="competitorKeywordsBody">
-                        <tr>
-                            <td><strong>your target keyword</strong></td>
-                            <td><span class="position other">Not ranking</span></td>
-                            <td>~170/month</td>
-                            <td><span style="background: #fff3cd; padding: 4px 8px; border-radius: 4px;">Medium</span></td>
-                            <td>✅ Page created, schema added (10/14/25)</td>
-                        </tr>
-                        <tr>
-                            <td><strong>your target keyword</strong></td>
-                            <td><span id="bizCoachPosComp">-</span></td>
-                            <td>~140/month</td>
-                            <td><span style="background: #d4edda; padding: 4px 8px; border-radius: 4px;">Low</span></td>
-                            <td>Create dedicated service page</td>
-                        </tr>
-                        <tr>
-                            <td><strong>your keywords your city</strong></td>
-                            <td><span id="leadershipPos">-</span></td>
-                            <td>~90/month</td>
-                            <td><span style="background: #d4edda; padding: 4px 8px; border-radius: 4px;">Low</span></td>
-                            <td>Add to services, create blog content</td>
-                        </tr>
-                        <tr>
-                            <td><strong>career coach near me</strong></td>
-                            <td><span id="careerCoachPos">-</span></td>
-                            <td>~1000/month</td>
-                            <td><span style="background: #f8d7da; padding: 4px 8px; border-radius: 4px;">High</span></td>
-                            <td>Local SEO optimization needed</td>
-                        </tr>
-                        <tr>
-                            <td><strong>executive business certification</strong></td>
-                            <td><span id="certPos">-</span></td>
-                            <td>~400/month</td>
-                            <td><span style="background: #fff3cd; padding: 4px 8px; border-radius: 4px;">Medium</span></td>
-                            <td>Create certification/credentials page</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Keywords Table -->
-            <div class="keywords-table">
-                <h2 class="chart-title">🔑 All Keywords & Rankings</h2>
-                <table id="keywordsTable">
-                    <thead>
-                        <tr>
-                            <th>Keyword</th>
-                            <th>Position</th>
-                            <th>Clicks</th>
-                            <th>Impressions</th>
-                            <th>CTR</th>
-                        </tr>
-                    </thead>
-                    <tbody id="keywordsTableBody">
-                        <tr>
-                            <td colspan="5" style="text-align: center; padding: 30px;">
-                                <div class="loading" style="margin: 0 auto;"></div>
-                                <p style="margin-top: 15px; color: #666;">Loading keyword data...</p>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
+            </div><!-- End tabs-container -->
+        </div><!-- End dashboardContent -->
+    </div><!-- End container -->
 
     <script>
         // Use dynamic API URL based on current origin
@@ -792,13 +716,17 @@
             checkConnection();
         });
 
+        // Storage key - matches site-manager.js
+        const STORAGE_KEY = 'seo_sites';
+        const CURRENT_KEY = 'seo_current_site';
+
         // Load sites from GSC or localStorage
         async function loadSites() {
             const selector = document.getElementById('siteSelector');
 
             // Try to get sites from localStorage first
             let sites = [];
-            const saved = localStorage.getItem('seo_dashboard_sites');
+            const saved = localStorage.getItem(STORAGE_KEY);
             if (saved) {
                 sites = JSON.parse(saved);
             }
@@ -815,7 +743,7 @@
                             url: site.siteUrl,
                             gsc: site.siteUrl
                         }));
-                        localStorage.setItem('seo_dashboard_sites', JSON.stringify(sites));
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify(sites));
                     }
                 } catch (e) {
                     console.log('Could not fetch GSC sites:', e);
@@ -829,7 +757,7 @@
                 ).join('');
 
                 // Select last used site or first
-                const lastSite = localStorage.getItem('seo_dashboard_current');
+                const lastSite = localStorage.getItem(CURRENT_KEY);
                 const siteToSelect = lastSite ? sites.find(s => s.id === lastSite) : sites[0];
                 if (siteToSelect) {
                     selector.value = siteToSelect.id;
@@ -850,10 +778,10 @@
         function changeSite() {
             const selector = document.getElementById('siteSelector');
             const siteId = selector.value;
-            const sites = JSON.parse(localStorage.getItem('seo_dashboard_sites') || '[]');
+            const sites = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
             currentSite = sites.find(s => s.id === siteId);
             if (currentSite) {
-                localStorage.setItem('seo_dashboard_current', siteId);
+                localStorage.setItem(CURRENT_KEY, siteId);
                 updateSiteDisplay();
                 loadDashboardData();
             }
@@ -862,7 +790,7 @@
         function openAddSiteModal() {
             const url = prompt('Enter website URL (e.g., https://example.com):');
             if (url) {
-                const sites = JSON.parse(localStorage.getItem('seo_dashboard_sites') || '[]');
+                const sites = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
                 const name = url.replace('https://', '').replace('http://', '').replace(/\/$/, '');
                 sites.push({
                     id: 'site-' + Date.now(),
@@ -870,7 +798,7 @@
                     url: url.endsWith('/') ? url : url + '/',
                     gsc: url.endsWith('/') ? url : url + '/'
                 });
-                localStorage.setItem('seo_dashboard_sites', JSON.stringify(sites));
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(sites));
                 window.location.reload();
             }
         }
@@ -933,6 +861,7 @@
                 updateKPIs(data, startDate, endDate);
                 createTrafficChart(data);
                 createKeywordsChart(data);
+                populateTopKeywords(data);
                 populateKeywordOpportunities(data);
                 populateKeywordsTable(data);
 
@@ -1050,9 +979,80 @@
             });
         }
 
+        // Populate top performing keywords
+        function populateTopKeywords(data) {
+            const keywords = data.rows.filter(row => row.keys && row.keys.length > 0);
+            const topKeywords = keywords
+                .sort((a, b) => b.clicks - a.clicks)
+                .slice(0, 5);
+
+            const tbody = document.getElementById('priorityKeywordsBody');
+            tbody.innerHTML = '';
+
+            if (topKeywords.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #666;">No keyword data available yet</td></tr>';
+                return;
+            }
+
+            topKeywords.forEach(row => {
+                const keyword = row.keys[row.keys.length - 1];
+                const position = row.position.toFixed(1);
+                const ctr = (row.ctr * 100).toFixed(2);
+
+                let positionClass = 'other';
+                let status = '📊 Monitoring';
+                if (position <= 3) {
+                    positionClass = 'top3';
+                    status = '🏆 Top 3 - Excellent!';
+                } else if (position <= 10) {
+                    positionClass = 'top10';
+                    status = '✅ Page 1 - Good';
+                } else if (position <= 20) {
+                    positionClass = 'top20';
+                    status = '⬆️ Close to Page 1';
+                }
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${keyword}</strong></td>
+                    <td><span class="position ${positionClass}">#${position}</span></td>
+                    <td>${row.clicks.toLocaleString()}</td>
+                    <td>${row.impressions.toLocaleString()}</td>
+                    <td>${ctr}%</td>
+                    <td>${status}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
         function populateKeywordOpportunities(data) {
             // Filter to only query dimension
             const keywords = data.rows.filter(row => row.keys && row.keys.length > 0);
+
+            // Update opportunities summary
+            const summary = document.getElementById('opportunitiesSummary');
+            const quickWinsCount = keywords.filter(row => row.position > 10 && row.position <= 30 && row.impressions >= 10).length;
+            const page1Count = keywords.filter(row => row.position <= 10).length;
+            const totalKeywords = keywords.length;
+
+            summary.innerHTML = `
+                <div style="padding: 15px; background: #d4edda; border-left: 4px solid #28a745; border-radius: 8px;">
+                    <strong>✅ Current Performance</strong><br>
+                    <ul style="margin: 10px 0 0 20px; color: #155724;">
+                        <li><strong>${page1Count}</strong> keywords on Google Page 1</li>
+                        <li><strong>${totalKeywords}</strong> total keywords tracked</li>
+                        <li><strong>${quickWinsCount}</strong> quick win opportunities (positions 11-30)</li>
+                    </ul>
+                </div>
+                <div style="padding: 15px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 8px;">
+                    <strong>💡 Recommendations</strong><br>
+                    <ul style="margin: 10px 0 0 20px; color: #856404;">
+                        <li>Focus on keywords ranking #11-20 for quick page 1 wins</li>
+                        <li>Improve titles/meta descriptions for high-impression, low-CTR keywords</li>
+                        <li>Add content targeting keywords with high impressions but low positions</li>
+                    </ul>
+                </div>
+            `;
 
             // 1. Quick Wins (Position 11-30 with decent impressions)
             const quickWins = keywords
@@ -1122,39 +1122,34 @@
                 });
             }
 
-            // 3. Update competitor keyword status with actual data
-            const competitorKeywords = [
-                'your target keyword',
-                'your target keyword',
-                'your keywords your city',
-                'career coach near me',
-                'executive business certification'
-            ];
+            // 3. Keywords close to page 1 (position 11-20)
+            const nearPage1 = keywords
+                .filter(row => row.position > 10 && row.position <= 20)
+                .sort((a, b) => a.position - b.position)
+                .slice(0, 10);
 
-            competitorKeywords.forEach(targetKeyword => {
-                const match = keywords.find(row => {
-                    const kw = row.keys[row.keys.length - 1].toLowerCase();
-                    return kw === targetKeyword.toLowerCase() || kw.includes(targetKeyword.toLowerCase());
+            const competitorBody = document.getElementById('competitorKeywordsBody');
+            competitorBody.innerHTML = '';
+
+            if (nearPage1.length === 0) {
+                competitorBody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px; color: #666;">No page 2 keywords found</td></tr>';
+            } else {
+                nearPage1.forEach(row => {
+                    const keyword = row.keys[row.keys.length - 1];
+                    const position = row.position.toFixed(1);
+                    const positionsToPage1 = Math.ceil(position - 10);
+
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><strong>${keyword}</strong></td>
+                        <td><span class="position top20">#${position}</span></td>
+                        <td>${row.impressions.toLocaleString()}</td>
+                        <td>${row.clicks}</td>
+                        <td style="color: #28a745; font-weight: 600;">Only ${positionsToPage1} spot${positionsToPage1 > 1 ? 's' : ''} from page 1!</td>
+                    `;
+                    competitorBody.appendChild(tr);
                 });
-
-                const elemId = targetKeyword.replace(/\s+/g, '_').replace('executive_coach_your city', 'execCoachPos')
-                    .replace('business_coach_your city', 'bizCoachPosComp')
-                    .replace('leadership_business_your city', 'leadershipPos')
-                    .replace('career_coach_near_me', 'careerCoachPos')
-                    .replace('executive_business_certification', 'certPos');
-
-                const elem = document.getElementById(elemId);
-                if (elem && match) {
-                    const position = match.position.toFixed(1);
-                    let positionClass = 'other';
-                    if (position <= 3) positionClass = 'top3';
-                    else if (position <= 10) positionClass = 'top10';
-                    else if (position <= 20) positionClass = 'top20';
-                    elem.innerHTML = `<span class="position ${positionClass}">#${position}</span>`;
-                } else if (elem) {
-                    elem.innerHTML = '<span class="position other">Not ranking</span>';
-                }
-            });
+            }
         }
 
         // Expected CTR by position (industry averages)
@@ -1203,6 +1198,25 @@
                 `;
                 tbody.appendChild(tr);
             });
+        }
+
+        // Tab switching function
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            // Remove active from all buttons
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            // Show selected tab
+            const selectedTab = document.getElementById('tab-' + tabName);
+            if (selectedTab) {
+                selectedTab.classList.add('active');
+            }
+            // Add active to clicked button
+            event.target.classList.add('active');
         }
 
         // Check connection on load
