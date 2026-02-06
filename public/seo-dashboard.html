@@ -407,26 +407,22 @@
     </style>
 </head>
 <body>
-    <!-- Contact Header -->
+    <!-- Site Selector Header -->
     <div class="contact-header">
-        <a href="tel:+14142655755">
-            <span>📞</span>
-            <span>(414) 265-5755</span>
-        </a>
-        <a href="https://maps.google.com/?q=313+N+Plankinton+Ave+Ste+207+Milwaukee+WI+53203" target="_blank">
-            <span>📍</span>
-            <span>313 N Plankinton Ave Ste 207, Milwaukee, WI 53203</span>
-        </a>
-        <div class="rating">
-            <span>⭐</span>
-            <span>5.0 (28 reviews)</span>
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <span>🌐 Current Site:</span>
+            <select id="siteSelector" onchange="changeSite()" style="padding: 8px 15px; border-radius: 5px; border: none; font-size: 14px; min-width: 250px;">
+                <option>Loading sites...</option>
+            </select>
+            <button onclick="openAddSiteModal()" style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 8px 15px; border-radius: 5px; cursor: pointer;">➕ Add Site</button>
+            <button onclick="window.location.reload()" style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 8px 15px; border-radius: 5px; cursor: pointer;">🔄 Refresh</button>
         </div>
     </div>
 
     <div class="container">
         <header>
-            <h1>📊 SEO Agents Dashboard</h1>
-            <p class="subtitle">Real Google Search Console Data for www.example.com</p>
+            <h1>📊 SEO Dashboard</h1>
+            <p class="subtitle">Real Google Search Console Data for <span id="currentSiteName">your site</span></p>
             <div id="dataRangeInfo" style="margin-top: 15px; padding: 12px; background: #f8f9fa; border-radius: 8px; display: none;">
                 <strong>📅 Data Period:</strong> <span id="dateRangeText">Loading...</span>
                 <span style="margin-left: 15px; color: #666; font-size: 0.9rem;">ℹ️ Google Search Console data has a 2-3 day delay</span>
@@ -452,7 +448,7 @@
                 <div class="stat-card">
                     <div class="stat-label">📈 Keyword Rankings</div>
                     <div class="stat-value">Top 1000</div>
-                    <p style="margin-top: 10px; color: #666; font-size: 0.9rem;">Track every keyword ranking for example.com with average position</p>
+                    <p style="margin-top: 10px; color: #666; font-size: 0.9rem;">Track every keyword ranking for your site with average position</p>
                 </div>
                 <div class="stat-card">
                     <div class="stat-label">👁️ Impressions & Clicks</div>
@@ -500,7 +496,7 @@
 
             <div class="alert alert-warning">
                 <strong>📋 Quick Checklist:</strong><br>
-                □ Verify you own example.com in Google Search Console<br>
+                □ Verify you own your site in Google Search Console<br>
                 □ Enable Search Console API in Google Cloud<br>
                 □ Create OAuth 2.0 credentials<br>
                 □ Run backend server on port 3000
@@ -512,7 +508,7 @@
             <!-- Data Authenticity Badge -->
             <div class="alert alert-info" style="margin-bottom: 20px;">
                 <strong>✅ 100% Real Data from Google Search Console API</strong><br>
-                This dashboard shows actual performance data for www.example.com directly from Google's servers.
+                This dashboard shows actual performance data for your site directly from Google's servers.
                 All metrics (clicks, impressions, CTR, positions) are pulled from the official Google Search Console API.
             </div>
 
@@ -593,7 +589,7 @@
                             </thead>
                             <tbody id="priorityKeywordsBody">
                                 <tr>
-                                    <td><strong>executive coach milwaukee</strong></td>
+                                    <td><strong>your target keyword</strong></td>
                                     <td id="execCoachPos"><span class="position other">Not Ranked</span></td>
                                     <td><span class="position top3">#1-3</span></td>
                                     <td id="execCoachClicks">0</td>
@@ -601,7 +597,7 @@
                                     <td id="execCoachStatus">🔄 Optimizing (Just updated 10/14/2025)</td>
                                 </tr>
                                 <tr>
-                                    <td><strong>business coach milwaukee</strong></td>
+                                    <td><strong>your target keyword</strong></td>
                                     <td id="bizCoachPos">-</td>
                                     <td><span class="position top3">#1-3</span></td>
                                     <td id="bizCoachClicks">-</td>
@@ -609,7 +605,7 @@
                                     <td id="bizCoachStatus">📊 Monitoring</td>
                                 </tr>
                                 <tr>
-                                    <td><strong>business coaching wisconsin</strong></td>
+                                    <td><strong>business business wisconsin</strong></td>
                                     <td id="bizCoachWiPos">-</td>
                                     <td><span class="position top3">#1-3</span></td>
                                     <td id="bizCoachWiClicks">-</td>
@@ -629,9 +625,9 @@
                 <div style="display: grid; gap: 15px;">
                     <div style="padding: 15px; background: #d4edda; border-left: 4px solid #28a745; border-radius: 8px;">
                         <strong>✅ October 14, 2025</strong><br>
-                        <span style="color: #155724;">Optimized "Executive Coach Milwaukee" page</span>
+                        <span style="color: #155724;">Optimized "your target keyword" page</span>
                         <ul style="margin: 10px 0 0 20px; color: #155724;">
-                            <li>Fixed page 5975 slug: /executive-coaching/</li>
+                            <li>Fixed page 5975 slug: /executive-business/</li>
                             <li>Updated page 6252 title & meta for target keyword</li>
                             <li>Added Service + FAQ schema (5 questions)</li>
                             <li>Expected impact: Page 1 rankings in 2-8 weeks</li>
@@ -708,7 +704,7 @@
                 </table>
 
                 <h3 style="margin: 30px 0 15px; color: #667eea; font-size: 1.1rem;">🔍 Competitor Keywords to Target</h3>
-                <p style="margin-bottom: 15px; color: #666;">Based on coaching industry analysis - keywords your competitors likely rank for</p>
+                <p style="margin-bottom: 15px; color: #666;">Based on business industry analysis - keywords your competitors likely rank for</p>
                 <table id="competitorKeywordsTable">
                     <thead>
                         <tr>
@@ -721,21 +717,21 @@
                     </thead>
                     <tbody id="competitorKeywordsBody">
                         <tr>
-                            <td><strong>executive coach milwaukee</strong></td>
+                            <td><strong>your target keyword</strong></td>
                             <td><span class="position other">Not ranking</span></td>
                             <td>~170/month</td>
                             <td><span style="background: #fff3cd; padding: 4px 8px; border-radius: 4px;">Medium</span></td>
                             <td>✅ Page created, schema added (10/14/25)</td>
                         </tr>
                         <tr>
-                            <td><strong>business coach milwaukee</strong></td>
+                            <td><strong>your target keyword</strong></td>
                             <td><span id="bizCoachPosComp">-</span></td>
                             <td>~140/month</td>
                             <td><span style="background: #d4edda; padding: 4px 8px; border-radius: 4px;">Low</span></td>
                             <td>Create dedicated service page</td>
                         </tr>
                         <tr>
-                            <td><strong>leadership coaching milwaukee</strong></td>
+                            <td><strong>your keywords your city</strong></td>
                             <td><span id="leadershipPos">-</span></td>
                             <td>~90/month</td>
                             <td><span style="background: #d4edda; padding: 4px 8px; border-radius: 4px;">Low</span></td>
@@ -749,7 +745,7 @@
                             <td>Local SEO optimization needed</td>
                         </tr>
                         <tr>
-                            <td><strong>executive coaching certification</strong></td>
+                            <td><strong>executive business certification</strong></td>
                             <td><span id="certPos">-</span></td>
                             <td>~400/month</td>
                             <td><span style="background: #fff3cd; padding: 4px 8px; border-radius: 4px;">Medium</span></td>
@@ -788,30 +784,101 @@
     <script>
         // Use dynamic API URL based on current origin
         const API_BASE = window.location.origin;
+        let currentSite = null;
 
-        // Initialize Site Manager
-        document.addEventListener('DOMContentLoaded', () => {
-            // Add site selector before the dashboard
-            const header = document.querySelector('header');
-            if (header) {
-                const siteSelector = document.createElement('div');
-                siteSelector.id = 'site-selector-container';
-                siteSelector.style.cssText = 'background: white; padding: 20px; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 5px 20px rgba(0,0,0,0.08);';
-                header.parentNode.insertBefore(siteSelector, header);
-
-                SiteManager.createSiteSelector('site-selector-container', {
-                    showRefresh: true,
-                    onSiteChange: () => window.location.reload(),
-                    onRefresh: () => loadDashboardData()
-                });
-            }
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadSites();
             checkConnection();
         });
 
+        // Load sites from GSC or localStorage
+        async function loadSites() {
+            const selector = document.getElementById('siteSelector');
+
+            // Try to get sites from localStorage first
+            let sites = [];
+            const saved = localStorage.getItem('seo_dashboard_sites');
+            if (saved) {
+                sites = JSON.parse(saved);
+            }
+
+            // If no saved sites, try to fetch from GSC
+            if (sites.length === 0) {
+                try {
+                    const response = await fetch('/api/gsc/sites');
+                    const data = await response.json();
+                    if (data.success && data.sites && data.sites.length > 0) {
+                        sites = data.sites.map((site, i) => ({
+                            id: 'gsc-' + i,
+                            name: site.siteUrl.replace('https://', '').replace('http://', '').replace(/\/$/, ''),
+                            url: site.siteUrl,
+                            gsc: site.siteUrl
+                        }));
+                        localStorage.setItem('seo_dashboard_sites', JSON.stringify(sites));
+                    }
+                } catch (e) {
+                    console.log('Could not fetch GSC sites:', e);
+                }
+            }
+
+            // Update selector
+            if (sites.length > 0) {
+                selector.innerHTML = sites.map(s =>
+                    `<option value="${s.id}">${s.name}</option>`
+                ).join('');
+
+                // Select last used site or first
+                const lastSite = localStorage.getItem('seo_dashboard_current');
+                const siteToSelect = lastSite ? sites.find(s => s.id === lastSite) : sites[0];
+                if (siteToSelect) {
+                    selector.value = siteToSelect.id;
+                    currentSite = siteToSelect;
+                    updateSiteDisplay();
+                }
+            } else {
+                selector.innerHTML = '<option>No sites - Add one or connect GSC</option>';
+            }
+        }
+
+        function updateSiteDisplay() {
+            if (currentSite) {
+                document.getElementById('currentSiteName').textContent = currentSite.name;
+            }
+        }
+
+        function changeSite() {
+            const selector = document.getElementById('siteSelector');
+            const siteId = selector.value;
+            const sites = JSON.parse(localStorage.getItem('seo_dashboard_sites') || '[]');
+            currentSite = sites.find(s => s.id === siteId);
+            if (currentSite) {
+                localStorage.setItem('seo_dashboard_current', siteId);
+                updateSiteDisplay();
+                loadDashboardData();
+            }
+        }
+
+        function openAddSiteModal() {
+            const url = prompt('Enter website URL (e.g., https://example.com):');
+            if (url) {
+                const sites = JSON.parse(localStorage.getItem('seo_dashboard_sites') || '[]');
+                const name = url.replace('https://', '').replace('http://', '').replace(/\/$/, '');
+                sites.push({
+                    id: 'site-' + Date.now(),
+                    name: name,
+                    url: url.endsWith('/') ? url : url + '/',
+                    gsc: url.endsWith('/') ? url : url + '/'
+                });
+                localStorage.setItem('seo_dashboard_sites', JSON.stringify(sites));
+                window.location.reload();
+            }
+        }
+
         // Get current site for API calls
         function getCurrentSiteParam() {
-            const site = SiteManager.getCurrentSite();
-            return site ? `&site=${encodeURIComponent(site.url)}&gsc=${encodeURIComponent(site.gscProperty)}` : '';
+            if (!currentSite) return '';
+            return `&site=${encodeURIComponent(currentSite.url)}&gsc=${encodeURIComponent(currentSite.gsc)}`;
         }
 
         // Check connection status
@@ -1057,11 +1124,11 @@
 
             // 3. Update competitor keyword status with actual data
             const competitorKeywords = [
-                'executive coach milwaukee',
-                'business coach milwaukee',
-                'leadership coaching milwaukee',
+                'your target keyword',
+                'your target keyword',
+                'your keywords your city',
                 'career coach near me',
-                'executive coaching certification'
+                'executive business certification'
             ];
 
             competitorKeywords.forEach(targetKeyword => {
@@ -1070,11 +1137,11 @@
                     return kw === targetKeyword.toLowerCase() || kw.includes(targetKeyword.toLowerCase());
                 });
 
-                const elemId = targetKeyword.replace(/\s+/g, '_').replace('executive_coach_milwaukee', 'execCoachPos')
-                    .replace('business_coach_milwaukee', 'bizCoachPosComp')
-                    .replace('leadership_coaching_milwaukee', 'leadershipPos')
+                const elemId = targetKeyword.replace(/\s+/g, '_').replace('executive_coach_your city', 'execCoachPos')
+                    .replace('business_coach_your city', 'bizCoachPosComp')
+                    .replace('leadership_business_your city', 'leadershipPos')
                     .replace('career_coach_near_me', 'careerCoachPos')
-                    .replace('executive_coaching_certification', 'certPos');
+                    .replace('executive_business_certification', 'certPos');
 
                 const elem = document.getElementById(elemId);
                 if (elem && match) {
