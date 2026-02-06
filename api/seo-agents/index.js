@@ -84,7 +84,10 @@ async function handleHealth(req, res) {
 
 // Technical Audit
 async function handleAudit(req, res) {
-  const url = req.query.url || 'https://www.spearity.com';
+  const url = req.query.url;
+  if (!url) {
+    return res.json({ success: false, error: 'URL parameter required. Usage: ?url=https://example.com' });
+  }
 
   try {
     const audit = await seo.runTechnicalAudit(url);
@@ -272,7 +275,8 @@ async function handleSEOCommand(args) {
 
   switch (subCmd) {
     case 'audit':
-      const url = args[1] || 'https://www.spearity.com';
+      const url = args[1];
+      if (!url) return { error: 'URL required. Usage: seo audit https://example.com' };
       const audit = await seo.runTechnicalAudit(url);
       return audit;
     case 'health':

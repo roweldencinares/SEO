@@ -396,89 +396,23 @@
     </div>
 
     <script>
-        // Sample data - will be replaced with real API calls
-        const trackingData = {
-            actions: [
-                {
-                    id: 1,
-                    name: 'Create "your target keyword" Landing Page',
-                    status: 'completed',
-                    before: { ranking: null, traffic: 0 },
-                    after: { ranking: 3, traffic: 145 },
-                    impact: '+145 visits/month',
-                    lastVerified: '2025-11-03',
-                    category: 'keywords'
-                },
-                {
-                    id: 2,
-                    name: 'Claim Google Business Profile',
-                    status: 'verified',
-                    before: { presence: false, impressions: 0 },
-                    after: { presence: true, impressions: 1200 },
-                    impact: '+1,200 impressions/month',
-                    lastVerified: '2025-11-03',
-                    category: 'local-listing'
-                },
-                {
-                    id: 5,
-                    name: 'Fix Missing Meta Descriptions (SEO)',
-                    status: 'completed',
-                    before: { pages: 212, metaDesc: 0 },
-                    after: { pages: 212, metaDesc: 211 },
-                    impact: '211 pages improved (99.5% success)',
-                    lastVerified: '2025-11-13',
-                    category: 'seo-technical'
-                },
-                {
-                    id: 6,
-                    name: 'Fix Title Tags Too Long (SEO)',
-                    status: 'completed',
-                    before: { pages: 268, optimized: 0 },
-                    after: { pages: 268, optimized: 25 },
-                    impact: '25 titles shortened to <60 chars',
-                    lastVerified: '2025-11-13',
-                    category: 'seo-technical'
-                },
-                {
-                    id: 7,
-                    name: 'Deploy FAQ Schema (Rich Snippets)',
-                    status: 'verified',
-                    before: { pages: 0, questions: 0 },
-                    after: { pages: 308, questions: 1024 },
-                    impact: '1,024 FAQ questions across 308 pages (100% rich snippet eligible)',
-                    lastVerified: '2025-11-24',
-                    category: 'seo-technical'
-                },
-                {
-                    id: 3,
-                    name: 'Fix AI visibility in ChatGPT',
-                    status: 'in-progress',
-                    before: { visible: false },
-                    after: { visible: null },
-                    impact: 'Pending verification',
-                    lastVerified: null,
-                    category: 'ai-discovery'
-                },
-                {
-                    id: 4,
-                    name: 'Launch Madison expansion',
-                    status: 'not-started',
-                    before: null,
-                    after: null,
-                    impact: 'Not started',
-                    lastVerified: null,
-                    category: 'keywords'
-                }
-            ],
-            weeklyProgress: [
-                { week: 'Week 1', completed: 0, score: 27 },
-                { week: 'Week 2', completed: 1, score: 40 },
-                { week: 'Week 3', completed: 2, score: 55 },
-                { week: 'Week 4', completed: 4, score: 73 },
-                { week: 'Week 5', completed: 6, score: 85 },
-                { week: 'Week 6', completed: 7, score: 95 }
-            ]
-        };
+        // Dynamic data - loaded from localStorage or API
+        const PROGRESS_KEY = 'seo_progress_data';
+
+        // Load saved progress or use empty state
+        function loadProgressData() {
+            const saved = localStorage.getItem(PROGRESS_KEY);
+            if (saved) {
+                return JSON.parse(saved);
+            }
+            // Empty state - no hardcoded data
+            return {
+                actions: [],
+                weeklyProgress: []
+            };
+        }
+
+        const trackingData = loadProgressData();
 
         window.addEventListener('load', () => {
             loadDashboard();
@@ -486,28 +420,84 @@
         });
 
         function loadDashboard() {
-            // Update metrics
+            // Update metrics based on actual data
             const completed = trackingData.actions.filter(a => a.status === 'completed' || a.status === 'verified').length;
+            const total = trackingData.actions.length;
+
             document.getElementById('completedActions').textContent = completed;
-            document.getElementById('completedChange').textContent = `+${completed} this week`;
+            document.getElementById('completedChange').textContent = total > 0 ? `${completed}/${total} actions` : 'No actions yet';
 
-            document.getElementById('rankingImprovement').textContent = '+2.5';
-            document.getElementById('presenceScore').textContent = '73%';
-            document.getElementById('presenceChange').textContent = '+46% from baseline';
-            document.getElementById('revenueImpact').textContent = '$12K';
+            // Calculate from actual data or show defaults
+            document.getElementById('rankingImprovement').textContent = total > 0 ? calculateRankingImprovement() : '-';
+            document.getElementById('presenceScore').textContent = total > 0 ? calculatePresenceScore() + '%' : '0%';
+            document.getElementById('presenceChange').textContent = total > 0 ? 'Based on actions' : 'Add actions to track';
+            document.getElementById('revenueImpact').textContent = total > 0 ? calculateRevenueImpact() : '-';
 
-            // ROI metrics
-            document.getElementById('roiLeads').textContent = '25';
-            document.getElementById('roiTraffic').textContent = '+180%';
-            document.getElementById('roiRevenue').textContent = '$12K/mo';
-            document.getElementById('roiTime').textContent = '45 hrs';
+            // ROI metrics - calculated from actual progress
+            document.getElementById('roiLeads').textContent = total > 0 ? estimateLeads() : '0';
+            document.getElementById('roiTraffic').textContent = total > 0 ? '+' + estimateTrafficIncrease() + '%' : '+0%';
+            document.getElementById('roiRevenue').textContent = total > 0 ? calculateRevenueImpact() + '/mo' : '$0/mo';
+            document.getElementById('roiTime').textContent = total > 0 ? estimateTimeSaved() + ' hrs' : '0 hrs';
 
             // Populate actions table
             renderActionsTable();
         }
 
+        function calculateRankingImprovement() {
+            const rankings = trackingData.actions
+                .filter(a => a.after?.ranking)
+                .map(a => a.after.ranking);
+            if (rankings.length === 0) return '-';
+            const avg = rankings.reduce((a, b) => a + b, 0) / rankings.length;
+            return '+' + avg.toFixed(1);
+        }
+
+        function calculatePresenceScore() {
+            const completed = trackingData.actions.filter(a => a.status === 'completed' || a.status === 'verified').length;
+            const total = trackingData.actions.length;
+            return total > 0 ? Math.round((completed / total) * 100) : 0;
+        }
+
+        function calculateRevenueImpact() {
+            // Estimate $500 per completed action
+            const completed = trackingData.actions.filter(a => a.status === 'completed' || a.status === 'verified').length;
+            return '$' + (completed * 500).toLocaleString();
+        }
+
+        function estimateLeads() {
+            const completed = trackingData.actions.filter(a => a.status === 'completed' || a.status === 'verified').length;
+            return Math.round(completed * 3);
+        }
+
+        function estimateTrafficIncrease() {
+            const completed = trackingData.actions.filter(a => a.status === 'completed' || a.status === 'verified').length;
+            return completed * 15;
+        }
+
+        function estimateTimeSaved() {
+            const completed = trackingData.actions.filter(a => a.status === 'completed' || a.status === 'verified').length;
+            return completed * 5;
+        }
+
         function renderActionsTable() {
             const tbody = document.getElementById('actionsTableBody');
+
+            if (trackingData.actions.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" style="text-align: center; padding: 40px; color: #666;">
+                            <div style="font-size: 3rem; margin-bottom: 15px;">📋</div>
+                            <h3 style="margin-bottom: 10px; color: #333;">No Actions Tracked Yet</h3>
+                            <p style="margin-bottom: 20px;">Start tracking your SEO improvements to measure ROI.</p>
+                            <button onclick="addSampleAction()" style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                                + Add First Action
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
             tbody.innerHTML = trackingData.actions.map(action => `
                 <tr>
                     <td><strong>${action.name}</strong></td>
@@ -531,6 +521,25 @@
                     </td>
                 </tr>
             `).join('');
+        }
+
+        function addSampleAction() {
+            const name = prompt('Enter action name (e.g., "Optimize homepage meta tags"):');
+            if (name) {
+                const newAction = {
+                    id: Date.now(),
+                    name: name,
+                    status: 'not-started',
+                    before: null,
+                    after: null,
+                    impact: 'Pending',
+                    lastVerified: null,
+                    category: 'seo-technical'
+                };
+                trackingData.actions.push(newAction);
+                localStorage.setItem(PROGRESS_KEY, JSON.stringify(trackingData));
+                loadDashboard();
+            }
         }
 
         function formatStatus(status) {
