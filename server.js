@@ -264,15 +264,42 @@ app.get('/auth/callback', async (req, res) => {
 // GSC API ROUTES (Multi-Site)
 // ============================================================
 
-app.get('/api/gsc/status', (req, res) => {
+app.get('/api/gsc/status', async (req, res) => {
     if (!oauth2Client) {
         return res.json({ authenticated: false, message: 'OAuth not configured' });
     }
     const tokens = oauth2Client.credentials;
-    res.json({
-        authenticated: !!tokens?.access_token,
-        expiryDate: tokens?.expiry_date
-    });
+
+    // If we have an access_token and it's not expired, we're good
+    if (tokens?.access_token && tokens?.expiry_date && tokens.expiry_date > Date.now() + 60000) {
+        return res.json({ authenticated: true, expiryDate: tokens.expiry_date });
+    }
+
+    // If we have a refresh_token, try to refresh automatically
+    if (tokens?.refresh_token) {
+        try {
+            const { credentials } = await oauth2Client.refreshAccessToken();
+            oauth2Client.setCredentials(credentials);
+            saveTokens(credentials);
+            return res.json({ authenticated: true, expiryDate: credentials.expiry_date });
+        } catch (error) {
+            console.log('Auto-refresh failed on status check:', error.message);
+            return res.json({ authenticated: false, message: 'Token refresh failed', canRetry: true });
+        }
+    }
+
+    res.json({ authenticated: false, expiryDate: tokens?.expiry_date });
+});
+
+// Explicit refresh endpoint for client-side reconnection
+app.post('/api/gsc/refresh', async (req, res) => {
+    try {
+        await ensureValidToken();
+        const tokens = oauth2Client.credentials;
+        res.json({ success: true, authenticated: true, expiryDate: tokens.expiry_date });
+    } catch (error) {
+        res.json({ success: false, authenticated: false, error: error.message });
+    }
 });
 
 app.get('/api/gsc/sites', async (req, res) => {

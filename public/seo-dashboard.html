@@ -709,12 +709,82 @@
         // Use dynamic API URL based on current origin
         const API_BASE = window.location.origin;
         let currentSite = null;
+        let isConnected = false;
+        let heartbeatInterval = null;
+        let reconnectAttempts = 0;
+        const HEARTBEAT_INTERVAL = 30000; // 30 seconds
+        const MAX_RECONNECT_ATTEMPTS = 5;
 
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', async () => {
             await loadSites();
-            checkConnection();
+            await checkConnection();
+            startHeartbeat();
         });
+
+        // Heartbeat: check connection periodically and auto-reconnect
+        function startHeartbeat() {
+            if (heartbeatInterval) clearInterval(heartbeatInterval);
+            heartbeatInterval = setInterval(async () => {
+                await checkConnection(true); // silent mode
+            }, HEARTBEAT_INTERVAL);
+        }
+
+        // Auto-reconnect by calling the refresh endpoint
+        async function attemptReconnect() {
+            if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+                console.log('Max reconnect attempts reached. Click "Connect" to re-auth.');
+                return false;
+            }
+            reconnectAttempts++;
+            updateStatusBadge('reconnecting');
+            try {
+                const response = await fetch(`${API_BASE}/api/gsc/refresh`, { method: 'POST' });
+                const data = await response.json();
+                if (data.authenticated) {
+                    reconnectAttempts = 0;
+                    return true;
+                }
+            } catch (e) {
+                console.log('Reconnect attempt failed:', e.message);
+            }
+            return false;
+        }
+
+        // Helper to update the status badge without full checkConnection
+        function updateStatusBadge(state) {
+            const badge = document.getElementById('gscStatus');
+            const btn = document.getElementById('connectBtn');
+            if (state === 'connected') {
+                badge.className = 'status-badge connected';
+                badge.innerHTML = '<span>✅</span> <span>Connected to Google Search Console</span>';
+                btn.style.display = 'none';
+            } else if (state === 'reconnecting') {
+                badge.className = 'status-badge disconnected';
+                badge.innerHTML = '<span class="loading"></span> <span>Reconnecting...</span>';
+                btn.style.display = 'none';
+            } else {
+                badge.className = 'status-badge disconnected';
+                badge.innerHTML = '<span>⚠️</span> <span>Not Connected</span>';
+                btn.style.display = '';
+            }
+        }
+
+        // Fetch wrapper with auto-retry on auth failure
+        async function fetchWithRetry(url, options = {}, retries = 1) {
+            const response = await fetch(url, options);
+            const data = await response.json();
+
+            // If auth failed, try to reconnect and retry
+            if (data.authenticated === false && retries > 0) {
+                const reconnected = await attemptReconnect();
+                if (reconnected) {
+                    await checkConnection(true);
+                    return fetchWithRetry(url, options, retries - 1);
+                }
+            }
+            return data;
+        }
 
         // Storage key - matches site-manager.js
         const STORAGE_KEY = 'seo_sites';
@@ -809,26 +879,41 @@
             return `&site=${encodeURIComponent(currentSite.url)}&gsc=${encodeURIComponent(currentSite.gsc)}`;
         }
 
-        // Check connection status
-        async function checkConnection() {
+        // Check connection status (silent=true for heartbeat checks)
+        async function checkConnection(silent = false) {
             try {
                 const response = await fetch(`${API_BASE}/api/gsc/status`);
                 const data = await response.json();
 
                 if (data.authenticated) {
-                    document.getElementById('gscStatus').className = 'status-badge connected';
-                    document.getElementById('gscStatus').innerHTML = '<span>✅</span> <span>Connected to Google Search Console</span>';
-                    document.getElementById('connectBtn').style.display = 'none';
+                    const wasDisconnected = !isConnected;
+                    isConnected = true;
+                    reconnectAttempts = 0;
+                    updateStatusBadge('connected');
                     document.getElementById('setupCard').classList.add('hidden');
                     document.getElementById('dashboardContent').classList.remove('hidden');
-                    loadDashboardData();
+                    // Reload data if we just reconnected
+                    if (wasDisconnected || !silent) {
+                        loadDashboardData();
+                    }
                 } else {
-                    document.getElementById('gscStatus').className = 'status-badge disconnected';
-                    document.getElementById('gscStatus').innerHTML = '<span>⚠️</span> <span>Not Connected</span>';
+                    isConnected = false;
+                    // Try to reconnect automatically before showing disconnected
+                    if (data.canRetry || silent) {
+                        const reconnected = await attemptReconnect();
+                        if (reconnected) {
+                            return checkConnection(silent);
+                        }
+                    }
+                    updateStatusBadge('disconnected');
                 }
             } catch (error) {
-                document.getElementById('gscStatus').className = 'status-badge disconnected';
-                document.getElementById('gscStatus').innerHTML = '<span>❌</span> <span>Server Not Running</span>';
+                isConnected = false;
+                if (!silent) {
+                    const badge = document.getElementById('gscStatus');
+                    badge.className = 'status-badge disconnected';
+                    badge.innerHTML = '<span>❌</span> <span>Server Not Running</span>';
+                }
             }
         }
 
@@ -855,8 +940,7 @@
                 document.getElementById('dataRangeInfo').style.display = 'block';
                 document.getElementById('dateRangeText').textContent = `${formatDate(startDate)} to ${formatDate(endDate)} (Last 30 Days)`;
 
-                const response = await fetch(`${API_BASE}/api/gsc/analytics?startDate=${startDate}&endDate=${endDate}${getCurrentSiteParam()}`);
-                const data = await response.json();
+                const data = await fetchWithRetry(`${API_BASE}/api/gsc/analytics?startDate=${startDate}&endDate=${endDate}${getCurrentSiteParam()}`);
 
                 updateKPIs(data, startDate, endDate);
                 createTrafficChart(data);
@@ -1219,8 +1303,10 @@
             event.target.classList.add('active');
         }
 
-        // Check connection on load
-        checkConnection();
+        // Cleanup heartbeat on page unload
+        window.addEventListener('beforeunload', () => {
+            if (heartbeatInterval) clearInterval(heartbeatInterval);
+        });
     </script>
 </body>
 </html>
