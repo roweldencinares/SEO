@@ -187,24 +187,7 @@ app.get('/api/config', (req, res) => {
 // PAGE ROUTES
 // ============================================================
 
-// Client dashboard = homepage
-app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'client-dashboard.html')));
-
-// Admin routes (your tools)
-app.get('/admin', (req, res) => res.redirect('/admin/dashboard'));
-app.get('/admin/dashboard', (req, res) => res.sendFile(path.join(__dirname, 'public', 'seo-dashboard.html')));
-app.get('/admin/seo-agents', (req, res) => res.sendFile(path.join(__dirname, 'public', 'seo-agents.html')));
-app.get('/admin/keywords', (req, res) => res.sendFile(path.join(__dirname, 'public', 'keywords-live.html')));
-app.get('/admin/website-audit', (req, res) => res.sendFile(path.join(__dirname, 'public', 'website-audit.html')));
-app.get('/admin/indexation-control', (req, res) => res.sendFile(path.join(__dirname, 'public', 'indexation-control.html')));
-app.get('/admin/deindex-recovery', (req, res) => res.sendFile(path.join(__dirname, 'public', 'deindex-recovery.html')));
-app.get('/admin/sitemap-automation', (req, res) => res.sendFile(path.join(__dirname, 'public', 'sitemap-automation.html')));
-app.get('/admin/entity-management', (req, res) => res.sendFile(path.join(__dirname, 'public', 'entity-management.html')));
-app.get('/admin/actions', (req, res) => res.sendFile(path.join(__dirname, 'public', 'action-plan.html')));
-app.get('/admin/progress', (req, res) => res.sendFile(path.join(__dirname, 'public', 'progress.html')));
-app.get('/admin/universal-audit', (req, res) => res.sendFile(path.join(__dirname, 'public', 'universal-audit.html')));
-
-// Legacy routes (keep working)
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'seo-dashboard.html')));
 app.get('/dashboard', (req, res) => res.sendFile(path.join(__dirname, 'public', 'seo-dashboard.html')));
 app.get('/seo', (req, res) => res.sendFile(path.join(__dirname, 'public', 'seo-dashboard.html')));
 app.get('/seo-agents', (req, res) => res.sendFile(path.join(__dirname, 'public', 'seo-agents.html')));

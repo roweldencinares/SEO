@@ -790,18 +790,43 @@
         const STORAGE_KEY = 'seo_sites';
         const CURRENT_KEY = 'seo_current_site';
 
-        // Load sites from GSC or localStorage
+        // Load sites: check config first, then GSC, then localStorage
         async function loadSites() {
             const selector = document.getElementById('siteSelector');
-
-            // Try to get sites from localStorage first
             let sites = [];
-            const saved = localStorage.getItem(STORAGE_KEY);
-            if (saved) {
-                sites = JSON.parse(saved);
+
+            // 1. Fetch client config (env var driven - dynamic per deployment)
+            try {
+                const cfgRes = await fetch('/api/config');
+                const cfg = await cfgRes.json();
+                if (cfg.domain && cfg.domain !== 'example.com') {
+                    // Find exact GSC property for this domain
+                    const gscRes = await fetch('/api/gsc/sites');
+                    const gscData = await gscRes.json();
+                    let gscUrl = 'https://' + cfg.domain + '/';
+                    if (gscData.success && gscData.sites) {
+                        const match = gscData.sites.find(s => s.siteUrl.toLowerCase().includes(cfg.domain.toLowerCase()));
+                        if (match) gscUrl = match.siteUrl;
+                    }
+                    sites = [{
+                        id: 'client-main',
+                        name: cfg.name || cfg.domain,
+                        url: 'https://' + cfg.domain,
+                        gsc: gscUrl
+                    }];
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(sites));
+                }
+            } catch (e) {
+                console.log('Config not available, falling back:', e);
             }
 
-            // If no saved sites, try to fetch from GSC
+            // 2. Fallback: localStorage
+            if (sites.length === 0) {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (saved) sites = JSON.parse(saved);
+            }
+
+            // 3. Fallback: fetch all GSC sites
             if (sites.length === 0) {
                 try {
                     const response = await fetch('/api/gsc/sites');
@@ -826,7 +851,6 @@
                     `<option value="${s.id}">${s.name}</option>`
                 ).join('');
 
-                // Select last used site or first
                 const lastSite = localStorage.getItem(CURRENT_KEY);
                 const siteToSelect = lastSite ? sites.find(s => s.id === lastSite) : sites[0];
                 if (siteToSelect) {
