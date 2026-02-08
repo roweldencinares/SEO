@@ -187,7 +187,7 @@ app.get('/api/config', (req, res) => {
 // PAGE ROUTES
 // ============================================================
 
-app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'seo-dashboard.html')));
+app.get('/', (req, res) => res.redirect('/seo-agents'));
 app.get('/dashboard', (req, res) => res.sendFile(path.join(__dirname, 'public', 'seo-dashboard.html')));
 app.get('/seo', (req, res) => res.sendFile(path.join(__dirname, 'public', 'seo-dashboard.html')));
 app.get('/seo-agents', (req, res) => res.sendFile(path.join(__dirname, 'public', 'seo-agents.html')));
