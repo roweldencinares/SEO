@@ -191,18 +191,18 @@ const ALLOWED_CLIENT_DOMAINS = (process.env.ALLOWED_CLIENT_DOMAINS || '')
     .split(',').map(d => d.trim().toLowerCase()).filter(Boolean);
 
 app.get('/client', (req, res) => {
+    const site = req.query.site;
+    if (site) {
+        const domain = site.toLowerCase().trim().replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '');
+        if (!domain.includes('.')) {
+            return res.status(400).send('Invalid domain format');
+        }
+        if (ALLOWED_CLIENT_DOMAINS.length > 0 && !ALLOWED_CLIENT_DOMAINS.includes(domain)) {
+            return res.status(403).send('Access denied. This domain is not configured.');
+        }
+        return res.sendFile(path.join(__dirname, 'public', 'client-dashboard.html'));
+    }
     res.sendFile(path.join(__dirname, 'public', 'client-landing.html'));
-});
-
-app.get('/client/:domain', (req, res) => {
-    const domain = req.params.domain.toLowerCase().trim();
-    if (!domain.includes('.') || domain.includes('/')) {
-        return res.status(400).send('Invalid domain format');
-    }
-    if (ALLOWED_CLIENT_DOMAINS.length > 0 && !ALLOWED_CLIENT_DOMAINS.includes(domain)) {
-        return res.status(403).send('Access denied. This domain is not configured.');
-    }
-    res.sendFile(path.join(__dirname, 'public', 'client-dashboard.html'));
 });
 
 // ============================================================

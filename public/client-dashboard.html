@@ -435,9 +435,10 @@
     </footer>
 
     <script>
-        // Extract domain from URL
-        const pathParts = window.location.pathname.split('/');
-        const CLIENT_DOMAIN = decodeURIComponent(pathParts[2] || '');
+        // Extract domain from query parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const rawDomain = urlParams.get('site') || '';
+        const CLIENT_DOMAIN = rawDomain.replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '');
         if (!CLIENT_DOMAIN) window.location.href = '/client';
 
         const API_BASE = window.location.origin;

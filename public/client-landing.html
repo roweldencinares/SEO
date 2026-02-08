@@ -85,7 +85,7 @@
             </div>
         </form>
         <p class="error" id="errorMsg">Please enter a valid domain (e.g. spearity.com)</p>
-        <p class="hint">Your dashboard is always available at:<br><strong>/client/your-domain.com</strong></p>
+        <p class="hint">Your dashboard is always available at:<br><strong>/client?site=your-domain.com</strong></p>
     </div>
     <script>
         function viewDashboard(e) {
@@ -93,7 +93,7 @@
             let domain = document.getElementById('domainInput').value.trim();
             domain = domain.replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/.*$/, '');
             if (domain && domain.includes('.')) {
-                window.location.href = '/client/' + encodeURIComponent(domain);
+                window.location.href = '/client?site=' + encodeURIComponent(domain);
             } else {
                 document.getElementById('errorMsg').style.display = 'block';
             }
