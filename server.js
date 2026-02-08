@@ -165,10 +165,46 @@ function getDateDaysAgo(days) {
 }
 
 // ============================================================
+// CLIENT CONFIG API (env-var driven, swap clients by changing vars)
+// ============================================================
+
+app.get('/api/config', (req, res) => {
+    res.json({
+        domain: process.env.CLIENT_DOMAIN || 'example.com',
+        name: process.env.CLIENT_NAME || 'Your Company',
+        tagline: process.env.CLIENT_TAGLINE || 'SEO Performance Dashboard',
+        primaryColor: process.env.CLIENT_PRIMARY_COLOR || '#1a365d',
+        accentColor: process.env.CLIENT_ACCENT_COLOR || '#ffd65a',
+        logoUrl: process.env.CLIENT_LOGO_URL || '',
+        contactEmail: process.env.CLIENT_CONTACT_EMAIL || '',
+        contactPhone: process.env.CLIENT_CONTACT_PHONE || '',
+        location: process.env.CLIENT_LOCATION || '',
+        industry: process.env.CLIENT_INDUSTRY || ''
+    });
+});
+
+// ============================================================
 // PAGE ROUTES
 // ============================================================
 
-app.get('/', (req, res) => res.redirect('/seo-agents'));
+// Client dashboard = homepage
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'client-dashboard.html')));
+
+// Admin routes (your tools)
+app.get('/admin', (req, res) => res.redirect('/admin/dashboard'));
+app.get('/admin/dashboard', (req, res) => res.sendFile(path.join(__dirname, 'public', 'seo-dashboard.html')));
+app.get('/admin/seo-agents', (req, res) => res.sendFile(path.join(__dirname, 'public', 'seo-agents.html')));
+app.get('/admin/keywords', (req, res) => res.sendFile(path.join(__dirname, 'public', 'keywords-live.html')));
+app.get('/admin/website-audit', (req, res) => res.sendFile(path.join(__dirname, 'public', 'website-audit.html')));
+app.get('/admin/indexation-control', (req, res) => res.sendFile(path.join(__dirname, 'public', 'indexation-control.html')));
+app.get('/admin/deindex-recovery', (req, res) => res.sendFile(path.join(__dirname, 'public', 'deindex-recovery.html')));
+app.get('/admin/sitemap-automation', (req, res) => res.sendFile(path.join(__dirname, 'public', 'sitemap-automation.html')));
+app.get('/admin/entity-management', (req, res) => res.sendFile(path.join(__dirname, 'public', 'entity-management.html')));
+app.get('/admin/actions', (req, res) => res.sendFile(path.join(__dirname, 'public', 'action-plan.html')));
+app.get('/admin/progress', (req, res) => res.sendFile(path.join(__dirname, 'public', 'progress.html')));
+app.get('/admin/universal-audit', (req, res) => res.sendFile(path.join(__dirname, 'public', 'universal-audit.html')));
+
+// Legacy routes (keep working)
 app.get('/dashboard', (req, res) => res.sendFile(path.join(__dirname, 'public', 'seo-dashboard.html')));
 app.get('/seo', (req, res) => res.sendFile(path.join(__dirname, 'public', 'seo-dashboard.html')));
 app.get('/seo-agents', (req, res) => res.sendFile(path.join(__dirname, 'public', 'seo-agents.html')));
@@ -182,28 +218,6 @@ app.get('/entity-management', (req, res) => res.sendFile(path.join(__dirname, 'p
 app.get('/actions', (req, res) => res.sendFile(path.join(__dirname, 'public', 'action-plan.html')));
 app.get('/progress', (req, res) => res.sendFile(path.join(__dirname, 'public', 'progress.html')));
 app.get('/universal-audit', (req, res) => res.sendFile(path.join(__dirname, 'public', 'universal-audit.html')));
-
-// ============================================================
-// CLIENT PORTAL ROUTES
-// ============================================================
-
-const ALLOWED_CLIENT_DOMAINS = (process.env.ALLOWED_CLIENT_DOMAINS || '')
-    .split(',').map(d => d.trim().toLowerCase()).filter(Boolean);
-
-app.get('/client', (req, res) => {
-    const site = req.query.site;
-    if (site) {
-        const domain = site.toLowerCase().trim().replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '');
-        if (!domain.includes('.')) {
-            return res.status(400).send('Invalid domain format');
-        }
-        if (ALLOWED_CLIENT_DOMAINS.length > 0 && !ALLOWED_CLIENT_DOMAINS.includes(domain)) {
-            return res.status(403).send('Access denied. This domain is not configured.');
-        }
-        return res.sendFile(path.join(__dirname, 'public', 'client-dashboard.html'));
-    }
-    res.sendFile(path.join(__dirname, 'public', 'client-landing.html'));
-});
 
 // ============================================================
 // AUTH ROUTES

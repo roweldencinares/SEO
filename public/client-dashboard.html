@@ -4,199 +4,320 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SEO Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
+        :root {
+            --primary: #1a365d;
+            --accent: #ffd65a;
+            --primary-light: #2a4a7f;
+            --primary-dark: #0f2340;
+            --accent-dark: #e6b800;
+            --bg: #f0f4f8;
+            --card: #ffffff;
+            --text: #1a202c;
+            --text-muted: #718096;
+            --border: #e2e8f0;
+            --success: #38a169;
+            --warning: #d69e2e;
+            --danger: #e53e3e;
+        }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: #333;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
             min-height: 100vh;
-            padding: 20px;
         }
-        .container { max-width: 1400px; margin: 0 auto; }
 
-        /* Header */
-        header {
-            background: white;
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            margin-bottom: 30px;
+        /* ===== BRANDED HEADER ===== */
+        .brand-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: white;
+            padding: 0;
         }
-        h1 { color: #667eea; font-size: 2rem; margin-bottom: 5px; }
-        .subtitle { color: #666; font-size: 1rem; }
-        .date-range {
-            margin-top: 15px;
-            padding: 10px 15px;
-            background: #f8f9fa;
+        .header-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 40px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .brand-logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .brand-logo img {
+            height: 50px;
+            width: auto;
             border-radius: 8px;
-            font-size: 0.9rem;
-            color: #555;
         }
-        .refresh-row {
+        .brand-logo .fallback-icon {
+            width: 50px;
+            height: 50px;
+            background: var(--accent);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--primary);
+        }
+        .brand-info h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        .brand-info .tagline {
+            font-size: 0.85rem;
+            opacity: 0.8;
+            margin-top: 2px;
+        }
+        .header-contact {
+            display: flex;
+            gap: 20px;
+            font-size: 0.85rem;
+            opacity: 0.9;
+        }
+        .header-contact a { color: white; text-decoration: none; }
+        .header-contact a:hover { color: var(--accent); }
+
+        /* Hero stats bar */
+        .hero-bar {
+            background: rgba(0,0,0,0.15);
+            padding: 15px 40px;
+        }
+        .hero-inner {
+            max-width: 1400px;
+            margin: 0 auto;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-top: 12px;
         }
-        .last-updated { color: #999; font-size: 0.85rem; }
-        .btn-refresh {
-            padding: 8px 18px;
-            background: #667eea;
-            color: white;
-            border: none;
-            border-radius: 8px;
+        .hero-title {
+            font-size: 1.1rem;
             font-weight: 600;
-            cursor: pointer;
-            font-size: 0.85rem;
+            color: white;
         }
-        .btn-refresh:hover { background: #5568d3; }
+        .hero-meta {
+            display: flex;
+            gap: 20px;
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.7);
+        }
 
-        /* Stats Grid */
-        .stats-grid {
+        /* ===== MAIN CONTENT ===== */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 30px 40px;
+        }
+
+        /* Error */
+        .error-banner {
+            background: #fff5f5;
+            color: var(--danger);
+            padding: 15px 20px;
+            border-radius: 10px;
+            border-left: 4px solid var(--danger);
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        /* KPI Grid */
+        .kpi-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            grid-template-columns: repeat(4, 1fr);
             gap: 20px;
             margin-bottom: 30px;
         }
-        .stat-card {
-            background: white;
-            padding: 25px;
-            border-radius: 15px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+        .kpi-card {
+            background: var(--card);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            border-top: 3px solid var(--primary);
         }
-        .stat-label {
-            color: #666;
-            font-size: 0.85rem;
+        .kpi-label {
+            font-size: 0.8rem;
+            font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
         }
-        .stat-value {
-            font-size: 2.2rem;
-            font-weight: 700;
-            color: #667eea;
-            margin: 8px 0;
+        .kpi-value {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--primary);
         }
 
         /* Health Score */
-        .health-card {
-            background: white;
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+        .health-row {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 20px;
             margin-bottom: 30px;
         }
-        .health-header {
+        .health-card {
+            background: var(--card);
+            border-radius: 12px;
+            padding: 28px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
             display: flex;
+            flex-direction: column;
             align-items: center;
-            gap: 25px;
-            margin-bottom: 20px;
+            text-align: center;
         }
-        .health-score-circle {
-            width: 100px;
-            height: 100px;
+        .health-ring {
+            width: 120px;
+            height: 120px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 2rem;
-            font-weight: 700;
-            color: white;
-            flex-shrink: 0;
+            margin-bottom: 15px;
+            position: relative;
         }
-        .health-score-circle.grade-a { background: linear-gradient(135deg, #28a745, #20c997); }
-        .health-score-circle.grade-b { background: linear-gradient(135deg, #17a2b8, #667eea); }
-        .health-score-circle.grade-c { background: linear-gradient(135deg, #ffc107, #fd7e14); }
-        .health-score-circle.grade-d { background: linear-gradient(135deg, #dc3545, #e83e8c); }
-        .health-checks {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
+        .health-ring-bg {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            border: 8px solid var(--border);
+        }
+        .health-ring-fill {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            border: 8px solid transparent;
+            border-top-color: var(--success);
+            border-right-color: var(--success);
+        }
+        .health-grade {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--primary);
+            z-index: 1;
+        }
+        .health-score-text { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 8px; }
+        .health-summary { font-size: 0.85rem; color: var(--text-muted); }
+        .health-checks-card {
+            background: var(--card);
+            border-radius: 12px;
+            padding: 28px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+        .checks-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
             margin-top: 15px;
         }
-        .health-check {
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 600;
+        .check-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
         }
-        .health-check.pass { background: #d4edda; color: #155724; }
-        .health-check.fail { background: #f8d7da; color: #721c24; }
+        .check-item.pass { background: #f0fff4; color: #22543d; }
+        .check-item.fail { background: #fff5f5; color: #742a2a; }
 
         /* Tabs */
-        .tabs-container {
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
-            margin-bottom: 30px;
+        .tabs-wrap {
+            background: var(--card);
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
             overflow: hidden;
+            margin-bottom: 30px;
         }
         .tabs-nav {
             display: flex;
-            background: #f8f9fa;
-            border-bottom: 2px solid #dee2e6;
+            border-bottom: 2px solid var(--border);
             overflow-x: auto;
         }
         .tab-btn {
             padding: 16px 28px;
-            background: transparent;
+            background: none;
             border: none;
-            font-size: 0.95rem;
+            font-family: inherit;
+            font-size: 0.9rem;
             font-weight: 600;
-            color: #666;
+            color: var(--text-muted);
             cursor: pointer;
             border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
             white-space: nowrap;
+            transition: all 0.2s;
         }
-        .tab-btn:hover { background: rgba(102,126,234,0.1); color: #667eea; }
-        .tab-btn.active { color: #667eea; border-bottom-color: #667eea; background: white; }
-        .tab-content { display: none; padding: 30px; }
-        .tab-content.active { display: block; }
+        .tab-btn:hover { color: var(--primary); }
+        .tab-btn.active { color: var(--primary); border-bottom-color: var(--accent); }
+        .tab-panel { display: none; padding: 28px; }
+        .tab-panel.active { display: block; }
 
         /* Charts */
         .chart-box {
-            background: #fff;
+            background: var(--bg);
+            border-radius: 10px;
             padding: 20px;
-            border-radius: 12px;
             margin-bottom: 25px;
         }
-        .chart-title {
-            font-size: 1.2rem;
-            font-weight: 600;
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text);
             margin-bottom: 15px;
-            color: #333;
         }
 
         /* Tables */
+        .table-section { margin-bottom: 28px; }
+        .table-section h3 { font-size: 1rem; font-weight: 700; color: var(--primary); margin-bottom: 4px; }
+        .table-section p { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px; }
         table { width: 100%; border-collapse: collapse; }
         th {
-            background: #f8f9fa;
-            padding: 12px 15px;
             text-align: left;
+            padding: 10px 14px;
+            font-size: 0.8rem;
             font-weight: 600;
-            color: #555;
-            border-bottom: 2px solid #dee2e6;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            color: var(--text-muted);
+            border-bottom: 2px solid var(--border);
         }
-        td { padding: 12px 15px; border-bottom: 1px solid #eee; }
-        tr:hover { background: #f8f9fa; }
-        .position {
+        td { padding: 10px 14px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+        tr:hover { background: #f7fafc; }
+        .pos-badge {
             display: inline-block;
-            padding: 4px 10px;
+            padding: 3px 10px;
             border-radius: 20px;
             font-weight: 600;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
         }
-        .position.top3 { background: #d4edda; color: #155724; }
-        .position.top10 { background: #d1ecf1; color: #0c5460; }
-        .position.top20 { background: #fff3cd; color: #856404; }
-        .position.other { background: #f8f9fa; color: #6c757d; }
+        .pos-top3 { background: #f0fff4; color: #22543d; }
+        .pos-top10 { background: #ebf8ff; color: #2a4365; }
+        .pos-top20 { background: #fffff0; color: #744210; }
+        .pos-other { background: #f7fafc; color: #718096; }
 
         /* Audit */
+        .audit-summary { display: flex; gap: 20px; align-items: center; margin-bottom: 20px; }
+        .audit-score-badge {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--primary);
+            background: var(--bg);
+            padding: 10px 20px;
+            border-radius: 10px;
+        }
         .audit-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 15px;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 12px;
         }
         .audit-item {
             display: flex;
@@ -204,28 +325,28 @@
             gap: 10px;
             padding: 12px;
             border-radius: 8px;
-            background: #f8f9fa;
+            font-size: 0.85rem;
         }
-        .audit-item.pass { background: #d4edda; }
-        .audit-item.fail { background: #f8d7da; }
-        .audit-icon { font-size: 1.2rem; flex-shrink: 0; }
-        .audit-name { font-weight: 600; font-size: 0.9rem; }
-        .audit-detail { font-size: 0.8rem; color: #666; margin-top: 2px; }
+        .audit-item.pass { background: #f0fff4; }
+        .audit-item.fail { background: #fff5f5; }
+        .audit-item-name { font-weight: 600; }
+        .audit-item-detail { color: var(--text-muted); font-size: 0.8rem; margin-top: 2px; }
 
-        /* Alerts */
-        .alert {
-            padding: 15px 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            font-size: 0.9rem;
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 30px 40px;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            border-top: 1px solid var(--border);
+            margin-top: 20px;
         }
-        .alert-info { background: #d1ecf1; color: #0c5460; border-left: 4px solid #17a2b8; }
 
-        /* Loading & Error */
-        .loading-overlay {
+        /* Loading */
+        .loading-screen {
             position: fixed;
             inset: 0;
-            background: rgba(102,126,234,0.95);
+            background: var(--primary);
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -233,313 +354,305 @@
             z-index: 9999;
             color: white;
         }
-        .spinner {
+        .loader {
             width: 50px; height: 50px;
-            border: 4px solid rgba(255,255,255,0.3);
-            border-top-color: white;
+            border: 4px solid rgba(255,255,255,0.2);
+            border-top-color: var(--accent);
             border-radius: 50%;
-            animation: spin 0.8s linear infinite;
+            animation: spin 0.7s linear infinite;
             margin-bottom: 20px;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
-        .error-banner {
-            background: #f8d7da;
-            color: #721c24;
-            padding: 15px 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            display: none;
-        }
 
-        /* Footer */
-        footer {
-            text-align: center;
-            padding: 30px;
-            color: rgba(255,255,255,0.7);
-            font-size: 0.85rem;
+        /* Responsive */
+        @media (max-width: 900px) {
+            .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+            .health-row { grid-template-columns: 1fr; }
+            .header-top { flex-direction: column; gap: 15px; padding: 20px; }
+            .header-contact { flex-direction: column; gap: 8px; text-align: center; }
+            .container { padding: 20px; }
+            .hero-inner { flex-direction: column; gap: 8px; text-align: center; }
         }
-        footer a { color: white; }
-
-        .table-section { margin-bottom: 30px; }
-        .table-section h3 {
-            font-size: 1.1rem;
-            color: #667eea;
-            margin-bottom: 5px;
-        }
-        .table-section p {
-            color: #666;
-            font-size: 0.9rem;
-            margin-bottom: 15px;
-        }
-
-        @media (max-width: 768px) {
-            h1 { font-size: 1.5rem; }
-            .stat-value { font-size: 1.8rem; }
-            .health-header { flex-direction: column; text-align: center; }
-            .tab-btn { padding: 12px 18px; font-size: 0.85rem; }
+        @media (max-width: 600px) {
+            .kpi-grid { grid-template-columns: 1fr; }
+            .kpi-value { font-size: 1.6rem; }
+            .brand-info h1 { font-size: 1.2rem; }
+            .tab-btn { padding: 12px 16px; font-size: 0.85rem; }
         }
     </style>
 </head>
 <body>
-    <!-- Loading overlay -->
-    <div class="loading-overlay" id="loadingOverlay">
-        <div class="spinner"></div>
-        <p style="font-size: 1.1rem; font-weight: 600;">Loading your SEO dashboard...</p>
-        <p style="margin-top: 8px; opacity: 0.8;">Fetching real-time data from Google Search Console</p>
+    <!-- Loading Screen -->
+    <div class="loading-screen" id="loadingScreen">
+        <div class="loader"></div>
+        <p style="font-size:1.1rem;font-weight:600;" id="loadingTitle">Loading your SEO dashboard...</p>
+        <p style="margin-top:8px;opacity:0.7;font-size:0.9rem;">Fetching real-time data from Google Search Console</p>
     </div>
 
-    <div class="container">
-        <header>
-            <h1 id="headerTitle">SEO Performance Dashboard</h1>
-            <p class="subtitle" id="headerSubtitle">Loading...</p>
-            <div class="date-range" id="dateRange" style="display:none;">
-                <strong>Data Period:</strong> <span id="dateRangeText"></span>
-                <span style="margin-left: 10px; color: #999; font-size: 0.85rem;">Google Search Console data has a 2-3 day delay</span>
+    <!-- Branded Header -->
+    <header class="brand-header">
+        <div class="header-top">
+            <div class="brand-logo">
+                <div class="fallback-icon" id="logoContainer">?</div>
+                <div class="brand-info">
+                    <h1 id="brandName">Loading...</h1>
+                    <div class="tagline" id="brandTagline"></div>
+                </div>
             </div>
-            <div class="refresh-row">
-                <span class="last-updated">Last updated: <span id="updateTime">-</span></span>
-                <button class="btn-refresh" onclick="loadAllData()">Refresh Data</button>
+            <div class="header-contact" id="headerContact"></div>
+        </div>
+        <div class="hero-bar">
+            <div class="hero-inner">
+                <span class="hero-title">SEO Performance Report</span>
+                <div class="hero-meta">
+                    <span id="dateRangeText">Last 30 days</span>
+                    <span>|</span>
+                    <span>Updated: <span id="updateTime">-</span></span>
+                </div>
             </div>
-        </header>
+        </div>
+    </header>
 
+    <div class="container">
         <div class="error-banner" id="errorBanner"></div>
 
         <!-- KPI Cards -->
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-label">Total Clicks</div>
-                <div class="stat-value" id="totalClicks">-</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">Total Impressions</div>
-                <div class="stat-value" id="totalImpressions">-</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">Average CTR</div>
-                <div class="stat-value" id="avgCTR">-</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">Average Position</div>
-                <div class="stat-value" id="avgPosition">-</div>
-            </div>
+        <div class="kpi-grid">
+            <div class="kpi-card"><div class="kpi-label">Total Clicks</div><div class="kpi-value" id="totalClicks">-</div></div>
+            <div class="kpi-card"><div class="kpi-label">Total Impressions</div><div class="kpi-value" id="totalImpressions">-</div></div>
+            <div class="kpi-card"><div class="kpi-label">Average CTR</div><div class="kpi-value" id="avgCTR">-</div></div>
+            <div class="kpi-card"><div class="kpi-label">Average Position</div><div class="kpi-value" id="avgPosition">-</div></div>
         </div>
 
-        <!-- Health Score -->
-        <div class="health-card" id="healthCard">
-            <h2 class="chart-title">SEO Health Score</h2>
-            <div class="health-header">
-                <div class="health-score-circle grade-b" id="healthCircle">
-                    <span id="healthGrade">-</span>
+        <!-- Health Score Row -->
+        <div class="health-row">
+            <div class="health-card">
+                <div class="health-ring">
+                    <div class="health-ring-bg"></div>
+                    <div class="health-ring-fill" id="healthRing"></div>
+                    <span class="health-grade" id="healthGrade">-</span>
                 </div>
-                <div>
-                    <div style="font-size: 1.3rem; font-weight: 700; color: #333;">Score: <span id="healthScore">-</span>/100</div>
-                    <p style="color: #666; margin-top: 5px;" id="healthSummary">Analyzing your website...</p>
-                </div>
+                <div class="health-score-text">SEO Health: <strong id="healthScore">-</strong>/100</div>
+                <div class="health-summary" id="healthSummary">Analyzing...</div>
             </div>
-            <div class="health-checks" id="healthChecks"></div>
+            <div class="health-checks-card">
+                <div class="section-title">Technical Checks</div>
+                <div class="checks-grid" id="healthChecks"><p style="color:var(--text-muted)">Loading checks...</p></div>
+            </div>
         </div>
 
         <!-- Tabs -->
-        <div class="tabs-container">
+        <div class="tabs-wrap">
             <div class="tabs-nav">
                 <button class="tab-btn active" data-tab="overview">Overview</button>
-                <button class="tab-btn" data-tab="keywords">Keywords</button>
+                <button class="tab-btn" data-tab="keywords">All Keywords</button>
                 <button class="tab-btn" data-tab="opportunities">Opportunities</button>
                 <button class="tab-btn" data-tab="audit">Site Audit</button>
             </div>
 
-            <!-- Tab: Overview -->
-            <div id="tab-overview" class="tab-content active">
+            <!-- Overview -->
+            <div id="tab-overview" class="tab-panel active">
                 <div class="chart-box">
-                    <h3 class="chart-title">Traffic Trends (Last 30 Days)</h3>
+                    <div class="section-title">Traffic Trends (Last 30 Days)</div>
                     <canvas id="trafficChart"></canvas>
                 </div>
                 <div class="chart-box">
-                    <h3 class="chart-title">Top 20 Keywords by Clicks</h3>
+                    <div class="section-title">Top 20 Keywords by Clicks</div>
                     <canvas id="keywordsChart"></canvas>
                 </div>
                 <div class="table-section">
                     <h3>Top Performing Keywords</h3>
-                    <table>
-                        <thead><tr><th>Keyword</th><th>Position</th><th>Clicks</th><th>Impressions</th><th>CTR</th></tr></thead>
-                        <tbody id="topKeywordsBody"><tr><td colspan="5" style="text-align:center;color:#999;padding:20px;">Loading...</td></tr></tbody>
-                    </table>
+                    <table><thead><tr><th>Keyword</th><th>Position</th><th>Clicks</th><th>Impressions</th><th>CTR</th></tr></thead>
+                    <tbody id="topKeywordsBody"><tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:20px;">Loading...</td></tr></tbody></table>
                 </div>
             </div>
 
-            <!-- Tab: Keywords -->
-            <div id="tab-keywords" class="tab-content">
-                <div class="alert alert-info">Complete list of all keywords your site ranks for in Google Search</div>
-                <table>
-                    <thead><tr><th>Keyword</th><th>Position</th><th>Clicks</th><th>Impressions</th><th>CTR</th></tr></thead>
-                    <tbody id="allKeywordsBody"><tr><td colspan="5" style="text-align:center;color:#999;padding:20px;">Loading...</td></tr></tbody>
-                </table>
+            <!-- All Keywords -->
+            <div id="tab-keywords" class="tab-panel">
+                <div class="table-section">
+                    <h3>Complete Keyword Rankings</h3>
+                    <p>All keywords your site ranks for in Google Search</p>
+                    <table><thead><tr><th>Keyword</th><th>Position</th><th>Clicks</th><th>Impressions</th><th>CTR</th></tr></thead>
+                    <tbody id="allKeywordsBody"><tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:20px;">Loading...</td></tr></tbody></table>
+                </div>
             </div>
 
-            <!-- Tab: Opportunities -->
-            <div id="tab-opportunities" class="tab-content">
-                <div id="oppSummary" style="margin-bottom: 25px;"></div>
-
+            <!-- Opportunities -->
+            <div id="tab-opportunities" class="tab-panel">
+                <div id="oppSummary" style="margin-bottom:25px;"></div>
                 <div class="table-section">
                     <h3>Quick Wins (Position 11-30)</h3>
-                    <p>Keywords that need a small push to reach page 1</p>
-                    <table>
-                        <thead><tr><th>Keyword</th><th>Position</th><th>Impressions</th><th>Clicks</th><th>Opportunity</th></tr></thead>
-                        <tbody id="quickWinsBody"><tr><td colspan="5" style="text-align:center;color:#999;padding:20px;">Loading...</td></tr></tbody>
-                    </table>
+                    <p>Keywords that need a small push to reach Google page 1</p>
+                    <table><thead><tr><th>Keyword</th><th>Position</th><th>Impressions</th><th>Clicks</th><th>Opportunity</th></tr></thead>
+                    <tbody id="quickWinsBody"><tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:20px;">Loading...</td></tr></tbody></table>
                 </div>
-
                 <div class="table-section">
                     <h3>High Impressions, Low Clicks</h3>
-                    <p>You're showing up in search but not getting clicks - improve titles/meta descriptions</p>
-                    <table>
-                        <thead><tr><th>Keyword</th><th>Position</th><th>Impressions</th><th>Clicks</th><th>CTR</th><th>Action</th></tr></thead>
-                        <tbody id="lowCtrBody"><tr><td colspan="6" style="text-align:center;color:#999;padding:20px;">Loading...</td></tr></tbody>
-                    </table>
+                    <p>Improve titles and meta descriptions to increase click-through rate</p>
+                    <table><thead><tr><th>Keyword</th><th>Position</th><th>Impressions</th><th>Clicks</th><th>CTR</th><th>Action</th></tr></thead>
+                    <tbody id="lowCtrBody"><tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:20px;">Loading...</td></tr></tbody></table>
                 </div>
-
                 <div class="table-section">
                     <h3>Almost Page 1 (Position 11-20)</h3>
                     <p>Keywords very close to reaching Google's first page</p>
-                    <table>
-                        <thead><tr><th>Keyword</th><th>Position</th><th>Impressions</th><th>Clicks</th><th>Opportunity</th></tr></thead>
-                        <tbody id="nearPage1Body"><tr><td colspan="5" style="text-align:center;color:#999;padding:20px;">Loading...</td></tr></tbody>
-                    </table>
+                    <table><thead><tr><th>Keyword</th><th>Position</th><th>Impressions</th><th>Clicks</th><th>Opportunity</th></tr></thead>
+                    <tbody id="nearPage1Body"><tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:20px;">Loading...</td></tr></tbody></table>
                 </div>
             </div>
 
-            <!-- Tab: Audit -->
-            <div id="tab-audit" class="tab-content">
-                <div style="margin-bottom: 25px;">
-                    <h3 class="chart-title">Technical SEO Audit</h3>
-                    <p style="color:#666; margin-bottom:5px;">Score: <strong id="auditScore">-</strong>/100 (<span id="auditGrade">-</span>)</p>
-                    <p style="color:#666; font-size:0.9rem;"><span id="auditPassed">-</span> of <span id="auditTotal">-</span> checks passed</p>
-                </div>
-                <div class="audit-grid" id="auditGrid">
-                    <p style="color:#999;">Loading audit results...</p>
-                </div>
-
-                <div style="margin-top: 30px;">
-                    <h3 class="chart-title">Core Web Vitals</h3>
-                    <div class="audit-grid" id="vitalsGrid">
-                        <p style="color:#999;">Loading...</p>
+            <!-- Audit -->
+            <div id="tab-audit" class="tab-panel">
+                <div class="audit-summary">
+                    <div class="audit-score-badge" id="auditScoreBadge">-</div>
+                    <div>
+                        <div style="font-weight:700;font-size:1.1rem;">Technical SEO Audit</div>
+                        <div style="color:var(--text-muted);font-size:0.9rem;"><span id="auditPassed">-</span> of <span id="auditTotal">-</span> checks passed</div>
                     </div>
+                </div>
+                <div class="audit-grid" id="auditGrid"><p style="color:var(--text-muted)">Loading audit...</p></div>
+                <div style="margin-top:30px;">
+                    <div class="section-title">Core Web Vitals</div>
+                    <div class="audit-grid" id="vitalsGrid"><p style="color:var(--text-muted)">Loading...</p></div>
                 </div>
             </div>
         </div>
     </div>
 
     <footer>
-        Data sourced from Google Search Console API<br>
-        <span style="opacity: 0.6; font-size: 0.8rem;">Powered by SEO Agents Dashboard</span>
+        <div id="footerContent">
+            Data sourced from Google Search Console API<br>
+            <span style="opacity:0.6;">Powered by SEO Agents Dashboard</span>
+        </div>
     </footer>
 
     <script>
-        // Extract domain from query parameter
-        const urlParams = new URLSearchParams(window.location.search);
-        const rawDomain = urlParams.get('site') || '';
-        const CLIENT_DOMAIN = rawDomain.replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '');
-        if (!CLIENT_DOMAIN) window.location.href = '/client';
-
         const API_BASE = window.location.origin;
-        const SITE_URL = 'https://' + CLIENT_DOMAIN;
-        let GSC_PROPERTY = null; // Will be resolved from actual GSC sites
-
-        // Set page title
-        document.title = CLIENT_DOMAIN + ' - SEO Dashboard';
-        document.getElementById('headerTitle').textContent = CLIENT_DOMAIN;
-        document.getElementById('headerSubtitle').textContent = 'SEO Performance Dashboard';
-
-        // Resolve the correct GSC property format for this domain
-        async function resolveGSCProperty() {
-            try {
-                const res = await fetch(`${API_BASE}/api/gsc/sites`);
-                const data = await res.json();
-                if (data.success && data.sites) {
-                    const match = data.sites.find(s => {
-                        const siteUrl = s.siteUrl.toLowerCase();
-                        return siteUrl.includes(CLIENT_DOMAIN.toLowerCase());
-                    });
-                    if (match) {
-                        GSC_PROPERTY = match.siteUrl;
-                        return;
-                    }
-                }
-            } catch (e) {
-                console.log('Could not resolve GSC property:', e);
-            }
-            // Fallback: try both formats, URL property first (more common)
-            GSC_PROPERTY = 'https://' + CLIENT_DOMAIN + '/';
-        }
+        let CONFIG = null;
+        let GSC_PROPERTY = null;
+        let trafficChartInstance = null;
+        let kwChartInstance = null;
 
         // Tab switching
         document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-                document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-panel').forEach(t => t.classList.remove('active'));
                 btn.classList.add('active');
                 document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
             });
         });
 
-        // Position badge helper
-        function posBadge(pos) {
-            const p = parseFloat(pos);
-            let cls = 'other';
-            if (p <= 3) cls = 'top3';
-            else if (p <= 10) cls = 'top10';
-            else if (p <= 20) cls = 'top20';
-            return `<span class="position ${cls}">#${p.toFixed(1)}</span>`;
+        // ===== INIT =====
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadConfig();
+            applyBranding();
+            await resolveGSCProperty();
+            await loadAllData();
+        });
+
+        async function loadConfig() {
+            try {
+                const res = await fetch(`${API_BASE}/api/config`);
+                CONFIG = await res.json();
+            } catch (e) {
+                CONFIG = { domain: 'example.com', name: 'Dashboard', tagline: '', primaryColor: '#1a365d', accentColor: '#ffd65a' };
+            }
         }
 
-        // Expected CTR by position
-        function expectedCTR(pos) {
-            if (pos <= 1) return 0.28;
-            if (pos <= 2) return 0.15;
-            if (pos <= 3) return 0.11;
-            if (pos <= 5) return 0.07;
-            if (pos <= 7) return 0.04;
-            if (pos <= 10) return 0.02;
-            if (pos <= 20) return 0.01;
-            return 0.005;
+        function applyBranding() {
+            const c = CONFIG;
+
+            // CSS custom properties
+            document.documentElement.style.setProperty('--primary', c.primaryColor);
+            document.documentElement.style.setProperty('--accent', c.accentColor);
+            // Compute lighter/darker variants
+            document.documentElement.style.setProperty('--primary-light', lightenColor(c.primaryColor, 20));
+            document.documentElement.style.setProperty('--primary-dark', lightenColor(c.primaryColor, -15));
+
+            // Page title
+            document.title = c.name + ' - SEO Dashboard';
+
+            // Header
+            document.getElementById('brandName').textContent = c.name;
+            document.getElementById('brandTagline').textContent = c.tagline;
+            document.getElementById('loadingTitle').textContent = 'Loading ' + c.name + ' dashboard...';
+
+            // Logo
+            const logoContainer = document.getElementById('logoContainer');
+            if (c.logoUrl) {
+                const img = document.createElement('img');
+                img.src = c.logoUrl;
+                img.alt = c.name;
+                img.onerror = () => { img.remove(); logoContainer.style.display = 'flex'; };
+                logoContainer.style.display = 'none';
+                logoContainer.parentNode.insertBefore(img, logoContainer);
+            } else {
+                logoContainer.textContent = c.name.charAt(0).toUpperCase();
+            }
+
+            // Contact
+            const contactEl = document.getElementById('headerContact');
+            let contactHtml = '';
+            if (c.contactPhone) contactHtml += `<a href="tel:${c.contactPhone}">${c.contactPhone}</a>`;
+            if (c.contactEmail) contactHtml += `<a href="mailto:${c.contactEmail}">${c.contactEmail}</a>`;
+            if (c.location) contactHtml += `<span>${c.location}</span>`;
+            contactEl.innerHTML = contactHtml;
+
+            // Footer
+            document.getElementById('footerContent').innerHTML =
+                `Data sourced from Google Search Console API<br>` +
+                `<span style="opacity:0.6;">SEO Report for ${c.name} | ${c.domain}</span>`;
+
+            // Loading screen color
+            document.getElementById('loadingScreen').style.background =
+                `linear-gradient(135deg, ${c.primaryColor} 0%, ${lightenColor(c.primaryColor, 20)} 100%)`;
         }
 
-        let trafficChartInstance = null;
-        let kwChartInstance = null;
+        function lightenColor(hex, percent) {
+            const num = parseInt(hex.replace('#', ''), 16);
+            const r = Math.min(255, Math.max(0, (num >> 16) + Math.round(2.55 * percent)));
+            const g = Math.min(255, Math.max(0, ((num >> 8) & 0xff) + Math.round(2.55 * percent)));
+            const b = Math.min(255, Math.max(0, (num & 0xff) + Math.round(2.55 * percent)));
+            return '#' + (0x1000000 + r * 0x10000 + g * 0x100 + b).toString(16).slice(1);
+        }
 
+        async function resolveGSCProperty() {
+            try {
+                const res = await fetch(`${API_BASE}/api/gsc/sites`);
+                const data = await res.json();
+                if (data.success && data.sites) {
+                    const domain = CONFIG.domain.toLowerCase();
+                    const match = data.sites.find(s => s.siteUrl.toLowerCase().includes(domain));
+                    if (match) { GSC_PROPERTY = match.siteUrl; return; }
+                }
+            } catch (e) {}
+            GSC_PROPERTY = 'https://' + CONFIG.domain + '/';
+        }
+
+        // ===== LOAD ALL DATA =====
         async function loadAllData() {
-            document.getElementById('loadingOverlay').style.display = 'flex';
             document.getElementById('errorBanner').style.display = 'none';
-
-            // Resolve GSC property on first load
-            if (!GSC_PROPERTY) await resolveGSCProperty();
-
-            const endDate = new Date(Date.now() - 3 * 86400000).toISOString().split('T')[0];
-            const startDate = new Date(Date.now() - 33 * 86400000).toISOString().split('T')[0];
-
-            const siteParam = encodeURIComponent(GSC_PROPERTY);
-            const urlParam = encodeURIComponent(SITE_URL);
+            const end = new Date(Date.now() - 3 * 86400000).toISOString().split('T')[0];
+            const start = new Date(Date.now() - 33 * 86400000).toISOString().split('T')[0];
+            const sp = encodeURIComponent(GSC_PROPERTY);
+            const up = encodeURIComponent('https://' + CONFIG.domain);
 
             try {
                 const [queryData, dateData, health, audit, vitals] = await Promise.all([
-                    fetch(`${API_BASE}/api/gsc/analytics?site=${siteParam}&startDate=${startDate}&endDate=${endDate}&dimensions=query`).then(r => r.json()),
-                    fetch(`${API_BASE}/api/gsc/analytics?site=${siteParam}&startDate=${startDate}&endDate=${endDate}&dimensions=date`).then(r => r.json()),
-                    fetch(`${API_BASE}/api/seo-agents/health?site=${urlParam}`).then(r => r.json()),
-                    fetch(`${API_BASE}/api/seo-agents/audit?url=${urlParam}`).then(r => r.json()),
-                    fetch(`${API_BASE}/api/web-vitals?url=${urlParam}`).then(r => r.json())
+                    fetch(`${API_BASE}/api/gsc/analytics?site=${sp}&startDate=${start}&endDate=${end}&dimensions=query`).then(r => r.json()),
+                    fetch(`${API_BASE}/api/gsc/analytics?site=${sp}&startDate=${start}&endDate=${end}&dimensions=date`).then(r => r.json()),
+                    fetch(`${API_BASE}/api/seo-agents/health?site=${up}`).then(r => r.json()),
+                    fetch(`${API_BASE}/api/seo-agents/audit?url=${up}`).then(r => r.json()),
+                    fetch(`${API_BASE}/api/web-vitals?url=${up}`).then(r => r.json())
                 ]);
 
-                // Check if GSC returned auth error
                 if (queryData.authenticated === false) {
-                    showError('Google Search Console is not connected. Please contact the administrator.');
-                    document.getElementById('loadingOverlay').style.display = 'none';
+                    showError('Data connection is being refreshed. Please reload in a moment.');
+                    document.getElementById('loadingScreen').style.display = 'none';
                     return;
                 }
 
-                // Date range display
-                document.getElementById('dateRange').style.display = 'block';
-                document.getElementById('dateRangeText').textContent =
-                    formatDate(startDate) + ' to ' + formatDate(endDate) + ' (Last 30 Days)';
+                document.getElementById('dateRangeText').textContent = formatDate(start) + ' — ' + formatDate(end);
 
                 renderKPIs(queryData);
                 renderTrafficChart(dateData);
@@ -552,231 +665,148 @@
                 renderVitals(vitals);
 
                 document.getElementById('updateTime').textContent = new Date().toLocaleString('en-US', {
-                    month: 'short', day: 'numeric', year: 'numeric',
-                    hour: 'numeric', minute: '2-digit', hour12: true
+                    month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true
                 });
             } catch (err) {
-                showError('Unable to load dashboard data. Please try again later.');
+                showError('Unable to load data. Please try refreshing the page.');
                 console.error(err);
             }
-            document.getElementById('loadingOverlay').style.display = 'none';
+            document.getElementById('loadingScreen').style.display = 'none';
         }
 
-        function showError(msg) {
-            const el = document.getElementById('errorBanner');
-            el.textContent = msg;
-            el.style.display = 'block';
+        function showError(msg) { const el = document.getElementById('errorBanner'); el.textContent = msg; el.style.display = 'block'; }
+        function formatDate(s) { return new Date(s).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); }
+
+        // ===== HELPERS =====
+        function posBadge(pos) {
+            const p = parseFloat(pos);
+            let c = 'pos-other';
+            if (p <= 3) c = 'pos-top3'; else if (p <= 10) c = 'pos-top10'; else if (p <= 20) c = 'pos-top20';
+            return `<span class="pos-badge ${c}">#${p.toFixed(1)}</span>`;
         }
-
-        function formatDate(s) {
-            return new Date(s).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        function expectedCTR(pos) {
+            if (pos <= 1) return 0.28; if (pos <= 2) return 0.15; if (pos <= 3) return 0.11;
+            if (pos <= 5) return 0.07; if (pos <= 7) return 0.04; if (pos <= 10) return 0.02;
+            if (pos <= 20) return 0.01; return 0.005;
         }
+        function emptyRow(cols, msg) { return `<tr><td colspan="${cols}" style="text-align:center;color:var(--text-muted);padding:20px;">${msg}</td></tr>`; }
 
-        // === RENDER FUNCTIONS ===
-
+        // ===== RENDER FUNCTIONS =====
         function renderKPIs(data) {
             const rows = data.rows || [];
-            const totals = rows.reduce((a, r) => ({
-                clicks: a.clicks + r.clicks,
-                impressions: a.impressions + r.impressions,
-                position: a.position + r.position,
-                count: a.count + 1
-            }), { clicks: 0, impressions: 0, position: 0, count: 0 });
-
-            document.getElementById('totalClicks').textContent = totals.clicks.toLocaleString();
-            document.getElementById('totalImpressions').textContent = totals.impressions.toLocaleString();
-            document.getElementById('avgCTR').textContent = totals.impressions > 0
-                ? ((totals.clicks / totals.impressions) * 100).toFixed(2) + '%' : '0%';
-            document.getElementById('avgPosition').textContent = totals.count > 0
-                ? (totals.position / totals.count).toFixed(1) : '-';
+            const t = rows.reduce((a, r) => ({ c: a.c + r.clicks, i: a.i + r.impressions, p: a.p + r.position, n: a.n + 1 }), { c: 0, i: 0, p: 0, n: 0 });
+            document.getElementById('totalClicks').textContent = t.c.toLocaleString();
+            document.getElementById('totalImpressions').textContent = t.i.toLocaleString();
+            document.getElementById('avgCTR').textContent = t.i > 0 ? ((t.c / t.i) * 100).toFixed(2) + '%' : '0%';
+            document.getElementById('avgPosition').textContent = t.n > 0 ? (t.p / t.n).toFixed(1) : '-';
         }
 
         function renderTrafficChart(data) {
             const daily = {};
-            (data.rows || []).forEach(r => {
-                if (r.keys && r.keys[0]) {
-                    const d = r.keys[0];
-                    if (!daily[d]) daily[d] = { clicks: 0, impressions: 0 };
-                    daily[d].clicks += r.clicks;
-                    daily[d].impressions += r.impressions;
-                }
-            });
+            (data.rows || []).forEach(r => { if (r.keys?.[0]) { const d = r.keys[0]; if (!daily[d]) daily[d] = { c: 0, i: 0 }; daily[d].c += r.clicks; daily[d].i += r.impressions; } });
             const dates = Object.keys(daily).sort();
             if (trafficChartInstance) trafficChartInstance.destroy();
             trafficChartInstance = new Chart(document.getElementById('trafficChart').getContext('2d'), {
                 type: 'line',
                 data: {
                     labels: dates.map(d => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })),
-                    datasets: [{
-                        label: 'Clicks', data: dates.map(d => daily[d].clicks),
-                        borderColor: '#667eea', backgroundColor: 'rgba(102,126,234,0.1)', tension: 0.4
-                    }, {
-                        label: 'Impressions', data: dates.map(d => daily[d].impressions),
-                        borderColor: '#764ba2', backgroundColor: 'rgba(118,75,162,0.1)', tension: 0.4
-                    }]
+                    datasets: [
+                        { label: 'Clicks', data: dates.map(d => daily[d].c), borderColor: CONFIG.primaryColor, backgroundColor: CONFIG.primaryColor + '15', tension: 0.4, fill: true },
+                        { label: 'Impressions', data: dates.map(d => daily[d].i), borderColor: CONFIG.accentColor, backgroundColor: CONFIG.accentColor + '15', tension: 0.4, fill: true }
+                    ]
                 },
                 options: { responsive: true, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true } } }
             });
         }
 
         function renderKeywordsChart(data) {
-            const top = (data.rows || []).filter(r => r.keys && r.keys.length)
-                .sort((a, b) => b.clicks - a.clicks).slice(0, 20);
+            const top = (data.rows || []).filter(r => r.keys?.length).sort((a, b) => b.clicks - a.clicks).slice(0, 20);
             if (kwChartInstance) kwChartInstance.destroy();
             kwChartInstance = new Chart(document.getElementById('keywordsChart').getContext('2d'), {
                 type: 'bar',
                 data: {
-                    labels: top.map(r => r.keys[0].length > 30 ? r.keys[0].substring(0, 30) + '...' : r.keys[0]),
-                    datasets: [{ label: 'Clicks', data: top.map(r => r.clicks), backgroundColor: '#667eea' }]
+                    labels: top.map(r => { const k = r.keys[0]; return k.length > 35 ? k.substring(0, 35) + '...' : k; }),
+                    datasets: [{ label: 'Clicks', data: top.map(r => r.clicks), backgroundColor: CONFIG.primaryColor }]
                 },
                 options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } } }
             });
         }
 
         function renderTopKeywords(data) {
-            const rows = (data.rows || []).filter(r => r.keys && r.keys.length)
-                .sort((a, b) => b.clicks - a.clicks).slice(0, 10);
-            const tbody = document.getElementById('topKeywordsBody');
-            if (!rows.length) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#999;padding:20px;">No keyword data available</td></tr>'; return; }
-            tbody.innerHTML = rows.map(r => `<tr>
-                <td><strong>${r.keys[0]}</strong></td>
-                <td>${posBadge(r.position)}</td>
-                <td>${r.clicks.toLocaleString()}</td>
-                <td>${r.impressions.toLocaleString()}</td>
-                <td>${(r.ctr * 100).toFixed(2)}%</td>
-            </tr>`).join('');
+            const rows = (data.rows || []).filter(r => r.keys?.length).sort((a, b) => b.clicks - a.clicks).slice(0, 10);
+            const el = document.getElementById('topKeywordsBody');
+            if (!rows.length) { el.innerHTML = emptyRow(5, 'No keyword data available'); return; }
+            el.innerHTML = rows.map(r => `<tr><td><strong>${r.keys[0]}</strong></td><td>${posBadge(r.position)}</td><td>${r.clicks.toLocaleString()}</td><td>${r.impressions.toLocaleString()}</td><td>${(r.ctr * 100).toFixed(2)}%</td></tr>`).join('');
         }
 
         function renderAllKeywords(data) {
-            const rows = (data.rows || []).filter(r => r.keys && r.keys.length)
-                .sort((a, b) => b.clicks - a.clicks).slice(0, 200);
-            const tbody = document.getElementById('allKeywordsBody');
-            if (!rows.length) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#999;padding:20px;">No keyword data available</td></tr>'; return; }
-            tbody.innerHTML = rows.map(r => `<tr>
-                <td><strong>${r.keys[0]}</strong></td>
-                <td>${posBadge(r.position)}</td>
-                <td>${r.clicks.toLocaleString()}</td>
-                <td>${r.impressions.toLocaleString()}</td>
-                <td>${(r.ctr * 100).toFixed(2)}%</td>
-            </tr>`).join('');
+            const rows = (data.rows || []).filter(r => r.keys?.length).sort((a, b) => b.clicks - a.clicks).slice(0, 200);
+            const el = document.getElementById('allKeywordsBody');
+            if (!rows.length) { el.innerHTML = emptyRow(5, 'No keyword data available'); return; }
+            el.innerHTML = rows.map(r => `<tr><td><strong>${r.keys[0]}</strong></td><td>${posBadge(r.position)}</td><td>${r.clicks.toLocaleString()}</td><td>${r.impressions.toLocaleString()}</td><td>${(r.ctr * 100).toFixed(2)}%</td></tr>`).join('');
         }
 
         function renderOpportunities(data) {
-            const kw = (data.rows || []).filter(r => r.keys && r.keys.length);
-            const page1 = kw.filter(r => r.position <= 10).length;
-            const qwCount = kw.filter(r => r.position > 10 && r.position <= 30 && r.impressions >= 10).length;
-
+            const kw = (data.rows || []).filter(r => r.keys?.length);
+            const p1 = kw.filter(r => r.position <= 10).length;
+            const qwc = kw.filter(r => r.position > 10 && r.position <= 30 && r.impressions >= 10).length;
             document.getElementById('oppSummary').innerHTML = `
-                <div style="display:grid;gap:12px;">
-                    <div style="padding:15px;background:#d4edda;border-left:4px solid #28a745;border-radius:8px;">
-                        <strong>${page1}</strong> keywords on Page 1 | <strong>${kw.length}</strong> total tracked | <strong>${qwCount}</strong> quick win opportunities
-                    </div>
+                <div style="padding:15px 20px;background:#f0fff4;border-left:4px solid var(--success);border-radius:8px;font-size:0.9rem;">
+                    <strong>${p1}</strong> keywords on Page 1 &nbsp;|&nbsp; <strong>${kw.length}</strong> total tracked &nbsp;|&nbsp; <strong>${qwc}</strong> quick win opportunities
                 </div>`;
 
-            // Quick wins (pos 11-30, decent impressions)
-            const quickWins = kw.filter(r => r.position > 10 && r.position <= 30 && r.impressions >= 10)
-                .sort((a, b) => b.impressions - a.impressions).slice(0, 10);
-            const qwBody = document.getElementById('quickWinsBody');
-            if (!quickWins.length) { qwBody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#999;padding:20px;">No quick wins found</td></tr>'; }
-            else { qwBody.innerHTML = quickWins.map(r => `<tr>
-                <td><strong>${r.keys[0]}</strong></td>
-                <td>${posBadge(r.position)}</td>
-                <td>${r.impressions.toLocaleString()}</td>
-                <td>${r.clicks}</td>
-                <td style="color:#28a745;font-weight:600;">+${Math.ceil(r.position - 10)} spots to page 1</td>
-            </tr>`).join(''); }
+            // Quick wins
+            const qw = kw.filter(r => r.position > 10 && r.position <= 30 && r.impressions >= 10).sort((a, b) => b.impressions - a.impressions).slice(0, 10);
+            document.getElementById('quickWinsBody').innerHTML = qw.length ? qw.map(r => `<tr><td><strong>${r.keys[0]}</strong></td><td>${posBadge(r.position)}</td><td>${r.impressions.toLocaleString()}</td><td>${r.clicks}</td><td style="color:var(--success);font-weight:600;">+${Math.ceil(r.position - 10)} to page 1</td></tr>`).join('') : emptyRow(5, 'No quick wins found');
 
             // Low CTR
-            const lowCtr = kw.filter(r => r.position <= 20 && r.impressions >= 20 && r.ctr < expectedCTR(r.position) * 0.7)
-                .sort((a, b) => b.impressions - a.impressions).slice(0, 10);
-            const lcBody = document.getElementById('lowCtrBody');
-            if (!lowCtr.length) { lcBody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#999;padding:20px;">All keywords performing well</td></tr>'; }
-            else { lcBody.innerHTML = lowCtr.map(r => `<tr>
-                <td><strong>${r.keys[0]}</strong></td>
-                <td>${posBadge(r.position)}</td>
-                <td>${r.impressions.toLocaleString()}</td>
-                <td>${r.clicks}</td>
-                <td>${(r.ctr * 100).toFixed(2)}% <span style="color:#dc3545;">(Expected: ${(expectedCTR(r.position) * 100).toFixed(1)}%)</span></td>
-                <td style="color:#667eea;font-weight:600;">Improve title/meta</td>
-            </tr>`).join(''); }
+            const lc = kw.filter(r => r.position <= 20 && r.impressions >= 20 && r.ctr < expectedCTR(r.position) * 0.7).sort((a, b) => b.impressions - a.impressions).slice(0, 10);
+            document.getElementById('lowCtrBody').innerHTML = lc.length ? lc.map(r => `<tr><td><strong>${r.keys[0]}</strong></td><td>${posBadge(r.position)}</td><td>${r.impressions.toLocaleString()}</td><td>${r.clicks}</td><td>${(r.ctr*100).toFixed(2)}% <span style="color:var(--danger);">(exp: ${(expectedCTR(r.position)*100).toFixed(1)}%)</span></td><td style="color:var(--primary);font-weight:600;">Improve title/meta</td></tr>`).join('') : emptyRow(6, 'All keywords performing well');
 
             // Near page 1
-            const near = kw.filter(r => r.position > 10 && r.position <= 20)
-                .sort((a, b) => a.position - b.position).slice(0, 10);
-            const npBody = document.getElementById('nearPage1Body');
-            if (!near.length) { npBody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#999;padding:20px;">No keywords on page 2</td></tr>'; }
-            else { npBody.innerHTML = near.map(r => {
-                const spots = Math.ceil(r.position - 10);
-                return `<tr>
-                    <td><strong>${r.keys[0]}</strong></td>
-                    <td>${posBadge(r.position)}</td>
-                    <td>${r.impressions.toLocaleString()}</td>
-                    <td>${r.clicks}</td>
-                    <td style="color:#28a745;font-weight:600;">Only ${spots} spot${spots > 1 ? 's' : ''} from page 1</td>
-                </tr>`;
-            }).join(''); }
+            const np = kw.filter(r => r.position > 10 && r.position <= 20).sort((a, b) => a.position - b.position).slice(0, 10);
+            document.getElementById('nearPage1Body').innerHTML = np.length ? np.map(r => { const s = Math.ceil(r.position - 10); return `<tr><td><strong>${r.keys[0]}</strong></td><td>${posBadge(r.position)}</td><td>${r.impressions.toLocaleString()}</td><td>${r.clicks}</td><td style="color:var(--success);font-weight:600;">Only ${s} spot${s>1?'s':''} away</td></tr>`; }).join('') : emptyRow(5, 'No page 2 keywords found');
         }
 
         function renderHealth(data) {
             if (!data.success) return;
             const d = data.data;
-            const circle = document.getElementById('healthCircle');
-            circle.className = 'health-score-circle grade-' + d.grade.replace('+', '').toLowerCase();
             document.getElementById('healthGrade').textContent = d.grade;
             document.getElementById('healthScore').textContent = d.overall;
+            const ring = document.getElementById('healthRing');
+            const deg = (d.overall / 100) * 360;
+            ring.style.background = `conic-gradient(var(--success) ${deg}deg, transparent ${deg}deg)`;
+            ring.style.borderRadius = '50%';
+            ring.style.border = 'none';
+            ring.style.mask = 'radial-gradient(farthest-side, transparent calc(100% - 8px), #fff calc(100% - 7px))';
+            ring.style.webkitMask = ring.style.mask;
 
-            const summaries = {
-                'A+': 'Excellent! Your site is well-optimized.',
-                'A': 'Great job! Minor improvements possible.',
-                'B': 'Good foundation. Some areas need attention.',
-                'C': 'Several issues found. Improvements recommended.',
-                'D': 'Significant issues. Immediate attention needed.'
-            };
+            const summaries = { 'A+': 'Excellent! Your site is well-optimized.', 'A': 'Great job! Minor improvements possible.', 'B': 'Good foundation with some areas to improve.', 'C': 'Several issues found. Improvements recommended.', 'D': 'Significant issues need attention.' };
             document.getElementById('healthSummary').textContent = summaries[d.grade] || '';
 
-            const checksEl = document.getElementById('healthChecks');
-            const labels = { https: 'HTTPS', robots: 'robots.txt', sitemap: 'sitemap.xml', title: 'Title Tag', meta: 'Meta Description' };
-            checksEl.innerHTML = Object.entries(d.checks).map(([k, v]) =>
-                `<span class="health-check ${v ? 'pass' : 'fail'}">${v ? '&#10003;' : '&#10007;'} ${labels[k] || k}</span>`
+            const labels = { https: 'HTTPS Secure', robots: 'robots.txt', sitemap: 'XML Sitemap', title: 'Title Tag', meta: 'Meta Description' };
+            document.getElementById('healthChecks').innerHTML = Object.entries(d.checks).map(([k, v]) =>
+                `<div class="check-item ${v ? 'pass' : 'fail'}">${v ? '&#10003;' : '&#10007;'} ${labels[k] || k}</div>`
             ).join('');
         }
 
         function renderAudit(data) {
             if (!data.success) return;
             const d = data.data;
-            document.getElementById('auditScore').textContent = d.score;
-            document.getElementById('auditGrade').textContent = d.grade;
+            document.getElementById('auditScoreBadge').textContent = d.score + '/100';
             document.getElementById('auditPassed').textContent = d.passed;
             document.getElementById('auditTotal').textContent = d.total;
-
-            document.getElementById('auditGrid').innerHTML = d.checks.map(c => `
-                <div class="audit-item ${c.passed ? 'pass' : 'fail'}">
-                    <span class="audit-icon">${c.passed ? '&#10003;' : '&#10007;'}</span>
-                    <div>
-                        <div class="audit-name">${c.name}</div>
-                        <div class="audit-detail">${c.details}</div>
-                    </div>
-                </div>
-            `).join('');
+            document.getElementById('auditGrid').innerHTML = d.checks.map(c =>
+                `<div class="audit-item ${c.passed ? 'pass' : 'fail'}"><span style="flex-shrink:0;">${c.passed ? '&#10003;' : '&#10007;'}</span><div><div class="audit-item-name">${c.name}</div><div class="audit-item-detail">${c.details}</div></div></div>`
+            ).join('');
         }
 
         function renderVitals(data) {
             if (!data.success) return;
-            const v = data.vitals;
-            document.getElementById('vitalsGrid').innerHTML = Object.entries(v).map(([key, val]) => {
-                const colors = { good: 'pass', 'needs-improvement': '', poor: 'fail' };
-                return `<div class="audit-item ${colors[val.rating] || ''}">
-                    <span class="audit-icon">${val.rating === 'good' ? '&#10003;' : '&#9888;'}</span>
-                    <div>
-                        <div class="audit-name">${key}</div>
-                        <div class="audit-detail">${val.value}${val.unit} (${val.rating})</div>
-                    </div>
-                </div>`;
-            }).join('');
+            document.getElementById('vitalsGrid').innerHTML = Object.entries(data.vitals).map(([k, v]) =>
+                `<div class="audit-item ${v.rating === 'good' ? 'pass' : 'fail'}"><span style="flex-shrink:0;">${v.rating === 'good' ? '&#10003;' : '&#9888;'}</span><div><div class="audit-item-name">${k}</div><div class="audit-item-detail">${v.value}${v.unit} — ${v.rating}</div></div></div>`
+            ).join('');
         }
-
-        // Load on page ready
-        document.addEventListener('DOMContentLoaded', loadAllData);
     </script>
 </body>
 </html>
