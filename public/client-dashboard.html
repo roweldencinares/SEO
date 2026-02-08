@@ -443,12 +443,34 @@
 
         const API_BASE = window.location.origin;
         const SITE_URL = 'https://' + CLIENT_DOMAIN;
-        const GSC_PROPERTY = 'sc-domain:' + CLIENT_DOMAIN;
+        let GSC_PROPERTY = null; // Will be resolved from actual GSC sites
 
         // Set page title
         document.title = CLIENT_DOMAIN + ' - SEO Dashboard';
         document.getElementById('headerTitle').textContent = CLIENT_DOMAIN;
         document.getElementById('headerSubtitle').textContent = 'SEO Performance Dashboard';
+
+        // Resolve the correct GSC property format for this domain
+        async function resolveGSCProperty() {
+            try {
+                const res = await fetch(`${API_BASE}/api/gsc/sites`);
+                const data = await res.json();
+                if (data.success && data.sites) {
+                    const match = data.sites.find(s => {
+                        const siteUrl = s.siteUrl.toLowerCase();
+                        return siteUrl.includes(CLIENT_DOMAIN.toLowerCase());
+                    });
+                    if (match) {
+                        GSC_PROPERTY = match.siteUrl;
+                        return;
+                    }
+                }
+            } catch (e) {
+                console.log('Could not resolve GSC property:', e);
+            }
+            // Fallback: try both formats, URL property first (more common)
+            GSC_PROPERTY = 'https://' + CLIENT_DOMAIN + '/';
+        }
 
         // Tab switching
         document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -488,6 +510,9 @@
         async function loadAllData() {
             document.getElementById('loadingOverlay').style.display = 'flex';
             document.getElementById('errorBanner').style.display = 'none';
+
+            // Resolve GSC property on first load
+            if (!GSC_PROPERTY) await resolveGSCProperty();
 
             const endDate = new Date(Date.now() - 3 * 86400000).toISOString().split('T')[0];
             const startDate = new Date(Date.now() - 33 * 86400000).toISOString().split('T')[0];
