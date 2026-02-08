@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SEO Performance Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 50px 40px;
+            max-width: 520px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+            text-align: center;
+        }
+        h1 { color: #333; font-size: 1.8rem; margin-bottom: 8px; }
+        .subtitle { color: #666; font-size: 1rem; margin-bottom: 35px; }
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        input {
+            flex: 1;
+            padding: 14px 18px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        input:focus { border-color: #667eea; }
+        button {
+            padding: 14px 24px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            white-space: nowrap;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        .hint {
+            color: #999;
+            font-size: 0.85rem;
+            margin-top: 15px;
+        }
+        .error {
+            color: #dc3545;
+            font-size: 0.9rem;
+            margin-top: 10px;
+            display: none;
+        }
+        @media (max-width: 480px) {
+            .input-group { flex-direction: column; }
+            .card { padding: 35px 25px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>SEO Performance Dashboard</h1>
+        <p class="subtitle">Enter your website domain to view your report</p>
+        <form onsubmit="viewDashboard(event)">
+            <div class="input-group">
+                <input type="text" id="domainInput" placeholder="e.g. spearity.com" autocomplete="url" required>
+                <button type="submit">View Report</button>
+            </div>
+        </form>
+        <p class="error" id="errorMsg">Please enter a valid domain (e.g. spearity.com)</p>
+        <p class="hint">Your dashboard is always available at:<br><strong>/client/your-domain.com</strong></p>
+    </div>
+    <script>
+        function viewDashboard(e) {
+            e.preventDefault();
+            let domain = document.getElementById('domainInput').value.trim();
+            domain = domain.replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/.*$/, '');
+            if (domain && domain.includes('.')) {
+                window.location.href = '/client/' + encodeURIComponent(domain);
+            } else {
+                document.getElementById('errorMsg').style.display = 'block';
+            }
+        }
+        document.getElementById('domainInput').addEventListener('input', () => {
+            document.getElementById('errorMsg').style.display = 'none';
+        });
+    </script>
+</body>
+</html>
