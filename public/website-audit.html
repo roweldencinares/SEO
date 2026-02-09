@@ -29,9 +29,9 @@
         }
 
         .container {
-            max-width: 1400px;
-            margin-left: 300px;
+            margin-left: 260px;
             padding: 30px;
+            max-width: calc(100% - 260px);
         }
 
         .header {
@@ -411,50 +411,6 @@
             </div>
         </div>
 
-        <!-- Recently Fixed -->
-        <div class="section" style="background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%); border-left: 4px solid #28a745;">
-            <h2 class="section-title" style="color: #155724;">
-                <span class="section-title-icon">🎉</span>
-                Recently Fixed (Nov 13, 2025)
-            </h2>
-            <p style="color: #155724; margin-bottom: 20px; font-weight: 500;">Automated SEO improvements completed today</p>
-            <ul class="audit-list">
-                <li class="audit-item" style="background: white; border-left: 4px solid #28a745;">
-                    <span class="audit-icon">✅</span>
-                    <div class="audit-text">
-                        <strong>Missing Meta Descriptions - 211 pages fixed</strong>
-                        <div style="margin-top: 5px; color: #155724;">
-                            Automated fix applied to 99.5% of pages (211/212). Each page now has an optimized meta description for better search engine visibility.
-                        </div>
-                        <div style="margin-top: 8px; padding: 8px; background: #f8f9fa; border-radius: 6px; font-size: 0.85rem;">
-                            <strong>Impact:</strong> Improved click-through rates from search results
-                        </div>
-                    </div>
-                </li>
-                <li class="audit-item" style="background: white; border-left: 4px solid #28a745;">
-                    <span class="audit-icon">✅</span>
-                    <div class="audit-text">
-                        <strong>Title Tags Too Long - 25 pages optimized</strong>
-                        <div style="margin-top: 5px; color: #155724;">
-                            Shortened title tags to under 60 characters on 25 pages. Titles now display fully in search results without truncation.
-                        </div>
-                        <div style="margin-top: 8px; padding: 8px; background: #f8f9fa; border-radius: 6px; font-size: 0.85rem;">
-                            <strong>Impact:</strong> Better search result display and improved SEO
-                        </div>
-                    </div>
-                </li>
-                <li class="audit-item" style="background: white; border-left: 4px solid #17a2b8;">
-                    <span class="audit-icon">📊</span>
-                    <div class="audit-text">
-                        <strong>Total Pages Improved: 236</strong>
-                        <div style="margin-top: 5px; color: #0c5460;">
-                            All fixes applied automatically using WordPress REST API. View detailed progress at <a href="/progress" style="color: #0c5460; font-weight: 600;">Progress Dashboard</a>
-                        </div>
-                    </div>
-                </li>
-            </ul>
-        </div>
-
         <!-- Critical Issues -->
         <div class="section" id="criticalSection" style="display: none;">
             <h2 class="section-title">
@@ -491,27 +447,8 @@
                 <span class="section-title-icon">⚡</span>
                 Performance Metrics
             </h2>
-            <div class="performance-metrics">
-                <div class="metric-card">
-                    <div class="metric-label">Load Time</div>
-                    <div class="metric-value">269ms</div>
-                    <div class="metric-change">🚀 Excellent</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-label">HTML Size</div>
-                    <div class="metric-value">122 KB</div>
-                    <div class="metric-change">⚠️ Could be optimized</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-label">Mobile Friendly</div>
-                    <div class="metric-value">✓</div>
-                    <div class="metric-change">✅ Passed</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-label">HTTPS</div>
-                    <div class="metric-value">✓</div>
-                    <div class="metric-change">✅ Secure</div>
-                </div>
+            <div class="performance-metrics" id="perfMetrics">
+                <div class="metric-card"><div class="metric-label">Loading...</div><div class="metric-value">--</div></div>
             </div>
         </div>
 
@@ -521,72 +458,8 @@
                 <span class="section-title-icon">💡</span>
                 Recommended Actions
             </h2>
-            <div class="recommendations-grid">
-                <div class="recommendation-item">
-                    <div class="recommendation-title">Optimize Title Tag Length</div>
-                    <div class="recommendation-desc">
-                        Your title tag is 67 characters long and may be truncated in search results. Aim for 50-60 characters for optimal display.
-                    </div>
-                    <div class="recommendation-impact">
-                        <span class="impact-badge medium">Medium Impact</span>
-                        <span>Est. Time: 15 minutes</span>
-                    </div>
-                </div>
-
-                <div class="recommendation-item">
-                    <div class="recommendation-title">Reduce Meta Description Length</div>
-                    <div class="recommendation-desc">
-                        Your meta description is 217 characters. Google typically displays 155-160 characters. Shorten it to avoid truncation.
-                    </div>
-                    <div class="recommendation-impact">
-                        <span class="impact-badge medium">Medium Impact</span>
-                        <span>Est. Time: 20 minutes</span>
-                    </div>
-                </div>
-
-                <div class="recommendation-item">
-                    <div class="recommendation-title">Enable HTML Minification</div>
-                    <div class="recommendation-desc">
-                        Your HTML size is 122 KB. Enable minification to reduce this by 20-30%, improving load times and reducing bandwidth usage.
-                    </div>
-                    <div class="recommendation-impact">
-                        <span class="impact-badge high">High Impact</span>
-                        <span>Est. Time: 30 minutes</span>
-                    </div>
-                </div>
-
-                <div class="recommendation-item">
-                    <div class="recommendation-title">Implement Image Lazy Loading</div>
-                    <div class="recommendation-desc">
-                        Add lazy loading to images below the fold to improve initial page load time and reduce bandwidth for users.
-                    </div>
-                    <div class="recommendation-impact">
-                        <span class="impact-badge high">High Impact</span>
-                        <span>Est. Time: 45 minutes</span>
-                    </div>
-                </div>
-
-                <div class="recommendation-item">
-                    <div class="recommendation-title">Add Browser Caching Rules</div>
-                    <div class="recommendation-desc">
-                        Configure browser caching for static resources to improve repeat visitor experience and reduce server load.
-                    </div>
-                    <div class="recommendation-impact">
-                        <span class="impact-badge high">High Impact</span>
-                        <span>Est. Time: 20 minutes</span>
-                    </div>
-                </div>
-
-                <div class="recommendation-item">
-                    <div class="recommendation-title">Enable Gzip Compression</div>
-                    <div class="recommendation-desc">
-                        Compress text-based resources (HTML, CSS, JS) to reduce file sizes by up to 70% and improve load times.
-                    </div>
-                    <div class="recommendation-impact">
-                        <span class="impact-badge high">High Impact</span>
-                        <span>Est. Time: 15 minutes</span>
-                    </div>
-                </div>
+            <div class="recommendations-grid" id="recommendationsGrid">
+                <div style="text-align:center;padding:20px;color:#888;">Loading recommendations...</div>
             </div>
         </div>
 
@@ -609,10 +482,10 @@
                     <a href="/keywords" class="btn">View Keywords →</a>
                 </div>
 
-                <div class="action-card" onclick="window.location.href='/local-seo'">
+                <div class="action-card" onclick="window.location.href='/local-listing'">
                     <h3>📍 Boost Local SEO</h3>
                     <p>Enhance your local search presence and directory listings</p>
-                    <a href="/local-seo" class="btn">View Local SEO →</a>
+                    <a href="/local-listing" class="btn">View Local SEO →</a>
                 </div>
             </div>
         </div>
@@ -662,74 +535,117 @@
     </div>
 
     <script>
-        // Load audit data from static file
+        let clientConfig = {};
+        let siteUrl = '';
+
         async function loadAuditData() {
             try {
-                console.log('Loading full audit data...');
-                document.getElementById('auditDate').textContent = 'Loading...';
+                // Get client config
+                const cfgRes = await fetch('/api/config');
+                clientConfig = await cfgRes.json();
+                siteUrl = 'https://' + (clientConfig.domain || 'example.com');
+                document.getElementById('auditUrl').value = siteUrl;
+                document.getElementById('auditDate').textContent = 'Scanning ' + clientConfig.domain + '...';
 
-                const response = await fetch('/audit-data.json');
-                console.log('Fetch response status:', response.status, response.ok);
-                if (!response.ok) throw new Error('Failed to load audit data: ' + response.status);
+                // Run real audit + health check + vitals in parallel
+                const [auditRes, healthRes, vitalsRes] = await Promise.all([
+                    fetch('/api/seo-agents/audit?url=' + encodeURIComponent(siteUrl)),
+                    fetch('/api/seo-agents/health?site=' + encodeURIComponent(siteUrl)),
+                    fetch('/api/web-vitals?url=' + encodeURIComponent(siteUrl))
+                ]);
 
-                const auditData = await response.json();
-                console.log('Full audit loaded:', auditData.summary);
+                const audit = await auditRes.json();
+                const health = await healthRes.json();
+                const vitals = await vitalsRes.json();
 
-                const auditDate = new Date(auditData.summary.crawlDate);
-                document.getElementById('auditDate').textContent = auditDate.toLocaleString() + ' (Full Audit - ' + auditData.summary.totalPages + ' pages)';
-
-                const criticalCount = auditData.issues.critical?.length || 0;
-                const warningCount = auditData.issues.warnings?.length || 0;
-                const passedCount = auditData.summary.totalPages - criticalCount - warningCount;
-
-                document.getElementById('criticalCount').textContent = criticalCount;
-                document.getElementById('warningCount').textContent = warningCount;
-                document.getElementById('passedCount').textContent = passedCount > 0 ? passedCount : 0;
-
-                const score = auditData.summary.totalPages > 0 ? Math.round((passedCount / auditData.summary.totalPages) * 100) : 0;
-                document.getElementById('totalScore').textContent = score;
-
-                if (auditData.issues.critical && auditData.issues.critical.length > 0) {
-                    document.getElementById('criticalSection').style.display = 'block';
-                    const criticalList = document.getElementById('criticalList');
-                    criticalList.innerHTML = auditData.issues.critical.map(issue => '<li class="audit-item critical"><span class="audit-icon">🚨</span><div class="audit-text"><strong>' + issue.type + '</strong> (' + issue.count + ' occurrences)<div style="margin-top: 5px;">Impact: ' + issue.impact + '</div></div></li>').join('');
+                if (audit.success && audit.data) {
+                    renderAuditResults(audit.data, health.data, vitals);
                 } else {
-                    document.getElementById('criticalSection').style.display = 'none';
+                    document.getElementById('auditDate').textContent = 'Audit failed - ' + (audit.error || 'Unknown error');
                 }
-
-                // Track fixed issues (updated 2025-11-13)
-                const fixedIssues = {
-                    'Missing Meta Descriptions': { original: 212, fixed: 211, remaining: 1 },
-                    'Title Tags Too Long': { original: 268, fixed: 25, remaining: 243 }
-                };
-
-                const warningsList = document.getElementById('warningsList');
-                if (auditData.issues.warnings && auditData.issues.warnings.length > 0) {
-                    warningsList.innerHTML = auditData.issues.warnings.slice(0, 10).map(issue => {
-                        const fixed = fixedIssues[issue.type];
-                        if (fixed) {
-                            return '<li class="audit-item warning" style="position: relative;"><span class="audit-icon">⚠️</span><div class="audit-text"><strong>' + issue.type + '</strong> (' + issue.count + ' occurrences)<div style="margin-top: 5px;">Impact: ' + issue.impact + '</div><div style="margin-top: 8px; padding: 8px; background: #d4edda; color: #155724; border-radius: 6px; font-size: 0.85rem;"><strong>✅ Partially Fixed!</strong> ' + fixed.fixed + ' pages automated, ' + fixed.remaining + ' remaining</div></div></li>';
-                        }
-                        return '<li class="audit-item warning"><span class="audit-icon">⚠️</span><div class="audit-text"><strong>' + issue.type + '</strong> (' + issue.count + ' occurrences)<div style="margin-top: 5px;">Impact: ' + issue.impact + '</div></div></li>';
-                    }).join('');
-                    if (auditData.issues.warnings.length > 10) {
-                        warningsList.innerHTML += '<li class="audit-item warning"><span class="audit-icon">📋</span><div class="audit-text"><strong>+ ' + (auditData.issues.warnings.length - 10) + ' more warnings</strong></div></li>';
-                    }
-                } else {
-                    warningsList.innerHTML = '<li class="audit-item passed"><span class="audit-icon">✅</span><span class="audit-text">No warnings found!</span></li>';
-                }
-
-                const passedList = document.getElementById('passedList');
-                passedList.innerHTML = '<li class="audit-item passed"><span class="audit-icon">✅</span><div class="audit-text"><strong>Successfully crawled ' + auditData.summary.totalPages + ' pages</strong><div>Audit completed in ' + auditData.summary.crawlTime + '</div></div></li><li class="audit-item passed"><span class="audit-icon">🔍</span><div class="audit-text"><strong>SEO Analysis Complete</strong><div>Found ' + auditData.summary.totalIssues + ' total issues across all pages</div></div></li>';
-
             } catch (error) {
-                console.error('Error loading audit data:', error);
-                document.getElementById('auditDate').textContent = 'Error loading data';
-                document.querySelector('.container').innerHTML += '<div class="section"><div class="empty-state"><div class="empty-state-icon">❌</div><h3>Unable to Load Audit Data</h3><p style="margin-bottom: 15px;">' + error.message + '</p><p>The audit report may not have been generated yet.</p></div></div>';
+                console.error('Audit error:', error);
+                document.getElementById('auditDate').textContent = 'Error: ' + error.message;
             }
         }
 
-}
+        function renderAuditResults(audit, health, vitals) {
+            document.getElementById('auditDate').textContent = new Date().toLocaleString() + ' (Live Audit - ' + (clientConfig.domain || '') + ')';
+
+            const passed = audit.checks.filter(c => c.passed);
+            const failed = audit.checks.filter(c => !c.passed);
+            const critical = failed.filter(c => c.weight >= 2);
+            const warnings = failed.filter(c => c.weight < 2);
+
+            document.getElementById('passedCount').textContent = passed.length;
+            document.getElementById('warningCount').textContent = warnings.length;
+            document.getElementById('criticalCount').textContent = critical.length;
+            document.getElementById('totalScore').textContent = audit.score;
+
+            // Critical issues
+            if (critical.length > 0) {
+                document.getElementById('criticalSection').style.display = 'block';
+                document.getElementById('criticalList').innerHTML = critical.map(c =>
+                    '<li class="audit-item critical"><span class="audit-icon">🚨</span><div class="audit-text"><strong>' + c.name + '</strong><div style="margin-top:5px;">' + c.details + '</div></div></li>'
+                ).join('');
+            } else {
+                document.getElementById('criticalSection').style.display = 'none';
+            }
+
+            // Warnings
+            const warningsList = document.getElementById('warningsList');
+            if (warnings.length > 0) {
+                warningsList.innerHTML = warnings.map(c =>
+                    '<li class="audit-item warning"><span class="audit-icon">⚠️</span><div class="audit-text"><strong>' + c.name + '</strong><div style="margin-top:5px;">' + c.details + '</div></div></li>'
+                ).join('');
+            } else {
+                warningsList.innerHTML = '<li class="audit-item passed"><span class="audit-icon">✅</span><span class="audit-text">No warnings!</span></li>';
+            }
+
+            // Passed
+            document.getElementById('passedList').innerHTML = passed.map(c =>
+                '<li class="audit-item passed"><span class="audit-icon">✅</span><div class="audit-text"><strong>' + c.name + '</strong><div style="margin-top:5px;">' + c.details + '</div></div></li>'
+            ).join('');
+
+            // Performance metrics
+            if (vitals && vitals.success) {
+                const v = vitals.vitals;
+                document.getElementById('perfMetrics').innerHTML = `
+                    <div class="metric-card"><div class="metric-label">LCP (Largest Paint)</div><div class="metric-value">${v.LCP.value}${v.LCP.unit}</div><div class="metric-change">${v.LCP.rating === 'good' ? '✅ Good' : '⚠️ Needs work'}</div></div>
+                    <div class="metric-card"><div class="metric-label">FID (Input Delay)</div><div class="metric-value">${v.FID.value}${v.FID.unit}</div><div class="metric-change">${v.FID.rating === 'good' ? '✅ Good' : '⚠️ Needs work'}</div></div>
+                    <div class="metric-card"><div class="metric-label">CLS (Layout Shift)</div><div class="metric-value">${v.CLS.value}</div><div class="metric-change">${v.CLS.rating === 'good' ? '✅ Good' : '⚠️ Needs work'}</div></div>
+                    <div class="metric-card"><div class="metric-label">TTFB (Server Speed)</div><div class="metric-value">${v.TTFB.value}${v.TTFB.unit}</div><div class="metric-change">${v.TTFB.rating === 'good' ? '✅ Good' : '⚠️ Needs work'}</div></div>
+                    <div class="metric-card"><div class="metric-label">Performance Score</div><div class="metric-value">${vitals.score}/100</div><div class="metric-change">${vitals.score >= 80 ? '🚀 Good' : '⚠️ Needs optimization'}</div></div>
+                    <div class="metric-card"><div class="metric-label">HTTPS</div><div class="metric-value">${audit.checks.find(c=>c.name==='HTTPS')?.passed ? '✓' : '✗'}</div><div class="metric-change">${audit.checks.find(c=>c.name==='HTTPS')?.passed ? '✅ Secure' : '🚨 Not secure'}</div></div>
+                `;
+            }
+
+            // Health-based recommendations
+            if (health) {
+                const recs = [];
+                if (!health.checks?.robots) recs.push({ title: 'Add robots.txt', desc: 'Your robots.txt file is missing. Search engines need this to crawl your site efficiently.', impact: 'high', time: '15 minutes' });
+                if (!health.checks?.sitemap) recs.push({ title: 'Create XML Sitemap', desc: 'No sitemap.xml found. Submit one to Google Search Console to help discover all your pages.', impact: 'high', time: '30 minutes' });
+                if (!health.checks?.meta) recs.push({ title: 'Add Meta Description', desc: 'Your homepage is missing a meta description. This is critical for click-through rates.', impact: 'high', time: '10 minutes' });
+
+                // From audit issues
+                audit.issues?.forEach(i => {
+                    recs.push({ title: i.name, desc: i.details, impact: i.severity || 'medium', time: '20 minutes' });
+                });
+
+                if (recs.length === 0) recs.push({ title: 'Looking good!', desc: 'No critical recommendations at this time. Keep monitoring with regular audits.', impact: 'low', time: '' });
+
+                document.getElementById('recommendationsGrid').innerHTML = recs.map(r => `
+                    <div class="recommendation-item">
+                        <div class="recommendation-title">${r.title}</div>
+                        <div class="recommendation-desc">${r.desc}</div>
+                        <div class="recommendation-impact">
+                            <span class="impact-badge ${r.impact}">${r.impact.charAt(0).toUpperCase() + r.impact.slice(1)} Impact</span>
+                            ${r.time ? '<span>Est. Time: ' + r.time + '</span>' : ''}
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
 
         function showAuditModal() {
             document.getElementById('auditModal').style.display = 'block';
@@ -761,12 +677,7 @@
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 55000); // 55s timeout
 
-                const response = await fetch('/api/site-audit-quick', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ url }),
+                const response = await fetch('/api/seo-agents/audit?url=' + encodeURIComponent(url), {
                     signal: controller.signal
                 });
 

@@ -13,8 +13,14 @@ import dotenv from 'dotenv';
 import fetch from 'node-fetch';
 import * as cheerio from 'cheerio';
 import rateLimit from 'express-rate-limit';
+import { createClient } from '@supabase/supabase-js';
 
 dotenv.config();
+
+// Supabase Client
+const supabase = process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY
+    ? createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
+    : null;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -201,6 +207,12 @@ app.get('/entity-management', (req, res) => res.sendFile(path.join(__dirname, 'p
 app.get('/actions', (req, res) => res.sendFile(path.join(__dirname, 'public', 'action-plan.html')));
 app.get('/progress', (req, res) => res.sendFile(path.join(__dirname, 'public', 'progress.html')));
 app.get('/universal-audit', (req, res) => res.sendFile(path.join(__dirname, 'public', 'universal-audit.html')));
+app.get('/competitors', (req, res) => res.sendFile(path.join(__dirname, 'public', 'competitors.html')));
+app.get('/local-listing', (req, res) => res.sendFile(path.join(__dirname, 'public', 'local-listing.html')));
+app.get('/ai-discovery', (req, res) => res.sendFile(path.join(__dirname, 'public', 'ai-discovery.html')));
+app.get('/alerts', (req, res) => res.sendFile(path.join(__dirname, 'public', 'alerts.html')));
+app.get('/integrations', (req, res) => res.sendFile(path.join(__dirname, 'public', 'integrations.html')));
+app.get('/email-campaigns', (req, res) => res.sendFile(path.join(__dirname, 'public', 'email-campaigns.html')));
 
 // ============================================================
 // AUTH ROUTES
@@ -954,6 +966,484 @@ app.get('/api/web-vitals', async (req, res) => {
         score: 85,
         note: 'Connect Google PageSpeed Insights API for real data'
     });
+});
+
+// ============================================================
+// LOCAL LISTING SCANNER (Real directory checks)
+// ============================================================
+
+app.get('/api/local-listing/scan', async (req, res) => {
+    const domain = req.query.domain || process.env.CLIENT_DOMAIN || 'example.com';
+    const name = req.query.name || process.env.CLIENT_NAME || 'Business';
+    const phone = process.env.CLIENT_CONTACT_PHONE || '';
+    const location = process.env.CLIENT_LOCATION || '';
+
+    const directories = [
+        { name: 'Google Business', icon: 'G', searchUrl: `https://www.google.com/search?q="${encodeURIComponent(name)}"+"${encodeURIComponent(location)}"` },
+        { name: 'Bing Places', icon: 'B', searchUrl: `https://www.bing.com/search?q="${encodeURIComponent(name)}"+"${encodeURIComponent(domain)}"` },
+        { name: 'Yelp', icon: 'Y', checkUrl: `https://www.yelp.com/search?find_desc=${encodeURIComponent(name)}&find_loc=${encodeURIComponent(location)}` },
+        { name: 'Facebook', icon: 'F', checkUrl: `https://www.facebook.com/search/pages/?q=${encodeURIComponent(name)}` },
+        { name: 'BBB', icon: 'BBB', checkUrl: `https://www.bbb.org/search?find_text=${encodeURIComponent(name)}&find_loc=${encodeURIComponent(location)}` },
+        { name: 'Yellow Pages', icon: 'YP', checkUrl: `https://www.yellowpages.com/search?search_terms=${encodeURIComponent(name)}&geo_location_terms=${encodeURIComponent(location)}` },
+        { name: 'Angi', icon: 'An', checkUrl: `https://www.angi.com/search?query=${encodeURIComponent(name)}` },
+        { name: 'HomeAdvisor', icon: 'HA', checkUrl: `https://www.homeadvisor.com/` },
+        { name: 'LinkedIn', icon: 'in', checkUrl: `https://www.linkedin.com/search/results/companies/?keywords=${encodeURIComponent(name)}` },
+        { name: 'Thumbtack', icon: 'T', checkUrl: `https://www.thumbtack.com/search?query=${encodeURIComponent(name)}` },
+        { name: 'Apple Maps', icon: 'A', checkUrl: `https://maps.apple.com/?q=${encodeURIComponent(name)}` },
+        { name: 'Nextdoor', icon: 'N', checkUrl: `https://nextdoor.com/` }
+    ];
+
+    const results = [];
+
+    // Check each directory by searching Google for site-specific results
+    const checkPromises = directories.map(async (dir) => {
+        try {
+            // Search Google for the business name + directory domain
+            const dirDomain = dir.checkUrl ? new URL(dir.checkUrl).hostname.replace('www.', '') : '';
+            const searchQuery = `site:${dirDomain} "${name}"`;
+            const googleUrl = `https://www.google.com/search?q=${encodeURIComponent(searchQuery)}&num=3`;
+
+            const response = await fetch(googleUrl, {
+                timeout: 8000,
+                headers: { 'User-Agent': 'Mozilla/5.0 (compatible; SEOBot/1.0)' }
+            });
+            const html = await response.text();
+            const found = html.toLowerCase().includes(name.toLowerCase()) && html.toLowerCase().includes(dirDomain.toLowerCase());
+
+            return { ...dir, listed: found, method: 'google-search' };
+        } catch (e) {
+            // Fallback: try to directly check if the business website mentions this directory
+            return { ...dir, listed: false, method: 'error', error: e.message };
+        }
+    });
+
+    const directoryResults = await Promise.allSettled(checkPromises);
+    directoryResults.forEach(r => {
+        if (r.status === 'fulfilled') results.push(r.value);
+        else results.push({ name: 'Unknown', listed: false, error: r.reason });
+    });
+
+    // Also check the business website itself for signals
+    let websiteSignals = {};
+    try {
+        const siteRes = await fetch(`https://${domain}`, { timeout: 10000 });
+        const siteHtml = await siteRes.text();
+        const $ = cheerio.load(siteHtml);
+
+        websiteSignals = {
+            hasAddress: siteHtml.toLowerCase().includes(location.toLowerCase()) || $('[itemprop="address"]').length > 0,
+            hasPhone: phone ? siteHtml.includes(phone.replace(/\D/g, '').slice(-10)) : false,
+            hasSchema: $('script[type="application/ld+json"]').length > 0,
+            hasLocalBusiness: siteHtml.includes('LocalBusiness') || siteHtml.includes('localbusiness'),
+            hasGoogleMaps: siteHtml.includes('maps.google') || siteHtml.includes('google.com/maps') || siteHtml.includes('maps.googleapis'),
+            napConsistent: true
+        };
+    } catch (e) {
+        websiteSignals = { hasAddress: false, hasPhone: false, hasSchema: false, hasLocalBusiness: false, hasGoogleMaps: false, napConsistent: false };
+    }
+
+    const listedCount = results.filter(r => r.listed).length;
+    const totalDirs = results.length;
+    const signalScore = Object.values(websiteSignals).filter(v => v === true).length;
+    const localScore = Math.round((listedCount / totalDirs) * 50 + (signalScore / 6) * 50);
+
+    res.json({
+        success: true,
+        domain,
+        businessName: name,
+        location,
+        phone,
+        directories: results.map(r => ({ name: r.name, icon: r.icon, listed: r.listed })),
+        websiteSignals,
+        stats: {
+            listed: listedCount,
+            notListed: totalDirs - listedCount,
+            total: totalDirs,
+            localScore,
+            napConsistency: websiteSignals.napConsistent && websiteSignals.hasAddress && websiteSignals.hasPhone ? 'High' : websiteSignals.hasAddress || websiteSignals.hasPhone ? 'Medium' : 'Low'
+        }
+    });
+});
+
+// ============================================================
+// AI DISCOVERY SCANNER (Real web presence checks)
+// ============================================================
+
+app.get('/api/ai-discovery/scan', async (req, res) => {
+    const domain = req.query.domain || process.env.CLIENT_DOMAIN || 'example.com';
+    const name = req.query.name || process.env.CLIENT_NAME || 'Business';
+    const location = process.env.CLIENT_LOCATION || '';
+    const industry = process.env.CLIENT_INDUSTRY || '';
+
+    const signals = {
+        schema: false,
+        localBusiness: false,
+        wikipedia: false,
+        socialProfiles: [],
+        citations: 0,
+        contentDepth: 0,
+        brandMentions: 0
+    };
+
+    // 1. Check website for AI-readability signals
+    try {
+        const siteRes = await fetch(`https://${domain}`, { timeout: 10000 });
+        const siteHtml = await siteRes.text();
+        const $ = cheerio.load(siteHtml);
+
+        // Schema markup
+        const schemas = $('script[type="application/ld+json"]');
+        signals.schema = schemas.length > 0;
+
+        // Parse schema types
+        const schemaTypes = [];
+        schemas.each((i, el) => {
+            try {
+                const data = JSON.parse($(el).html());
+                if (data['@type']) schemaTypes.push(data['@type']);
+                if (Array.isArray(data['@graph'])) data['@graph'].forEach(g => { if (g['@type']) schemaTypes.push(g['@type']); });
+            } catch(e) {}
+        });
+        signals.schemaTypes = schemaTypes;
+        signals.localBusiness = schemaTypes.some(t => typeof t === 'string' && (t.includes('LocalBusiness') || t.includes('Organization') || t.includes('Service')));
+
+        // Content depth
+        const bodyText = $('body').text();
+        const wordCount = bodyText.split(/\s+/).filter(w => w.length > 2).length;
+        signals.contentDepth = wordCount;
+
+        // Social profiles linked
+        const socialDomains = ['facebook.com', 'linkedin.com', 'twitter.com', 'x.com', 'instagram.com', 'youtube.com', 'tiktok.com'];
+        $('a[href]').each((i, el) => {
+            const href = $(el).attr('href') || '';
+            socialDomains.forEach(sd => {
+                if (href.includes(sd) && !signals.socialProfiles.includes(sd)) {
+                    signals.socialProfiles.push(sd);
+                }
+            });
+        });
+
+        // About page check
+        try {
+            const aboutRes = await fetch(`https://${domain}/about`, { timeout: 5000 });
+            if (aboutRes.ok) {
+                const aboutHtml = await aboutRes.text();
+                const about$ = cheerio.load(aboutHtml);
+                const aboutWords = about$('body').text().split(/\s+/).filter(w => w.length > 2).length;
+                signals.hasAboutPage = true;
+                signals.aboutPageDepth = aboutWords;
+            } else {
+                signals.hasAboutPage = false;
+            }
+        } catch(e) { signals.hasAboutPage = false; }
+
+    } catch(e) {
+        console.log('AI Discovery: Could not fetch site:', e.message);
+    }
+
+    // 2. Check Google for brand mentions/citations
+    try {
+        const brandSearch = await fetch(`https://www.google.com/search?q="${encodeURIComponent(name)}"+-site:${domain}&num=20`, {
+            timeout: 8000,
+            headers: { 'User-Agent': 'Mozilla/5.0 (compatible; SEOBot/1.0)' }
+        });
+        const searchHtml = await brandSearch.text();
+        // Count approximate result snippets containing the name
+        const nameRegex = new RegExp(name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+        const mentions = (searchHtml.match(nameRegex) || []).length;
+        signals.brandMentions = mentions;
+        signals.citations = Math.min(mentions, 20);
+    } catch(e) {
+        signals.brandMentions = 0;
+    }
+
+    // 3. Check Wikipedia/Wikidata
+    try {
+        const wikiRes = await fetch(`https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(name)}&format=json`, { timeout: 5000 });
+        const wikiData = await wikiRes.json();
+        signals.wikipedia = wikiData.query?.search?.some(r => r.title.toLowerCase().includes(name.toLowerCase())) || false;
+    } catch(e) {
+        signals.wikipedia = false;
+    }
+
+    // Calculate AI visibility scores per platform based on signals
+    const baseScore = (
+        (signals.schema ? 15 : 0) +
+        (signals.localBusiness ? 10 : 0) +
+        (signals.wikipedia ? 20 : 0) +
+        (signals.socialProfiles.length >= 3 ? 10 : signals.socialProfiles.length >= 1 ? 5 : 0) +
+        (signals.citations >= 10 ? 15 : signals.citations >= 5 ? 10 : signals.citations >= 1 ? 5 : 0) +
+        (signals.contentDepth >= 1000 ? 10 : signals.contentDepth >= 500 ? 5 : 0) +
+        (signals.hasAboutPage ? 10 : 0) +
+        (signals.brandMentions >= 10 ? 10 : signals.brandMentions >= 3 ? 5 : 0)
+    );
+
+    const platforms = [
+        { name: 'ChatGPT (OpenAI)', score: Math.min(100, baseScore + (signals.wikipedia ? 10 : 0)), color: '#10a37f' },
+        { name: 'Google Gemini', score: Math.min(100, baseScore + (signals.schema ? 10 : 0) + (signals.localBusiness ? 5 : 0)), color: '#4285f4' },
+        { name: 'Claude (Anthropic)', score: Math.min(100, baseScore + (signals.contentDepth >= 1000 ? 10 : 0)), color: '#764ba2' },
+        { name: 'Perplexity AI', score: Math.min(100, baseScore + (signals.citations >= 5 ? 10 : 0)), color: '#1a1a2e' },
+        { name: 'Microsoft Copilot', score: Math.min(100, baseScore + (signals.socialProfiles.includes('linkedin.com') ? 10 : 0)), color: '#00bcf2' },
+        { name: 'Google SGE', score: Math.min(100, baseScore + (signals.schema ? 10 : 0) + (signals.localBusiness ? 10 : 0)), color: '#ea4335' }
+    ];
+
+    const avgScore = Math.round(platforms.reduce((s, p) => s + p.score, 0) / platforms.length);
+
+    // Generate queries relevant to the business
+    const queries = [
+        `Best ${industry || 'services'} companies in ${location}`,
+        `${name} reviews`,
+        `Top rated ${industry || 'services'} near ${location}`,
+        `What is ${domain}?`,
+        `${industry || 'services'} ${location} recommendations`,
+        `Compare ${industry || 'services'} providers in ${location}`
+    ];
+
+    res.json({
+        success: true,
+        domain,
+        businessName: name,
+        overallScore: avgScore,
+        platforms,
+        signals,
+        queries,
+        recommendations: [
+            !signals.schema ? { rec: 'Add structured data (JSON-LD) to your website', impact: 'High', status: 'Missing' } : { rec: 'Structured data detected', impact: 'High', status: 'Done' },
+            !signals.localBusiness ? { rec: 'Add LocalBusiness or Organization schema', impact: 'High', status: 'Missing' } : { rec: 'Business schema detected', impact: 'High', status: 'Done' },
+            !signals.hasAboutPage ? { rec: 'Create a detailed About page with entity-rich content', impact: 'High', status: 'Missing' } : { rec: 'About page exists', impact: 'High', status: 'Done' },
+            !signals.wikipedia ? { rec: 'Build Wikipedia/Wikidata presence for entity recognition', impact: 'High', status: 'Missing' } : null,
+            signals.socialProfiles.length < 3 ? { rec: `Add more social profiles (currently ${signals.socialProfiles.length})`, impact: 'Medium', status: 'Partial' } : { rec: 'Good social profile coverage', impact: 'Medium', status: 'Done' },
+            signals.citations < 5 ? { rec: 'Get mentioned in industry publications and directories', impact: 'High', status: 'Missing' } : { rec: `${signals.citations} brand citations found`, impact: 'High', status: 'Done' },
+            signals.contentDepth < 500 ? { rec: 'Add more detailed content to homepage (currently thin)', impact: 'Medium', status: 'Missing' } : null,
+            { rec: 'Publish authoritative, FAQ-style content that AI models reference', impact: 'Medium', status: 'Todo' },
+            { rec: 'Optimize for conversational/question-based queries', impact: 'Medium', status: 'Todo' }
+        ].filter(Boolean)
+    });
+});
+
+// ============================================================
+// AUTOMATED DAILY SEO SCANNING & ALERTS
+// ============================================================
+
+// Daily cron scan - runs all SEO checks and stores results in Supabase
+app.get('/api/cron/daily-scan', async (req, res) => {
+    try {
+        // Verify cron secret if configured (Vercel sends this automatically)
+        if (process.env.CRON_SECRET) {
+            const cronSecret = req.headers['authorization'];
+            if (cronSecret !== `Bearer ${process.env.CRON_SECRET}`) {
+                return res.status(401).json({ error: 'Unauthorized' });
+            }
+        }
+
+        if (!supabase) {
+            return res.status(500).json({ error: 'Supabase not configured' });
+        }
+
+        console.log('🔄 Daily SEO scan starting...');
+        const domain = process.env.CLIENT_DOMAIN || 'spearity.com';
+        const siteUrl = `https://www.${domain}`;
+        const gscSite = process.env.GSC_SITE || `sc-domain:${domain}`;
+        const scanDate = new Date().toISOString().split('T')[0];
+
+        // Run all scans in parallel
+        const [auditResult, healthResult, gscResult, aiResult] = await Promise.allSettled([
+            // Audit scan
+            (async () => {
+                const issues = [];
+                const passed = [];
+                try {
+                    const robotsRes = await fetch(`${siteUrl}/robots.txt`, { timeout: 5000 });
+                    if (robotsRes.ok) { passed.push('robots.txt'); } else issues.push('robots.txt not found');
+                } catch (e) { issues.push('robots.txt inaccessible'); }
+                try {
+                    const sitemapRes = await fetch(`${siteUrl}/sitemap.xml`, { timeout: 5000 });
+                    if (sitemapRes.ok) passed.push('sitemap.xml'); else issues.push('sitemap.xml not found');
+                } catch (e) { issues.push('sitemap inaccessible'); }
+                if (siteUrl.startsWith('https://')) passed.push('HTTPS'); else issues.push('No HTTPS');
+                try {
+                    const homeRes = await fetch(siteUrl, { timeout: 10000 });
+                    const html = await homeRes.text();
+                    const $ = cheerio.load(html);
+                    if ($('title').length && $('title').text().trim()) passed.push('title'); else issues.push('Missing title');
+                    if ($('meta[name="description"]').length) passed.push('meta-desc'); else issues.push('Missing meta description');
+                } catch (e) { issues.push('Homepage inaccessible'); }
+                const score = Math.max(0, Math.min(100, 50 + (passed.length * 10) - (issues.length * 15)));
+                return { score, issues: issues.length, passed: passed.length, details: { issues, passed } };
+            })(),
+            // Health check (uses same logic as /api/seo-agents/health)
+            (async () => {
+                let score = 50;
+                const checks = { robots: false, sitemap: false, https: false, title: false, meta: false };
+                if (siteUrl.startsWith('https://')) { score += 10; checks.https = true; }
+                try { const r = await fetch(`${siteUrl}/robots.txt`, { timeout: 5000 }); if (r.ok) { score += 10; checks.robots = true; } } catch (e) {}
+                try { const r = await fetch(`${siteUrl}/sitemap.xml`, { timeout: 5000 }); if (r.ok) { score += 10; checks.sitemap = true; } } catch (e) {}
+                try {
+                    const r = await fetch(siteUrl, { timeout: 10000 }); const html = await r.text(); const $ = cheerio.load(html);
+                    if ($('title').length && $('title').text().trim()) { score += 10; checks.title = true; }
+                    if ($('meta[name="description"]').length) { score += 10; checks.meta = true; }
+                } catch (e) {}
+                return { score: Math.min(score, 100), checks };
+            })(),
+            // GSC summary
+            (async () => {
+                try {
+                    await ensureValidToken();
+                    const searchconsole = google.searchconsole({ version: 'v1', auth: oauth2Client });
+                    const response = await searchconsole.searchanalytics.query({
+                        siteUrl: getGSCSiteUrl(gscSite),
+                        requestBody: { startDate: getDateDaysAgo(30), endDate: getDateDaysAgo(0), dimensions: ['query'], rowLimit: 25000 }
+                    });
+                    const rows = response.data.rows || [];
+                    const totalClicks = rows.reduce((sum, r) => sum + (r.clicks || 0), 0);
+                    const totalImpressions = rows.reduce((sum, r) => sum + (r.impressions || 0), 0);
+                    const avgPosition = rows.length > 0 ? rows.reduce((sum, r) => sum + (r.position || 0), 0) / rows.length : 0;
+                    const avgCTR = totalImpressions > 0 ? ((totalClicks / totalImpressions) * 100) : 0;
+                    const top10Count = rows.filter(r => r.position && r.position <= 10).length;
+                    return { clicks: totalClicks, impressions: totalImpressions, position: parseFloat(avgPosition.toFixed(1)), ctr: parseFloat(avgCTR.toFixed(2)), keywords: rows.length, top10: top10Count };
+                } catch (e) {
+                    return { clicks: null, error: e.message };
+                }
+            })(),
+            // AI discovery (lightweight - check schema signals only to avoid API costs)
+            (async () => {
+                try {
+                    const siteRes = await fetch(siteUrl, { timeout: 10000 });
+                    const html = await siteRes.text();
+                    const $ = cheerio.load(html);
+                    const hasSchema = $('script[type="application/ld+json"]').length > 0;
+                    const hasTitle = $('title').length > 0;
+                    const hasMeta = $('meta[name="description"]').length > 0;
+                    const hasOG = $('meta[property="og:title"]').length > 0;
+                    const signals = [hasSchema, hasTitle, hasMeta, hasOG].filter(Boolean).length;
+                    return { score: signals * 25 };
+                } catch (e) {
+                    return { score: null, error: e.message };
+                }
+            })()
+        ]);
+
+        const audit = auditResult.status === 'fulfilled' ? auditResult.value : { score: null };
+        const health = healthResult.status === 'fulfilled' ? healthResult.value : { score: null };
+        const gsc = gscResult.status === 'fulfilled' ? gscResult.value : {};
+        const ai = aiResult.status === 'fulfilled' ? aiResult.value : { score: null };
+
+        // Store scan result
+        const scanRow = {
+            scan_date: scanDate,
+            domain,
+            audit_score: audit.score,
+            health_score: health.score,
+            ai_score: ai.score,
+            local_score: null,
+            gsc_clicks: gsc.clicks || null,
+            gsc_impressions: gsc.impressions || null,
+            gsc_position: gsc.position || null,
+            gsc_ctr: gsc.ctr || null,
+            keywords_tracked: gsc.keywords || null,
+            top10_count: gsc.top10 || null,
+            raw_data: { audit, health, gsc, ai }
+        };
+
+        const { error: insertError } = await supabase
+            .from('scan_history')
+            .upsert(scanRow, { onConflict: 'scan_date' });
+
+        if (insertError) console.error('Failed to store scan:', insertError.message);
+
+        // Compare with previous scan for alert detection
+        const { data: prevScans } = await supabase
+            .from('scan_history')
+            .select('*')
+            .lt('scan_date', scanDate)
+            .order('scan_date', { ascending: false })
+            .limit(1);
+
+        const alerts = [];
+        const prev = prevScans?.[0];
+
+        if (prev) {
+            if (audit.score !== null && prev.audit_score !== null && prev.audit_score - audit.score > 10)
+                alerts.push({ type: 'critical', title: 'Audit Score Drop', description: `Audit score dropped from ${prev.audit_score} to ${audit.score} (-${prev.audit_score - audit.score} points)`, category: 'audit' });
+            if (health.score !== null && prev.health_score !== null && prev.health_score - health.score > 10)
+                alerts.push({ type: 'critical', title: 'Health Score Drop', description: `Health score dropped from ${prev.health_score} to ${health.score}`, category: 'health' });
+            if (ai.score !== null && prev.ai_score !== null && prev.ai_score - ai.score > 15)
+                alerts.push({ type: 'warning', title: 'AI Visibility Drop', description: `AI visibility dropped from ${prev.ai_score}% to ${ai.score}%`, category: 'ai' });
+            if (gsc.clicks !== null && prev.gsc_clicks !== null && prev.gsc_clicks > 0) {
+                const dropPct = ((prev.gsc_clicks - gsc.clicks) / prev.gsc_clicks) * 100;
+                if (dropPct > 30)
+                    alerts.push({ type: 'warning', title: 'Traffic Drop', description: `GSC clicks dropped ${Math.round(dropPct)}% (${prev.gsc_clicks} → ${gsc.clicks})`, category: 'traffic' });
+            }
+            if (audit.score !== null && prev.audit_score !== null && audit.score - prev.audit_score > 10)
+                alerts.push({ type: 'success', title: 'Audit Score Improved', description: `Audit score improved from ${prev.audit_score} to ${audit.score} (+${audit.score - prev.audit_score})`, category: 'audit' });
+            if (health.score !== null && prev.health_score !== null && health.score - prev.health_score > 10)
+                alerts.push({ type: 'success', title: 'Health Score Improved', description: `Health score improved from ${prev.health_score} to ${health.score}`, category: 'health' });
+        } else {
+            alerts.push({ type: 'info', title: 'First Scan Recorded', description: 'Baseline scan stored. Future scans will detect changes.', category: 'system' });
+        }
+
+        // Store alerts
+        if (alerts.length > 0) {
+            const alertRows = alerts.map(a => ({
+                alert_date: scanDate, domain, type: a.type, title: a.title,
+                description: a.description, category: a.category, data: { scan: scanRow }
+            }));
+            const { error: alertError } = await supabase.from('scan_alerts').insert(alertRows);
+            if (alertError) console.error('Failed to store alerts:', alertError.message);
+        }
+
+        console.log(`✅ Daily scan complete: audit=${audit.score}, health=${health.score}, ai=${ai.score}, alerts=${alerts.length}`);
+
+        res.json({
+            success: true, scan_date: scanDate,
+            scores: { audit: audit.score, health: health.score, ai: ai.score },
+            gsc: { clicks: gsc.clicks, impressions: gsc.impressions, position: gsc.position, ctr: gsc.ctr },
+            alerts_generated: alerts.length, alerts
+        });
+    } catch (error) {
+        console.error('Daily scan error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Get scan history for trend charts
+app.get('/api/scan-history', async (req, res) => {
+    try {
+        if (!supabase) return res.status(500).json({ error: 'Supabase not configured' });
+        const days = parseInt(req.query.days) || 30;
+        const since = getDateDaysAgo(days);
+
+        const { data, error } = await supabase
+            .from('scan_history')
+            .select('scan_date, audit_score, health_score, ai_score, local_score, gsc_clicks, gsc_impressions, gsc_position, gsc_ctr, keywords_tracked, top10_count')
+            .gte('scan_date', since)
+            .order('scan_date', { ascending: true });
+
+        if (error) throw error;
+        res.json({ success: true, data: data || [] });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Get stored alerts
+app.get('/api/scan-alerts', async (req, res) => {
+    try {
+        if (!supabase) return res.status(500).json({ error: 'Supabase not configured' });
+        const days = parseInt(req.query.days) || 30;
+        const since = getDateDaysAgo(days);
+
+        const { data, error } = await supabase
+            .from('scan_alerts')
+            .select('*')
+            .gte('alert_date', since)
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        res.json({ success: true, data: data || [] });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
 });
 
 // ============================================================

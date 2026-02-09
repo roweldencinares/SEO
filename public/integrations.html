@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Integrations - SEO Dashboard</title>
+    <link rel="stylesheet" href="/sidebar.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f7fa; min-height: 100vh; }
+        header { background: white; padding: 25px 30px; border-radius: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 25px; }
+        h1 { color: #333; font-size: 1.8rem; margin-bottom: 5px; font-weight: 700; }
+        .subtitle { color: #666; font-size: 0.95rem; }
+        .integrations-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 20px; margin-bottom: 25px; }
+        .int-card { background: white; border-radius: 12px; padding: 25px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); border-left: 4px solid #e0e0e0; transition: all 0.3s; }
+        .int-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+        .int-card.connected { border-left-color: #28a745; }
+        .int-card.disconnected { border-left-color: #dc3545; }
+        .int-card.partial { border-left-color: #ffc107; }
+        .int-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .int-name-row { display: flex; align-items: center; gap: 12px; }
+        .int-icon { width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; font-weight: 700; color: white; }
+        .int-name { font-size: 1.1rem; font-weight: 700; color: #333; }
+        .int-status { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; }
+        .status-connected { background: #d4edda; color: #155724; }
+        .status-disconnected { background: #f8d7da; color: #721c24; }
+        .status-partial { background: #fff3cd; color: #856404; }
+        .int-details { margin-top: 10px; }
+        .int-detail { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f0f0f0; font-size: 0.9rem; }
+        .int-detail:last-child { border-bottom: none; }
+        .int-detail .label { color: #888; }
+        .int-detail .value { color: #333; font-weight: 500; }
+        .int-action { margin-top: 15px; }
+        .int-action a, .int-action button { display: inline-block; padding: 8px 16px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; text-decoration: none; cursor: pointer; transition: all 0.3s; border: none; }
+        .btn-connect { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
+        .btn-connect:hover { transform: translateY(-1px); box-shadow: 0 3px 10px rgba(102,126,234,0.3); }
+        .btn-manage { background: #e9ecef; color: #333; }
+        .btn-manage:hover { background: #dee2e6; }
+        .card { background: white; border-radius: 12px; padding: 25px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 25px; }
+        .card h2 { font-size: 1.2rem; color: #333; margin-bottom: 15px; }
+        .api-log { font-family: 'Courier New', monospace; font-size: 0.85rem; background: #1a1a2e; color: #e0e0e0; padding: 20px; border-radius: 10px; max-height: 300px; overflow-y: auto; }
+        .api-log .entry { padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .api-log .time { color: #888; }
+        .api-log .success { color: #28a745; }
+        .api-log .error { color: #dc3545; }
+        .api-log .info { color: #17a2b8; }
+        .loading { text-align: center; padding: 30px; color: #888; }
+        .spinner { display: inline-block; width: 30px; height: 30px; border: 3px solid #e0e0e0; border-top-color: #667eea; border-radius: 50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Integrations</h1>
+            <p class="subtitle" id="headerSubtitle">Manage connected services and APIs</p>
+        </header>
+
+        <div class="integrations-grid" id="intGrid">
+            <div class="loading"><div class="spinner"></div><p style="margin-top:10px;">Checking connections...</p></div>
+        </div>
+
+        <div class="card">
+            <h2>API Activity Log</h2>
+            <div class="api-log" id="apiLog">
+                <div class="entry"><span class="time">Loading...</span></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/sidebar.js"></script>
+    <script>
+        let clientConfig = {};
+
+        async function init() {
+            initSidebar('/integrations');
+            try {
+                const cfgRes = await fetch('/api/config');
+                clientConfig = await cfgRes.json();
+                document.getElementById('headerSubtitle').textContent = `Integration status for ${clientConfig.name || clientConfig.domain}`;
+                await checkIntegrations();
+            } catch(e) { console.error('Init error:', e); }
+        }
+
+        async function checkIntegrations() {
+            const integrations = [];
+            const logs = [];
+            const now = new Date();
+
+            // 1. Google Search Console
+            try {
+                const gscRes = await fetch('/api/gsc/status');
+                const gsc = await gscRes.json();
+                integrations.push({
+                    name: 'Google Search Console',
+                    icon: 'G',
+                    iconBg: '#4285f4',
+                    status: gsc.authenticated ? 'connected' : 'disconnected',
+                    statusText: gsc.authenticated ? 'Connected' : 'Not Connected',
+                    details: [
+                        { label: 'Status', value: gsc.authenticated ? 'Authenticated' : 'Needs Setup' },
+                        { label: 'Token Expiry', value: gsc.expiryDate ? new Date(gsc.expiryDate).toLocaleString() : 'N/A' },
+                        { label: 'Auto-Refresh', value: gsc.authenticated ? 'Active' : 'Inactive' }
+                    ],
+                    action: gsc.authenticated ? { text: 'Manage', url: '/dashboard', cls: 'btn-manage' } : { text: 'Connect', url: '/auth/google', cls: 'btn-connect' }
+                });
+                logs.push({ time: now.toLocaleTimeString(), msg: `GSC Status: ${gsc.authenticated ? 'Connected' : 'Disconnected'}`, type: gsc.authenticated ? 'success' : 'error' });
+            } catch(e) {
+                logs.push({ time: now.toLocaleTimeString(), msg: 'GSC check failed: ' + e.message, type: 'error' });
+            }
+
+            // 2. GSC Sites
+            try {
+                const sitesRes = await fetch('/api/gsc/sites');
+                const sites = await sitesRes.json();
+                const siteCount = sites.sites ? sites.sites.length : 0;
+                const clientSite = sites.sites?.find(s => s.siteUrl.toLowerCase().includes((clientConfig.domain || '').toLowerCase()));
+                integrations.push({
+                    name: 'GSC Site Verification',
+                    icon: 'V',
+                    iconBg: '#28a745',
+                    status: clientSite ? 'connected' : siteCount > 0 ? 'partial' : 'disconnected',
+                    statusText: clientSite ? 'Verified' : siteCount > 0 ? 'Other Sites Only' : 'No Sites',
+                    details: [
+                        { label: 'Total Sites', value: siteCount },
+                        { label: 'Client Site', value: clientSite ? clientSite.siteUrl : 'Not found' },
+                        { label: 'Permission', value: clientSite ? clientSite.permissionLevel || 'Owner' : 'N/A' }
+                    ],
+                    action: null
+                });
+                logs.push({ time: now.toLocaleTimeString(), msg: `Sites found: ${siteCount}. Client site: ${clientSite ? 'Yes' : 'No'}`, type: clientSite ? 'success' : 'info' });
+            } catch(e) {
+                logs.push({ time: now.toLocaleTimeString(), msg: 'Sites check failed: ' + e.message, type: 'error' });
+            }
+
+            // 3. SEO Health API
+            try {
+                const healthRes = await fetch(`/api/seo-agents/health?site=https://${clientConfig.domain}`);
+                const health = await healthRes.json();
+                integrations.push({
+                    name: 'SEO Health Engine',
+                    icon: 'H',
+                    iconBg: '#fd7e14',
+                    status: health.success ? 'connected' : 'disconnected',
+                    statusText: health.success ? 'Active' : 'Error',
+                    details: [
+                        { label: 'Health Score', value: health.data ? health.data.overall + '/100' : 'N/A' },
+                        { label: 'Grade', value: health.data ? health.data.grade : 'N/A' },
+                        { label: 'Checks Run', value: health.data ? Object.keys(health.data.checks).length : 0 }
+                    ],
+                    action: { text: 'View Audit', url: '/website-audit', cls: 'btn-manage' }
+                });
+                logs.push({ time: now.toLocaleTimeString(), msg: `Health check: ${health.success ? 'Score ' + health.data.overall : 'Failed'}`, type: health.success ? 'success' : 'error' });
+            } catch(e) {
+                logs.push({ time: now.toLocaleTimeString(), msg: 'Health check failed: ' + e.message, type: 'error' });
+            }
+
+            // 4. Web Vitals API
+            try {
+                const vitalsRes = await fetch(`/api/web-vitals?url=https://${clientConfig.domain}`);
+                const vitals = await vitalsRes.json();
+                integrations.push({
+                    name: 'Core Web Vitals',
+                    icon: 'W',
+                    iconBg: '#17a2b8',
+                    status: vitals.success ? 'connected' : 'disconnected',
+                    statusText: vitals.success ? 'Active' : 'Error',
+                    details: [
+                        { label: 'LCP', value: vitals.vitals ? vitals.vitals.LCP.value + 's' : 'N/A' },
+                        { label: 'CLS', value: vitals.vitals ? vitals.vitals.CLS.value : 'N/A' },
+                        { label: 'Performance', value: vitals.score ? vitals.score + '/100' : 'N/A' }
+                    ],
+                    action: null
+                });
+                logs.push({ time: now.toLocaleTimeString(), msg: `Web Vitals: Score ${vitals.score || 'N/A'}`, type: vitals.success ? 'success' : 'error' });
+            } catch(e) {
+                logs.push({ time: now.toLocaleTimeString(), msg: 'Vitals check failed: ' + e.message, type: 'error' });
+            }
+
+            // 5. Google Analytics (placeholder)
+            integrations.push({
+                name: 'Google Analytics 4',
+                icon: 'GA',
+                iconBg: '#e37400',
+                status: 'disconnected',
+                statusText: 'Not Connected',
+                details: [
+                    { label: 'Status', value: 'Available for setup' },
+                    { label: 'Property ID', value: 'Not configured' },
+                    { label: 'Data Stream', value: 'N/A' }
+                ],
+                action: { text: 'Connect GA4', url: '#', cls: 'btn-connect' }
+            });
+
+            // 6. Email/Notifications
+            integrations.push({
+                name: 'Email Notifications',
+                icon: 'E',
+                iconBg: '#6f42c1',
+                status: clientConfig.contactEmail ? 'connected' : 'disconnected',
+                statusText: clientConfig.contactEmail ? 'Configured' : 'Not Set',
+                details: [
+                    { label: 'Email', value: clientConfig.contactEmail || 'Not configured' },
+                    { label: 'Weekly Reports', value: clientConfig.contactEmail ? 'Available' : 'N/A' },
+                    { label: 'Alert Emails', value: clientConfig.contactEmail ? 'Available' : 'N/A' }
+                ],
+                action: null
+            });
+
+            renderIntegrations(integrations);
+            renderLogs(logs);
+        }
+
+        function renderIntegrations(integrations) {
+            const grid = document.getElementById('intGrid');
+            grid.innerHTML = integrations.map(int => `
+                <div class="int-card ${int.status}">
+                    <div class="int-header">
+                        <div class="int-name-row">
+                            <div class="int-icon" style="background:${int.iconBg}">${int.icon}</div>
+                            <div class="int-name">${int.name}</div>
+                        </div>
+                        <span class="int-status status-${int.status}">${int.statusText}</span>
+                    </div>
+                    <div class="int-details">
+                        ${int.details.map(d => `<div class="int-detail"><span class="label">${d.label}</span><span class="value">${d.value}</span></div>`).join('')}
+                    </div>
+                    ${int.action ? `<div class="int-action"><a href="${int.action.url}" class="${int.action.cls}">${int.action.text}</a></div>` : ''}
+                </div>
+            `).join('');
+        }
+
+        function renderLogs(logs) {
+            const logEl = document.getElementById('apiLog');
+            logEl.innerHTML = logs.map(l => `<div class="entry"><span class="time">[${l.time}]</span> <span class="${l.type}">${l.msg}</span></div>`).join('');
+        }
+
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>

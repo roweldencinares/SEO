@@ -3,621 +3,342 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Progress Tracking - Your Site Marketing</title>
-
-    
-    
-
-    <!-- Shared Sidebar Styles -->
+    <title>Progress Tracking - SEO Dashboard</title>
     <link rel="stylesheet" href="/sidebar.css">
-
-    <!-- Chart.js for visualizations -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f5f7fa;
-            min-height: 100vh;
-        }
-
-        .main-content {
-            margin-left: 280px;
-            padding: 30px;
-        }
-
-        .page-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 40px 30px;
-            border-radius: 20px;
-            margin-bottom: 30px;
-            color: white;
-            box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3);
-        }
-
-        .page-header h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-        }
-
-        .subtitle {
-            opacity: 0.95;
-            font-size: 1.1rem;
-        }
-
-        .metrics-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .metric-card {
-            background: white;
-            padding: 25px;
-            border-radius: 15px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .metric-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 4px;
-            height: 100%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
-
-        .metric-label {
-            color: #666;
-            font-size: 0.9rem;
-            margin-bottom: 10px;
-        }
-
-        .metric-value {
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: #333;
-            margin-bottom: 10px;
-        }
-
-        .metric-change {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 600;
-        }
-
-        .metric-change.positive {
-            background: #d4edda;
-            color: #155724;
-        }
-
-        .metric-change.negative {
-            background: #f8d7da;
-            color: #721c24;
-        }
-
-        .metric-change.neutral {
-            background: #d1ecf1;
-            color: #0c5460;
-        }
-
-        .section {
-            background: white;
-            padding: 30px;
-            border-radius: 15px;
-            margin-bottom: 30px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        }
-
-        .section-title {
-            font-size: 1.5rem;
-            color: #333;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .actions-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .actions-table th {
-            text-align: left;
-            padding: 15px;
-            background: #f8f9fa;
-            font-weight: 600;
-            color: #666;
-            border-bottom: 2px solid #e0e0e0;
-        }
-
-        .actions-table td {
-            padding: 15px;
-            border-bottom: 1px solid #f0f0f0;
-        }
-
-        .actions-table tr:hover {
-            background: #f8f9fa;
-        }
-
-        .status-badge {
-            display: inline-block;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 600;
-        }
-
-        .status-not-started {
-            background: #f0f0f0;
-            color: #666;
-        }
-
-        .status-in-progress {
-            background: #fff3cd;
-            color: #856404;
-        }
-
-        .status-completed {
-            background: #d4edda;
-            color: #155724;
-        }
-
-        .status-verified {
-            background: #d1ecf1;
-            color: #0c5460;
-        }
-
-        .before-after {
-            display: flex;
-            gap: 20px;
-            align-items: center;
-        }
-
-        .before-after-item {
-            flex: 1;
-        }
-
-        .before-after-label {
-            font-size: 0.85rem;
-            color: #666;
-            margin-bottom: 5px;
-        }
-
-        .before-after-value {
-            font-size: 1.3rem;
-            font-weight: 600;
-            color: #333;
-        }
-
-        .arrow {
-            color: #28a745;
-            font-size: 1.5rem;
-        }
-
-        .action-buttons {
-            display: flex;
-            gap: 10px;
-        }
-
-        .btn {
-            padding: 8px 16px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.85rem;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-
-        .btn-verify {
-            background: #0dcaf0;
-            color: white;
-        }
-
-        .btn-verify:hover {
-            background: #0aa2c0;
-        }
-
-        .btn-done {
-            background: #28a745;
-            color: white;
-        }
-
-        .btn-done:hover {
-            background: #218838;
-        }
-
-        .chart-container {
-            position: relative;
-            height: 300px;
-            margin-top: 20px;
-        }
-
-        .roi-summary {
-            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-            color: white;
-            padding: 30px;
-            border-radius: 15px;
-            margin-top: 30px;
-        }
-
-        .roi-summary h3 {
-            margin-bottom: 15px;
-            font-size: 1.5rem;
-        }
-
-        .roi-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-top: 20px;
-        }
-
-        .roi-item {
-            background: rgba(255,255,255,0.1);
-            padding: 20px;
-            border-radius: 10px;
-        }
-
-        .roi-label {
-            font-size: 0.9rem;
-            opacity: 0.9;
-            margin-bottom: 10px;
-        }
-
-        .roi-value {
-            font-size: 2rem;
-            font-weight: 700;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f7fa; min-height: 100vh; }
+        .page-header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 35px 30px; border-radius: 15px; margin-bottom: 25px; color: white; box-shadow: 0 10px 40px rgba(102,126,234,0.3); }
+        .page-header h1 { font-size: 2rem; margin-bottom: 8px; }
+        .page-header .subtitle { opacity: 0.95; font-size: 1rem; }
+        .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 25px; }
+        .metric-card { background: white; padding: 22px; border-radius: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); position: relative; overflow: hidden; }
+        .metric-card::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; }
+        .metric-card.purple::before { background: linear-gradient(135deg, #667eea, #764ba2); }
+        .metric-card.green::before { background: #28a745; }
+        .metric-card.blue::before { background: #17a2b8; }
+        .metric-card.orange::before { background: #fd7e14; }
+        .metric-label { color: #666; font-size: 0.85rem; margin-bottom: 8px; }
+        .metric-value { font-size: 2.2rem; font-weight: 700; color: #333; margin-bottom: 6px; }
+        .metric-sub { font-size: 0.8rem; padding: 3px 10px; border-radius: 12px; display: inline-block; }
+        .sub-positive { background: #d4edda; color: #155724; }
+        .sub-neutral { background: #d1ecf1; color: #0c5460; }
+        .sub-negative { background: #f8d7da; color: #721c24; }
+        .card { background: white; border-radius: 15px; padding: 25px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 25px; }
+        .card h2 { color: #333; margin-bottom: 15px; font-size: 1.3rem; }
+        .chart-container { position: relative; height: 300px; margin-top: 10px; }
+        .scores-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .score-card { text-align: center; padding: 20px; border-radius: 12px; border: 2px solid #e9ecef; }
+        .score-card .score-val { font-size: 2rem; font-weight: 700; }
+        .score-card .score-lbl { font-size: 0.8rem; color: #888; margin-top: 4px; }
+        .score-bar-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f0f0f0; }
+        .score-bar-row:last-child { border-bottom: none; }
+        .score-bar-name { width: 140px; font-size: 0.9rem; color: #555; flex-shrink: 0; }
+        .score-bar-track { flex: 1; height: 10px; background: #e9ecef; border-radius: 5px; overflow: hidden; }
+        .score-bar-fill { height: 100%; border-radius: 5px; transition: width 0.8s ease; }
+        .score-bar-val { width: 50px; text-align: right; font-weight: 700; font-size: 0.9rem; }
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 12px 15px; background: #f8f9fa; color: #555; font-weight: 600; font-size: 0.85rem; border-bottom: 2px solid #e9ecef; }
+        td { padding: 12px 15px; border-bottom: 1px solid #f0f0f0; font-size: 0.9rem; color: #333; }
+        tr:hover { background: #f8f9fa; }
+        .badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 600; }
+        .badge-up { background: #d4edda; color: #155724; }
+        .badge-down { background: #f8d7da; color: #721c24; }
+        .badge-same { background: #e9ecef; color: #666; }
+        .roi-card { background: linear-gradient(135deg, #28a745, #20c997); color: white; padding: 30px; border-radius: 15px; margin-bottom: 25px; }
+        .roi-card h3 { margin-bottom: 15px; font-size: 1.4rem; }
+        .roi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-top: 15px; }
+        .roi-item { background: rgba(255,255,255,0.15); padding: 18px; border-radius: 10px; }
+        .roi-label { font-size: 0.85rem; opacity: 0.9; margin-bottom: 6px; }
+        .roi-value { font-size: 1.8rem; font-weight: 700; }
+        .actions-progress { display: flex; gap: 15px; flex-wrap: wrap; margin-top: 10px; }
+        .ap-stat { flex: 1; min-width: 140px; background: #f8f9fa; border-radius: 10px; padding: 15px; text-align: center; }
+        .ap-stat .ap-val { font-size: 1.6rem; font-weight: 700; color: #667eea; }
+        .ap-stat .ap-lbl { font-size: 0.8rem; color: #888; margin-top: 4px; }
+        .loading { text-align: center; padding: 50px; color: #888; }
+        .spinner { width: 40px; height: 40px; border: 4px solid #e0e0e0; border-top-color: #667eea; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 15px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
-    <!-- Sidebar injected by sidebar.js -->
-
-    <div class="main-content">
-        <!-- Page Header -->
+    <div class="container">
         <div class="page-header">
-            <h1>📊 Progress Tracking Dashboard</h1>
-            <p class="subtitle">Track your marketing improvements with automated before/after verification</p>
+            <h1 id="headerTitle">Progress Tracking</h1>
+            <p class="subtitle" id="headerSub">Track your SEO improvements with real data</p>
         </div>
 
-        <!-- Key Metrics -->
-        <div class="metrics-grid">
-            <div class="metric-card">
-                <div class="metric-label">Actions Completed</div>
-                <div class="metric-value" id="completedActions">0</div>
-                <div class="metric-change positive">
-                    <span>↑</span>
-                    <span id="completedChange">+0 this week</span>
+        <div id="loadingState" class="loading"><div class="spinner"></div><p>Loading progress data...</p></div>
+
+        <div id="mainContent" style="display:none;">
+            <!-- Key Metrics -->
+            <div class="metrics-grid" id="metricsGrid">
+                <div class="metric-card purple">
+                    <div class="metric-label">Total Clicks (30 days)</div>
+                    <div class="metric-value" id="totalClicks">--</div>
+                    <div class="metric-sub sub-neutral" id="clicksSub">Loading...</div>
+                </div>
+                <div class="metric-card green">
+                    <div class="metric-label">Total Impressions</div>
+                    <div class="metric-value" id="totalImpressions">--</div>
+                    <div class="metric-sub sub-neutral" id="impressionsSub">Loading...</div>
+                </div>
+                <div class="metric-card blue">
+                    <div class="metric-label">Avg Position</div>
+                    <div class="metric-value" id="avgPosition">--</div>
+                    <div class="metric-sub sub-neutral" id="positionSub">Loading...</div>
+                </div>
+                <div class="metric-card orange">
+                    <div class="metric-label">Average CTR</div>
+                    <div class="metric-value" id="avgCTR">--</div>
+                    <div class="metric-sub sub-neutral" id="ctrSub">Loading...</div>
                 </div>
             </div>
 
-            <div class="metric-card">
-                <div class="metric-label">Average Ranking Improvement</div>
-                <div class="metric-value" id="rankingImprovement">+0</div>
-                <div class="metric-change positive">
-                    <span>↑</span>
-                    <span id="rankingChange">positions</span>
+            <!-- SEO Scores Overview -->
+            <div class="card">
+                <h2>SEO Health Scores</h2>
+                <div class="scores-grid" id="scoresGrid">
+                    <div class="score-card"><div class="score-val" id="auditScore" style="color:#667eea;">--</div><div class="score-lbl">Audit Score</div></div>
+                    <div class="score-card"><div class="score-val" id="healthScore" style="color:#28a745;">--</div><div class="score-lbl">Health Score</div></div>
+                    <div class="score-card"><div class="score-val" id="aiScore" style="color:#764ba2;">--</div><div class="score-lbl">AI Visibility</div></div>
+                    <div class="score-card"><div class="score-val" id="localScore" style="color:#fd7e14;">--</div><div class="score-lbl">Local SEO</div></div>
+                </div>
+                <div id="scoreBreakdown"></div>
+            </div>
+
+            <!-- Traffic Over Time Chart -->
+            <div class="card">
+                <h2>Search Traffic Over Time</h2>
+                <div class="chart-container">
+                    <canvas id="trafficChart"></canvas>
                 </div>
             </div>
 
-            <div class="metric-card">
-                <div class="metric-label">Local Presence Score</div>
-                <div class="metric-value" id="presenceScore">0%</div>
-                <div class="metric-change positive">
-                    <span>↑</span>
-                    <span id="presenceChange">+0% from baseline</span>
+            <!-- Daily Score Trends (from automated scans) -->
+            <div class="card">
+                <h2>Daily Score Trends (Automated Scans)</h2>
+                <p style="color:#888; font-size:0.85rem; margin-bottom:10px;">Historical data from daily automated scans. Updates every 24 hours.</p>
+                <div class="chart-container">
+                    <canvas id="trendChart"></canvas>
+                </div>
+                <div id="trendEmpty" style="display:none; text-align:center; padding:30px; color:#888;">
+                    <p>No scan history yet. Run your first scan from the <a href="/alerts" style="color:#667eea;">Alerts page</a>.</p>
                 </div>
             </div>
 
-            <div class="metric-card">
-                <div class="metric-label">Estimated Monthly Revenue Impact</div>
-                <div class="metric-value" id="revenueImpact">$0</div>
-                <div class="metric-change positive">
-                    <span>↑</span>
-                    <span id="revenueChange">from actions</span>
-                </div>
+            <!-- Keyword Rankings Progress -->
+            <div class="card">
+                <h2>Keyword Ranking Changes (This Week vs Last Week)</h2>
+                <div id="rankingsTable"><div class="loading"><div class="spinner"></div></div></div>
             </div>
-        </div>
 
-        <!-- Progress Over Time Chart -->
-        <div class="section">
-            <h2 class="section-title">
-                <span>📈</span>
-                <span>Progress Over Time</span>
-            </h2>
-            <div class="chart-container">
-                <canvas id="progressChart"></canvas>
+            <!-- Action Plan Progress -->
+            <div class="card">
+                <h2>Action Plan Progress</h2>
+                <div class="actions-progress" id="actionsProgress">
+                    <div class="ap-stat"><div class="ap-val" id="apCompleted">0</div><div class="ap-lbl">Completed</div></div>
+                    <div class="ap-stat"><div class="ap-val" id="apPending">0</div><div class="ap-lbl">Pending</div></div>
+                    <div class="ap-stat"><div class="ap-val" id="apTotal">0</div><div class="ap-lbl">Total Actions</div></div>
+                    <div class="ap-stat"><div class="ap-val" id="apProgress">0%</div><div class="ap-lbl">Progress</div></div>
+                </div>
+                <p style="color:#888; font-size:0.85rem; margin-top:12px;">Actions tracked from the <a href="/actions" style="color:#667eea;">Action Plan</a> page</p>
             </div>
-        </div>
 
-        <!-- Actions Tracking Table -->
-        <div class="section">
-            <h2 class="section-title">
-                <span>✅</span>
-                <span>Action Progress & Verification</span>
-            </h2>
-            <table class="actions-table" id="actionsTable">
-                <thead>
-                    <tr>
-                        <th>Action</th>
-                        <th>Status</th>
-                        <th>Before → After</th>
-                        <th>Impact</th>
-                        <th>Last Verified</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="actionsTableBody">
-                    <!-- Actions will be populated here -->
-                </tbody>
-            </table>
-        </div>
-
-        <!-- ROI Summary -->
-        <div class="roi-summary">
-            <h3>💰 Return on Investment Summary</h3>
-            <p>Estimated business impact from completed actions</p>
-            <div class="roi-grid">
-                <div class="roi-item">
-                    <div class="roi-label">New Leads/Month</div>
-                    <div class="roi-value" id="roiLeads">0</div>
-                </div>
-                <div class="roi-item">
-                    <div class="roi-label">Traffic Increase</div>
-                    <div class="roi-value" id="roiTraffic">+0%</div>
-                </div>
-                <div class="roi-item">
-                    <div class="roi-label">Revenue Potential</div>
-                    <div class="roi-value" id="roiRevenue">$0/mo</div>
-                </div>
-                <div class="roi-item">
-                    <div class="roi-label">Time Saved</div>
-                    <div class="roi-value" id="roiTime">0 hrs</div>
+            <!-- ROI Summary -->
+            <div class="roi-card">
+                <h3>Performance Summary</h3>
+                <p style="opacity:0.9;">Based on real Google Search Console data and site scans</p>
+                <div class="roi-grid">
+                    <div class="roi-item"><div class="roi-label">Keywords Tracked</div><div class="roi-value" id="roiKeywords">0</div></div>
+                    <div class="roi-item"><div class="roi-label">Top 10 Rankings</div><div class="roi-value" id="roiTop10">0</div></div>
+                    <div class="roi-item"><div class="roi-label">Keywords Improving</div><div class="roi-value" id="roiImproving">0</div></div>
+                    <div class="roi-item"><div class="roi-label">Keywords Declining</div><div class="roi-value" id="roiDeclining">0</div></div>
                 </div>
             </div>
         </div>
     </div>
 
+    <script src="/sidebar.js"></script>
     <script>
-        // Dynamic data - loaded from localStorage or API
-        const PROGRESS_KEY = 'seo_progress_data';
+        let clientConfig = {};
+        let gscProperty = '';
 
-        // Load saved progress or use empty state
-        function loadProgressData() {
-            const saved = localStorage.getItem(PROGRESS_KEY);
-            if (saved) {
-                return JSON.parse(saved);
+        async function init() {
+            initSidebar('/progress');
+            try {
+                // Get client config
+                const cfgRes = await fetch('/api/config');
+                clientConfig = await cfgRes.json();
+                document.getElementById('headerTitle').textContent = `${clientConfig.name || clientConfig.domain} - Progress`;
+                document.getElementById('headerSub').textContent = `SEO performance tracking for ${clientConfig.domain}`;
+
+                // Resolve GSC property
+                try {
+                    const sitesRes = await fetch('/api/gsc/sites');
+                    const sitesData = await sitesRes.json();
+                    if (sitesData.success && sitesData.sites) {
+                        const match = sitesData.sites.find(s => s.siteUrl.toLowerCase().includes(clientConfig.domain.toLowerCase()));
+                        gscProperty = match ? match.siteUrl : 'https://' + clientConfig.domain + '/';
+                    } else {
+                        gscProperty = 'https://' + clientConfig.domain + '/';
+                    }
+                } catch(e) {
+                    gscProperty = 'https://' + clientConfig.domain + '/';
+                }
+
+                const siteUrl = 'https://' + clientConfig.domain;
+                const encodedProp = encodeURIComponent(gscProperty);
+
+                // Fetch all data in parallel
+                const [summaryRes, dateRes, rankingsRes, auditRes, healthRes, aiRes, localRes] = await Promise.all([
+                    fetch('/api/gsc/summary?site=' + encodedProp),
+                    fetch('/api/gsc/analytics?site=' + encodedProp + '&dimensions=date'),
+                    fetch('/api/gsc/rankings?site=' + encodedProp),
+                    fetch('/api/seo-agents/audit?url=' + encodeURIComponent(siteUrl)),
+                    fetch('/api/seo-agents/health?site=' + encodeURIComponent(siteUrl)),
+                    fetch('/api/ai-discovery/scan?domain=' + encodeURIComponent(clientConfig.domain) + '&name=' + encodeURIComponent(clientConfig.name || clientConfig.domain)),
+                    fetch('/api/local-listing/scan?domain=' + encodeURIComponent(clientConfig.domain) + '&name=' + encodeURIComponent(clientConfig.name || clientConfig.domain))
+                ]);
+
+                const summary = await summaryRes.json();
+                const dateData = await dateRes.json();
+                const rankings = await rankingsRes.json();
+                const audit = await auditRes.json();
+                const health = await healthRes.json();
+                const ai = await aiRes.json();
+                const local = await localRes.json();
+
+                renderMetrics(summary);
+                renderScores(audit, health, ai, local);
+                renderTrafficChart(dateData);
+                renderRankings(rankings);
+                renderActionProgress();
+                renderROI(summary, rankings);
+                loadTrendChart();
+
+                document.getElementById('loadingState').style.display = 'none';
+                document.getElementById('mainContent').style.display = 'block';
+            } catch(e) {
+                console.error('Init error:', e);
+                document.getElementById('loadingState').innerHTML = '<p style="color:#dc3545;">Error loading data: ' + e.message + '</p>';
             }
-            // Empty state - no hardcoded data
-            return {
-                actions: [],
-                weeklyProgress: []
-            };
         }
 
-        const trackingData = loadProgressData();
+        function renderMetrics(summary) {
+            if (!summary.success || !summary.summary) return;
+            const s = summary.summary;
 
-        window.addEventListener('load', () => {
-            loadDashboard();
-            initializeChart();
-        });
+            document.getElementById('totalClicks').textContent = s.totalClicks.toLocaleString();
+            document.getElementById('clicksSub').textContent = s.keywordsTracked + ' keywords tracked';
 
-        function loadDashboard() {
-            // Update metrics based on actual data
-            const completed = trackingData.actions.filter(a => a.status === 'completed' || a.status === 'verified').length;
-            const total = trackingData.actions.length;
+            document.getElementById('totalImpressions').textContent = s.totalImpressions.toLocaleString();
+            document.getElementById('impressionsSub').textContent = 'Last 30 days';
 
-            document.getElementById('completedActions').textContent = completed;
-            document.getElementById('completedChange').textContent = total > 0 ? `${completed}/${total} actions` : 'No actions yet';
+            document.getElementById('avgPosition').textContent = s.avgPosition;
+            const posClass = parseFloat(s.avgPosition) <= 20 ? 'sub-positive' : parseFloat(s.avgPosition) <= 50 ? 'sub-neutral' : 'sub-negative';
+            document.getElementById('positionSub').className = 'metric-sub ' + posClass;
+            document.getElementById('positionSub').textContent = s.top10Rankings + ' in top 10';
 
-            // Calculate from actual data or show defaults
-            document.getElementById('rankingImprovement').textContent = total > 0 ? calculateRankingImprovement() : '-';
-            document.getElementById('presenceScore').textContent = total > 0 ? calculatePresenceScore() + '%' : '0%';
-            document.getElementById('presenceChange').textContent = total > 0 ? 'Based on actions' : 'Add actions to track';
-            document.getElementById('revenueImpact').textContent = total > 0 ? calculateRevenueImpact() : '-';
-
-            // ROI metrics - calculated from actual progress
-            document.getElementById('roiLeads').textContent = total > 0 ? estimateLeads() : '0';
-            document.getElementById('roiTraffic').textContent = total > 0 ? '+' + estimateTrafficIncrease() + '%' : '+0%';
-            document.getElementById('roiRevenue').textContent = total > 0 ? calculateRevenueImpact() + '/mo' : '$0/mo';
-            document.getElementById('roiTime').textContent = total > 0 ? estimateTimeSaved() + ' hrs' : '0 hrs';
-
-            // Populate actions table
-            renderActionsTable();
+            document.getElementById('avgCTR').textContent = s.avgCTR + '%';
+            const ctrClass = parseFloat(s.avgCTR) >= 3 ? 'sub-positive' : parseFloat(s.avgCTR) >= 1 ? 'sub-neutral' : 'sub-negative';
+            document.getElementById('ctrSub').className = 'metric-sub ' + ctrClass;
+            document.getElementById('ctrSub').textContent = parseFloat(s.avgCTR) >= 3 ? 'Good CTR' : 'Room to improve';
         }
 
-        function calculateRankingImprovement() {
-            const rankings = trackingData.actions
-                .filter(a => a.after?.ranking)
-                .map(a => a.after.ranking);
-            if (rankings.length === 0) return '-';
-            const avg = rankings.reduce((a, b) => a + b, 0) / rankings.length;
-            return '+' + avg.toFixed(1);
+        function renderScores(audit, health, ai, local) {
+            const scores = [];
+
+            // Audit score
+            if (audit.success && audit.data) {
+                const passed = audit.data.checks.filter(c => c.passed).length;
+                const total = audit.data.checks.length;
+                const pct = Math.round((passed / total) * 100);
+                document.getElementById('auditScore').textContent = pct + '/100';
+                scores.push({ name: 'Site Audit', score: pct });
+            } else {
+                document.getElementById('auditScore').textContent = 'N/A';
+            }
+
+            // Health score
+            if (health.success && health.data) {
+                const checks = health.data.checks;
+                const passed = Object.values(checks).filter(v => v === true).length;
+                const total = Object.keys(checks).length;
+                const pct = Math.round((passed / total) * 100);
+                document.getElementById('healthScore').textContent = pct + '/100';
+                scores.push({ name: 'Health', score: pct });
+            } else {
+                document.getElementById('healthScore').textContent = 'N/A';
+            }
+
+            // AI visibility
+            if (ai.success) {
+                document.getElementById('aiScore').textContent = ai.overallScore + '/100';
+                scores.push({ name: 'AI Visibility', score: ai.overallScore });
+            } else {
+                document.getElementById('aiScore').textContent = 'N/A';
+            }
+
+            // Local SEO
+            if (local.success && local.stats) {
+                document.getElementById('localScore').textContent = local.stats.localScore + '/100';
+                scores.push({ name: 'Local SEO', score: local.stats.localScore });
+            } else {
+                document.getElementById('localScore').textContent = 'N/A';
+            }
+
+            // Score breakdown bars
+            const breakdown = document.getElementById('scoreBreakdown');
+            breakdown.innerHTML = scores.map(s => {
+                const color = s.score >= 70 ? '#28a745' : s.score >= 40 ? '#ffc107' : '#dc3545';
+                return `<div class="score-bar-row">
+                    <div class="score-bar-name">${s.name}</div>
+                    <div class="score-bar-track"><div class="score-bar-fill" style="width:${s.score}%;background:${color};"></div></div>
+                    <div class="score-bar-val" style="color:${color};">${s.score}%</div>
+                </div>`;
+            }).join('');
         }
 
-        function calculatePresenceScore() {
-            const completed = trackingData.actions.filter(a => a.status === 'completed' || a.status === 'verified').length;
-            const total = trackingData.actions.length;
-            return total > 0 ? Math.round((completed / total) * 100) : 0;
-        }
-
-        function calculateRevenueImpact() {
-            // Estimate $500 per completed action
-            const completed = trackingData.actions.filter(a => a.status === 'completed' || a.status === 'verified').length;
-            return '$' + (completed * 500).toLocaleString();
-        }
-
-        function estimateLeads() {
-            const completed = trackingData.actions.filter(a => a.status === 'completed' || a.status === 'verified').length;
-            return Math.round(completed * 3);
-        }
-
-        function estimateTrafficIncrease() {
-            const completed = trackingData.actions.filter(a => a.status === 'completed' || a.status === 'verified').length;
-            return completed * 15;
-        }
-
-        function estimateTimeSaved() {
-            const completed = trackingData.actions.filter(a => a.status === 'completed' || a.status === 'verified').length;
-            return completed * 5;
-        }
-
-        function renderActionsTable() {
-            const tbody = document.getElementById('actionsTableBody');
-
-            if (trackingData.actions.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="6" style="text-align: center; padding: 40px; color: #666;">
-                            <div style="font-size: 3rem; margin-bottom: 15px;">📋</div>
-                            <h3 style="margin-bottom: 10px; color: #333;">No Actions Tracked Yet</h3>
-                            <p style="margin-bottom: 20px;">Start tracking your SEO improvements to measure ROI.</p>
-                            <button onclick="addSampleAction()" style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; cursor: pointer;">
-                                + Add First Action
-                            </button>
-                        </td>
-                    </tr>
-                `;
+        function renderTrafficChart(dateData) {
+            if (!dateData.success || !dateData.rows || dateData.rows.length === 0) {
+                document.getElementById('trafficChart').parentElement.innerHTML = '<p style="color:#888;text-align:center;padding:40px;">No date-level traffic data available</p>';
                 return;
             }
 
-            tbody.innerHTML = trackingData.actions.map(action => `
-                <tr>
-                    <td><strong>${action.name}</strong></td>
-                    <td><span class="status-badge status-${action.status.replace('_', '-')}">${formatStatus(action.status)}</span></td>
-                    <td>${formatBeforeAfter(action)}</td>
-                    <td>${action.impact}</td>
-                    <td>${action.lastVerified || 'Not yet'}</td>
-                    <td>
-                        <div class="action-buttons">
-                            ${action.status !== 'verified' ? `
-                                <button class="btn btn-verify" onclick="verifyAction(${action.id})">
-                                    🔄 Verify
-                                </button>
-                            ` : ''}
-                            ${action.status === 'not-started' ? `
-                                <button class="btn btn-done" onclick="markDone(${action.id})">
-                                    ✓ Start
-                                </button>
-                            ` : ''}
-                        </div>
-                    </td>
-                </tr>
-            `).join('');
-        }
+            const rows = dateData.rows.sort((a, b) => a.keys[0].localeCompare(b.keys[0]));
+            const labels = rows.map(r => {
+                const d = new Date(r.keys[0]);
+                return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            });
+            const clicks = rows.map(r => r.clicks || 0);
+            const impressions = rows.map(r => r.impressions || 0);
 
-        function addSampleAction() {
-            const name = prompt('Enter action name (e.g., "Optimize homepage meta tags"):');
-            if (name) {
-                const newAction = {
-                    id: Date.now(),
-                    name: name,
-                    status: 'not-started',
-                    before: null,
-                    after: null,
-                    impact: 'Pending',
-                    lastVerified: null,
-                    category: 'seo-technical'
-                };
-                trackingData.actions.push(newAction);
-                localStorage.setItem(PROGRESS_KEY, JSON.stringify(trackingData));
-                loadDashboard();
-            }
-        }
-
-        function formatStatus(status) {
-            return status.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
-        }
-
-        function formatBeforeAfter(action) {
-            if (!action.before && !action.after) {
-                return '<span style="color: #999;">No data</span>';
-            }
-
-            if (action.category === 'keywords' && action.after?.ranking) {
-                return `<div class="before-after">
-                    <div class="before-after-item">
-                        <div class="before-after-label">Before</div>
-                        <div class="before-after-value">Not ranked</div>
-                    </div>
-                    <div class="arrow">→</div>
-                    <div class="before-after-item">
-                        <div class="before-after-label">After</div>
-                        <div class="before-after-value">#${action.after.ranking}</div>
-                    </div>
-                </div>`;
-            }
-
-            if (action.category === 'local-listing') {
-                return `<div class="before-after">
-                    <div class="before-after-item">
-                        <div class="before-after-label">Before</div>
-                        <div class="before-after-value">${action.before.impressions || 0}</div>
-                    </div>
-                    <div class="arrow">→</div>
-                    <div class="before-after-item">
-                        <div class="before-after-label">After</div>
-                        <div class="before-after-value">${action.after.impressions || 0}</div>
-                    </div>
-                </div>`;
-            }
-
-            if (action.category === 'seo-technical') {
-                const beforeValue = action.before.metaDesc !== undefined ? action.before.metaDesc : action.before.optimized;
-                const afterValue = action.after.metaDesc !== undefined ? action.after.metaDesc : action.after.optimized;
-                return `<div class="before-after">
-                    <div class="before-after-item">
-                        <div class="before-after-label">Before</div>
-                        <div class="before-after-value">${beforeValue} pages</div>
-                    </div>
-                    <div class="arrow">→</div>
-                    <div class="before-after-item">
-                        <div class="before-after-label">After</div>
-                        <div class="before-after-value">${afterValue} pages</div>
-                    </div>
-                </div>`;
-            }
-
-            return '<span style="color: #999;">Pending</span>';
-        }
-
-        function initializeChart() {
-            const ctx = document.getElementById('progressChart').getContext('2d');
+            const ctx = document.getElementById('trafficChart').getContext('2d');
             new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: trackingData.weeklyProgress.map(w => w.week),
+                    labels,
                     datasets: [
                         {
-                            label: 'Actions Completed',
-                            data: trackingData.weeklyProgress.map(w => w.completed),
+                            label: 'Clicks',
+                            data: clicks,
                             borderColor: '#667eea',
-                            backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                            tension: 0.4
+                            backgroundColor: 'rgba(102,126,234,0.1)',
+                            fill: true,
+                            tension: 0.4,
+                            borderWidth: 2,
+                            pointRadius: 2
                         },
                         {
-                            label: 'Overall Score',
-                            data: trackingData.weeklyProgress.map(w => w.score),
+                            label: 'Impressions',
+                            data: impressions,
                             borderColor: '#28a745',
-                            backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                            backgroundColor: 'rgba(40,167,69,0.05)',
+                            fill: true,
                             tension: 0.4,
+                            borderWidth: 2,
+                            pointRadius: 2,
                             yAxisID: 'y1'
                         }
                     ]
@@ -625,57 +346,142 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    interaction: {
-                        mode: 'index',
-                        intersect: false
-                    },
+                    interaction: { mode: 'index', intersect: false },
                     scales: {
-                        y: {
-                            type: 'linear',
-                            display: true,
-                            position: 'left',
-                            title: {
-                                display: true,
-                                text: 'Actions Completed'
-                            }
-                        },
-                        y1: {
-                            type: 'linear',
-                            display: true,
-                            position: 'right',
-                            title: {
-                                display: true,
-                                text: 'Overall Score (%)'
-                            },
-                            grid: {
-                                drawOnChartArea: false
-                            }
-                        }
+                        y: { type: 'linear', display: true, position: 'left', title: { display: true, text: 'Clicks' } },
+                        y1: { type: 'linear', display: true, position: 'right', title: { display: true, text: 'Impressions' }, grid: { drawOnChartArea: false } }
                     }
                 }
             });
         }
 
-        async function verifyAction(actionId) {
-            alert(`🤖 AI Verification Started!\n\nGemini is re-scanning to verify this action...\nThis will take ~10 seconds.`);
+        function renderRankings(rankings) {
+            const container = document.getElementById('rankingsTable');
 
-            // Simulate API call
-            setTimeout(() => {
-                alert(`✅ Verification Complete!\n\nAction verified successfully.\nMetrics have been updated.`);
-                location.reload();
-            }, 2000);
+            if (!rankings.success || !rankings.rankings || rankings.rankings.length === 0) {
+                container.innerHTML = '<p style="color:#888;text-align:center;padding:30px;">No ranking comparison data available</p>';
+                return;
+            }
+
+            const kws = rankings.rankings;
+
+            // Count improvements and declines
+            let improving = 0, declining = 0, stable = 0;
+            kws.forEach(k => {
+                const change = k.change || 0;
+                if (change > 0.5) improving++;
+                else if (change < -0.5) declining++;
+                else stable++;
+            });
+
+            // Show top movers (biggest changes)
+            const sorted = [...kws].sort((a, b) => Math.abs(b.change || 0) - Math.abs(a.change || 0)).slice(0, 20);
+
+            container.innerHTML = `
+                <div style="display:flex;gap:15px;margin-bottom:15px;flex-wrap:wrap;">
+                    <div style="padding:8px 16px;background:#d4edda;border-radius:8px;font-weight:600;color:#155724;">Improving: ${improving}</div>
+                    <div style="padding:8px 16px;background:#f8d7da;border-radius:8px;font-weight:600;color:#721c24;">Declining: ${declining}</div>
+                    <div style="padding:8px 16px;background:#e9ecef;border-radius:8px;font-weight:600;color:#666;">Stable: ${stable}</div>
+                </div>
+                <table>
+                    <thead><tr><th>Keyword</th><th>Current Pos</th><th>Previous Pos</th><th>Change</th><th>Clicks</th><th>Impressions</th></tr></thead>
+                    <tbody>${sorted.map(k => {
+                        const change = k.change || 0;
+                        const badgeCls = change > 0.5 ? 'badge-up' : change < -0.5 ? 'badge-down' : 'badge-same';
+                        const arrow = change > 0.5 ? '+' + change.toFixed(1) : change < -0.5 ? change.toFixed(1) : '0';
+                        return `<tr>
+                            <td><strong>${k.keyword}</strong></td>
+                            <td>${k.currentPosition ? k.currentPosition.toFixed(1) : '--'}</td>
+                            <td>${k.previousPosition ? k.previousPosition.toFixed(1) : 'New'}</td>
+                            <td><span class="badge ${badgeCls}">${arrow}</span></td>
+                            <td>${k.clicks || 0}</td>
+                            <td>${(k.impressions || 0).toLocaleString()}</td>
+                        </tr>`;
+                    }).join('')}</tbody>
+                </table>`;
         }
 
-        function markDone(actionId) {
-            alert(`Action marked as started!\nClick "Verify" when complete to measure impact.`);
-            location.reload();
-        }
-    </script>
+        function renderActionProgress() {
+            // Read from action plan's localStorage key
+            let doneActions = [];
+            try { doneActions = JSON.parse(localStorage.getItem('seo_action_plan_done') || '[]'); } catch(e) {}
 
-    <!-- Sidebar Component -->
-    <script src="/sidebar.js"></script>
-    <script>
-        initSidebar('/progress');
+            // We don't have the full action list without re-generating it,
+            // but we can count what's marked done and estimate a reasonable total
+            const completed = doneActions.length;
+
+            // Estimate total: Beach Hydrovac typically has ~18-25 actions from the scans
+            // We show what we know
+            document.getElementById('apCompleted').textContent = completed;
+
+            if (completed > 0) {
+                document.getElementById('apPending').textContent = 'View plan';
+                document.getElementById('apTotal').textContent = completed + '+';
+                document.getElementById('apProgress').textContent = 'Active';
+                document.getElementById('apProgress').style.color = '#28a745';
+            } else {
+                document.getElementById('apPending').textContent = '--';
+                document.getElementById('apTotal').textContent = '--';
+                document.getElementById('apProgress').textContent = 'Start plan';
+            }
+        }
+
+        function renderROI(summary, rankings) {
+            if (summary.success && summary.summary) {
+                document.getElementById('roiKeywords').textContent = summary.summary.keywordsTracked;
+                document.getElementById('roiTop10').textContent = summary.summary.top10Rankings;
+            }
+
+            if (rankings.success && rankings.rankings) {
+                let improving = 0, declining = 0;
+                rankings.rankings.forEach(k => {
+                    const change = k.change || 0;
+                    if (change > 0.5) improving++;
+                    else if (change < -0.5) declining++;
+                });
+                document.getElementById('roiImproving').textContent = improving;
+                document.getElementById('roiDeclining').textContent = declining;
+            }
+        }
+
+        async function loadTrendChart() {
+            try {
+                const res = await fetch('/api/scan-history?days=30');
+                const json = await res.json();
+                if (!json.success || !json.data || json.data.length === 0) {
+                    document.getElementById('trendChart').style.display = 'none';
+                    document.getElementById('trendEmpty').style.display = 'block';
+                    return;
+                }
+                const data = json.data;
+                const ctx = document.getElementById('trendChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: data.map(d => d.scan_date),
+                        datasets: [
+                            { label: 'Audit', data: data.map(d => d.audit_score), borderColor: '#667eea', tension: 0.4, fill: false, spanGaps: true, borderWidth: 2, pointRadius: 3 },
+                            { label: 'Health', data: data.map(d => d.health_score), borderColor: '#28a745', tension: 0.4, fill: false, spanGaps: true, borderWidth: 2, pointRadius: 3 },
+                            { label: 'AI Visibility', data: data.map(d => d.ai_score), borderColor: '#764ba2', tension: 0.4, fill: false, spanGaps: true, borderWidth: 2, pointRadius: 3 },
+                            { label: 'Local', data: data.map(d => d.local_score), borderColor: '#fd7e14', tension: 0.4, fill: false, spanGaps: true, borderWidth: 2, pointRadius: 3 }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: { mode: 'index', intersect: false },
+                        plugins: { legend: { position: 'top' } },
+                        scales: { y: { min: 0, max: 100, title: { display: true, text: 'Score (%)' } } }
+                    }
+                });
+            } catch (e) {
+                console.error('Trend chart error:', e);
+                document.getElementById('trendChart').style.display = 'none';
+                document.getElementById('trendEmpty').style.display = 'block';
+            }
+        }
+
+        window.addEventListener('load', init);
     </script>
 </body>
 </html>

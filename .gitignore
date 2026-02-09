@@ -1,1 +1,6 @@
 .vercel
+node_modules
+.env
+.env.*
+*.log
+google-tokens.json

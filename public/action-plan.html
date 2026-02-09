@@ -3,880 +3,264 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Your Marketing Action Plan - Your Site</title>
-
+    <title>Action Plan - SEO Dashboard</title>
+    <link rel="stylesheet" href="/sidebar.css">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f5f7fa;
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 40px;
-            border-radius: 15px;
-            margin-bottom: 30px;
-        }
-
-        .header h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-        }
-
-        .header .subtitle {
-            opacity: 0.95;
-            font-size: 1.1rem;
-        }
-
-        .progress-overview {
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .progress-card {
-            background: white;
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        }
-
-        .progress-bar-container {
-            margin: 20px 0;
-        }
-
-        .progress-bar {
-            height: 30px;
-            background: #e0e0e0;
-            border-radius: 15px;
-            overflow: hidden;
-            position: relative;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #667eea, #764ba2);
-            transition: width 0.5s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: 600;
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
-            margin-top: 20px;
-        }
-
-        .stat-item {
-            text-align: center;
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 10px;
-        }
-
-        .stat-value {
-            font-size: 2rem;
-            font-weight: 700;
-            color: #667eea;
-        }
-
-        .stat-label {
-            font-size: 0.85rem;
-            color: #666;
-            margin-top: 5px;
-        }
-
-        .verify-all-btn {
-            width: 100%;
-            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-            color: white;
-            border: none;
-            padding: 16px;
-            border-radius: 10px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            margin-top: 20px;
-        }
-
-        .verify-all-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
-        }
-
-        .section {
-            background: white;
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            margin-bottom: 20px;
-        }
-
-        .section h2 {
-            color: #333;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .action-item {
-            border: 2px solid #e0e0e0;
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 15px;
-            transition: all 0.3s ease;
-        }
-
-        .action-item:hover {
-            border-color: #667eea;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.1);
-        }
-
-        .action-item.completed {
-            background: #f0f8f0;
-            border-color: #28a745;
-            opacity: 0.7;
-        }
-
-        .action-item.verifying {
-            background: #fff8e6;
-            border-color: #ffc107;
-        }
-
-        .action-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 15px;
-        }
-
-        .action-title {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: #333;
-            flex: 1;
-        }
-
-        .action-badges {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        .badge {
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            white-space: nowrap;
-        }
-
-        .badge-priority {
-            background: #fee;
-            color: #c00;
-        }
-
-        .badge-impact {
-            background: #e3f2fd;
-            color: #1976d2;
-        }
-
-        .badge-time {
-            background: #f3e5f5;
-            color: #7b1fa2;
-        }
-
-        .action-description {
-            color: #666;
-            margin-bottom: 15px;
-            line-height: 1.6;
-        }
-
-        .action-footer {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .btn {
-            padding: 8px 20px;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            font-weight: 600;
-            border: none;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .btn-primary {
-            background: #667eea;
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: #5568d3;
-        }
-
-        .btn-success {
-            background: #28a745;
-            color: white;
-        }
-
-        .btn-success:hover {
-            background: #218838;
-        }
-
-        .btn-secondary {
-            background: #6c757d;
-            color: white;
-        }
-
-        .btn-secondary:hover {
-            background: #5a6268;
-        }
-
-        .btn-outline {
-            background: white;
-            border: 2px solid #667eea;
-            color: #667eea;
-        }
-
-        .btn-outline:hover {
-            background: #667eea;
-            color: white;
-        }
-
-        .status-message {
-            padding: 10px;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            margin-top: 10px;
-        }
-
-        .status-success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-
-        .status-error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-
-        .status-info {
-            background: #d1ecf1;
-            color: #0c5460;
-            border: 1px solid #bee5eb;
-        }
-
-        .category-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            cursor: pointer;
-            padding: 15px 0;
-            border-bottom: 2px solid #e0e0e0;
-            margin-bottom: 20px;
-        }
-
-        .category-stats {
-            font-size: 0.9rem;
-            color: #666;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: #999;
-        }
-
-        .empty-state-icon {
-            font-size: 4rem;
-            margin-bottom: 20px;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 60px;
-        }
-
-        .spinner {
-            width: 50px;
-            height: 50px;
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #667eea;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        .alert {
-            padding: 15px 20px;
-            border-radius: 10px;
-            font-size: 1rem;
-        }
-
-        .alert-warning {
-            background: #fff3cd;
-            border-left: 4px solid #ffc107;
-            color: #856404;
-        }
-
-        .alert-info {
-            background: #d1ecf1;
-            border-left: 4px solid #0dcaf0;
-            color: #0c5460;
-        }
-
-        .action-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
-        .action-list li {
-            display: flex;
-            gap: 20px;
-            padding: 20px;
-            background: white;
-            border-radius: 12px;
-            margin-bottom: 15px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            transition: all 0.3s ease;
-        }
-
-        .action-list li:hover {
-            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.15);
-            transform: translateY(-2px);
-        }
-
-        .action-list li.completed {
-            opacity: 0.7;
-            background: #f8f9fa;
-        }
-
-        .action-icon {
-            width: 40px;
-            height: 40px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            font-size: 1.2rem;
-            flex-shrink: 0;
-        }
-
-        .action-content {
-            flex: 1;
-        }
-
-        .action-title {
-            font-size: 1.2rem;
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 8px;
-        }
-
-        .action-desc {
-            color: #666;
-            line-height: 1.6;
-            font-size: 0.95rem;
-        }
-
-        .action-buttons {
-            display: flex;
-            gap: 10px;
-            margin-top: 12px;
-        }
-
-        .action-buttons button {
-            padding: 8px 16px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.85rem;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-
-        .btn-done {
-            background: #28a745;
-            color: white;
-        }
-
-        .btn-done:hover {
-            background: #218838;
-        }
-
-        .btn-verify {
-            background: #0dcaf0;
-            color: white;
-        }
-
-        .btn-verify:hover {
-            background: #0aa2c0;
-        }
-
-        .section-title {
-            font-size: 1.8rem;
-            color: #333;
-            margin-bottom: 25px;
-        }
-
-        .impact-summary {
-            font-size: 1.1rem;
-            line-height: 1.8;
-        }
-
-        .impact-summary strong {
-            display: block;
-            margin-bottom: 5px;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f7fa; min-height: 100vh; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 35px 30px; border-radius: 15px; margin-bottom: 25px; }
+        .header h1 { font-size: 2rem; margin-bottom: 8px; }
+        .header .subtitle { opacity: 0.95; font-size: 1rem; }
+        .progress-row { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 25px; }
+        .card { background: white; border-radius: 15px; padding: 25px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .card h2 { color: #333; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; font-size: 1.3rem; }
+        .progress-bar { height: 28px; background: #e0e0e0; border-radius: 14px; overflow: hidden; margin: 15px 0; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, #667eea, #764ba2); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 0.9rem; transition: width 0.8s ease; }
+        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+        .stat-item { text-align: center; padding: 14px; background: #f8f9fa; border-radius: 10px; }
+        .stat-value { font-size: 1.8rem; font-weight: 700; color: #667eea; }
+        .stat-label { font-size: 0.8rem; color: #666; margin-top: 4px; }
+        .score-row { margin: 12px 0; display: flex; justify-content: space-between; align-items: center; }
+        .score-row span { color: #555; }
+        .score-row strong { color: #333; }
+        .score-bar { flex: 1; height: 8px; background: #e9ecef; border-radius: 4px; margin: 0 12px; overflow: hidden; }
+        .score-bar-fill { height: 100%; border-radius: 4px; transition: width 0.6s; }
+        .section-label { padding: 12px 18px; border-radius: 10px; margin-bottom: 15px; font-weight: 600; }
+        .label-quick { background: #fff3cd; border-left: 4px solid #ffc107; color: #856404; }
+        .label-medium { background: #d1ecf1; border-left: 4px solid #17a2b8; color: #0c5460; }
+        .label-long { background: #e2e3e5; border-left: 4px solid #6c757d; color: #383d41; }
+        .action-item { display: flex; gap: 15px; padding: 18px; border: 2px solid #e9ecef; border-radius: 12px; margin-bottom: 12px; transition: all 0.3s; align-items: flex-start; }
+        .action-item:hover { border-color: #667eea; box-shadow: 0 3px 15px rgba(102,126,234,0.1); }
+        .action-item.done { background: #f0f8f0; border-color: #28a745; opacity: 0.7; }
+        .action-num { width: 36px; height: 36px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0; }
+        .action-body { flex: 1; }
+        .action-title { font-size: 1.05rem; font-weight: 600; color: #333; margin-bottom: 6px; }
+        .action-desc { color: #666; font-size: 0.9rem; line-height: 1.5; margin-bottom: 10px; }
+        .action-meta { display: flex; gap: 10px; flex-wrap: wrap; }
+        .badge { padding: 4px 12px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
+        .badge-high { background: #f8d7da; color: #721c24; }
+        .badge-medium { background: #fff3cd; color: #856404; }
+        .badge-low { background: #d4edda; color: #155724; }
+        .badge-time { background: #e8eaf6; color: #3f51b5; }
+        .badge-category { background: #e0f2f1; color: #00695c; }
+        .action-btn { padding: 6px 14px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: 600; transition: all 0.3s; }
+        .btn-done { background: #28a745; color: white; }
+        .btn-done:hover { background: #218838; }
+        .btn-link { background: #e9ecef; color: #333; }
+        .btn-link:hover { background: #dee2e6; }
+        .impact-card { background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 15px; padding: 25px; color: white; margin-top: 20px; }
+        .impact-card h3 { margin-bottom: 12px; }
+        .impact-card p { opacity: 0.95; line-height: 1.7; margin-bottom: 6px; }
+        .loading { text-align: center; padding: 50px; color: #888; }
+        .spinner { width: 40px; height: 40px; border: 4px solid #e0e0e0; border-top-color: #667eea; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 15px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @media (max-width: 900px) { .progress-row { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- Header -->
         <div class="header">
-            <h1 id="businessName">🎯 Your Marketing Action Plan</h1>
-            <p class="subtitle">Track your progress and verify improvements</p>
-            <div style="margin-top: 15px;">
-                <a href="/progress" id="progressLink" style="display: inline-block; padding: 10px 20px; background: rgba(255,255,255,0.2); color: white; text-decoration: none; border-radius: 8px; font-weight: 600; transition: all 0.3s ease;">
-                    📊 View Progress Tracking →
-                </a>
-            </div>
+            <h1 id="headerTitle">Action Plan</h1>
+            <p class="subtitle" id="headerSub">Prioritized SEO improvements based on your site audit</p>
         </div>
 
-        <!-- Loading State -->
-        <div id="loading" class="loading">
-            <div class="spinner"></div>
-            <p>Loading your action plan...</p>
-        </div>
+        <div id="loadingState" class="loading"><div class="spinner"></div><p>Analyzing your site and generating action plan...</p></div>
 
-        <!-- Main Content -->
-        <div id="mainContent" style="display: none;">
-            <!-- Progress Overview -->
-            <div class="progress-overview">
-                <div class="progress-card">
-                    <h2>📊 Overall Progress</h2>
-                    <div class="progress-bar-container">
-                        <div class="progress-bar">
-                            <div class="progress-fill" id="overallProgress" style="width: 0%;">0%</div>
-                        </div>
-                    </div>
+        <div id="mainContent" style="display:none;">
+            <div class="progress-row">
+                <div class="card">
+                    <h2>Overall Progress</h2>
+                    <div class="progress-bar"><div class="progress-fill" id="progressBar" style="width:0%;">0%</div></div>
                     <div class="stats-grid">
-                        <div class="stat-item">
-                            <div class="stat-value" id="completedCount">0</div>
-                            <div class="stat-label">Completed</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-value" id="pendingCount">0</div>
-                            <div class="stat-label">Pending</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-value" id="totalCount">0</div>
-                            <div class="stat-label">Total Actions</div>
-                        </div>
+                        <div class="stat-item"><div class="stat-value" id="completedCount">0</div><div class="stat-label">Completed</div></div>
+                        <div class="stat-item"><div class="stat-value" id="pendingCount">0</div><div class="stat-label">Pending</div></div>
+                        <div class="stat-item"><div class="stat-value" id="totalCount">0</div><div class="stat-label">Total</div></div>
                     </div>
                 </div>
-
-                <div class="progress-card">
-                    <h2>🎯 Your Goals</h2>
-                    <div style="margin: 20px 0;">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-                            <span>Local Presence</span>
-                            <strong id="localScore">27%</strong>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-                            <span>AI Visibility</span>
-                            <strong id="aiScore">40%</strong>
-                        </div>
-                        <div style="display: flex; justify-content: space-between;">
-                            <span>Email Performance</span>
-                            <strong id="emailScore">15%</strong>
-                        </div>
-                    </div>
-                    <button class="verify-all-btn" onclick="verifyAllProgress()">
-                        🔄 Verify All Progress
-                    </button>
+                <div class="card">
+                    <h2>Score Breakdown</h2>
+                    <div id="scoreBreakdown"></div>
                 </div>
             </div>
 
-            <!-- Strategic Action Plan -->
-            <div class="section">
-                <h2 class="section-title">📋 Strategic Action Plan</h2>
-
-                <div class="alert alert-warning" style="margin-bottom: 20px;">
-                    <strong>⚡ Quick Wins (1-2 Weeks):</strong> Low-hanging fruit with immediate impact
-                </div>
-                <ul class="action-list" id="quickWins"></ul>
-
-                <div class="alert alert-info" style="margin-top: 30px; margin-bottom: 20px;">
-                    <strong>📅 Medium-Term Goals (1-2 Months):</strong> Build authority and coverage
-                </div>
-                <ul class="action-list" id="mediumTerm"></ul>
-
-                <div class="impact-summary" style="margin-top: 30px; padding: 25px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 15px; color: white;">
-                    <h3 style="margin-bottom: 15px;">🎯 Expected Impact</h3>
-                    <div id="impactMetrics"></div>
-                </div>
+            <div class="card">
+                <h2>Strategic Action Plan</h2>
+                <div class="section-label label-quick">Quick Wins (1-2 Weeks) - Immediate impact</div>
+                <div id="quickWins"></div>
+                <div class="section-label label-medium" style="margin-top:25px;">Medium-Term (1-2 Months) - Build authority</div>
+                <div id="mediumTerm"></div>
+                <div class="section-label label-long" style="margin-top:25px;">Long-Term (3-6 Months) - Sustained growth</div>
+                <div id="longTerm"></div>
             </div>
+
+            <div class="impact-card" id="impactCard"></div>
         </div>
     </div>
 
+    <script src="/sidebar.js"></script>
     <script>
-        let currentLeadId = null;
-        let actionsData = [];
+        let clientConfig = {};
+        let actions = [];
+        const STORAGE_KEY = 'seo_action_plan_done';
 
-        window.addEventListener('load', async () => {
-            // Get leadId from URL query parameter or localStorage
-            const urlParams = new URLSearchParams(window.location.search);
-            currentLeadId = urlParams.get('leadId') || localStorage.getItem('leadId');
-
-            if (!currentLeadId) {
-                showEmptyState();
-                return;
-            }
-
-            await loadActionPlan();
-        });
-
-        async function loadActionPlan() {
+        async function init() {
+            initSidebar('/actions');
             try {
-                const response = await fetch(`/api/action-plan/${currentLeadId}`);
-                const data = await response.json();
+                const cfgRes = await fetch('/api/config');
+                clientConfig = await cfgRes.json();
+                document.getElementById('headerTitle').textContent = `${clientConfig.name || clientConfig.domain} - Action Plan`;
+                document.getElementById('headerSub').textContent = `Prioritized improvements for ${clientConfig.domain}`;
 
-                if (!data.success) {
-                    throw new Error(data.error);
-                }
+                const siteUrl = 'https://' + clientConfig.domain;
 
-                actionsData = data.actions;
-                displayActionPlan(data);
+                // Fetch all data in parallel
+                const [auditRes, healthRes, aiRes, localRes] = await Promise.all([
+                    fetch('/api/seo-agents/audit?url=' + encodeURIComponent(siteUrl)),
+                    fetch('/api/seo-agents/health?site=' + encodeURIComponent(siteUrl)),
+                    fetch('/api/ai-discovery/scan?domain=' + encodeURIComponent(clientConfig.domain) + '&name=' + encodeURIComponent(clientConfig.name || clientConfig.domain)),
+                    fetch('/api/local-listing/scan?domain=' + encodeURIComponent(clientConfig.domain) + '&name=' + encodeURIComponent(clientConfig.name || clientConfig.domain))
+                ]);
 
-            } catch (error) {
-                console.error('Error loading action plan:', error);
-                showEmptyState();
+                const audit = await auditRes.json();
+                const health = await healthRes.json();
+                const ai = await aiRes.json();
+                const local = await localRes.json();
+
+                generateActions(audit, health, ai, local);
+                renderPlan();
+
+                document.getElementById('loadingState').style.display = 'none';
+                document.getElementById('mainContent').style.display = 'block';
+            } catch(e) {
+                console.error('Init error:', e);
+                document.getElementById('loadingState').innerHTML = '<p style="color:#dc3545;">Error loading data: ' + e.message + '</p>';
             }
         }
 
-        function displayActionPlan(data) {
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('mainContent').style.display = 'block';
-
-            // Update business name if available
-            if (data.lead && data.lead.businessName) {
-                document.getElementById('businessName').textContent = `🎯 ${data.lead.businessName} - Action Plan`;
-            }
-
-            // Update progress tracking link with leadId
-            document.getElementById('progressLink').href = `/progress?leadId=${currentLeadId}`;
-
-            // Calculate progress (based on ALL actions, including completed)
-            const completed = actionsData.filter(a => a.status === 'completed' || a.status === 'verified').length;
-            const pending = actionsData.filter(a => a.status !== 'completed' && a.status !== 'verified').length;
-            const total = actionsData.length;
-            const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
-
-            document.getElementById('overallProgress').style.width = progress + '%';
-            document.getElementById('overallProgress').textContent = progress + '%';
-            document.getElementById('completedCount').textContent = completed;
-            document.getElementById('pendingCount').textContent = pending;
-            document.getElementById('totalCount').textContent = total;
-
-            // Update scores (from data.stats or defaults)
-            if (data.stats) {
-                const presenceScore = data.stats.presenceScore || 0;
-                document.getElementById('localScore').textContent = presenceScore + '%';
-            }
-
-            // Separate actions into Quick Wins and Medium-Term (ONLY show pending/incomplete actions)
-            const pendingActions = actionsData.filter(a => a.status !== 'completed' && a.status !== 'verified');
-            const quickWins = pendingActions.filter(a => a.timeframe === 'quick' || a.priority === 'high').slice(0, 3);
-            const mediumTerm = pendingActions.filter(a => a.timeframe === 'medium' || a.priority === 'medium').slice(0, 3);
-
-            // Display actions
-            displayStrategicActions('quickWins', quickWins);
-            displayStrategicActions('mediumTerm', mediumTerm);
-
-            // Display impact metrics
-            displayImpactMetrics(data);
+        function getDone() {
+            try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch(e) { return []; }
         }
 
-        function displayStrategicActions(containerId, actions) {
+        function toggleDone(id) {
+            let done = getDone();
+            if (done.includes(id)) done = done.filter(d => d !== id);
+            else done.push(id);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(done));
+            renderPlan();
+        }
+
+        function generateActions(audit, health, ai, local) {
+            actions = [];
+            let id = 1;
+
+            // From Audit
+            if (audit.success && audit.data) {
+                audit.data.checks.filter(c => !c.passed).forEach(c => {
+                    const priority = c.weight >= 2 ? 'high' : 'medium';
+                    const timeframe = c.weight >= 2 ? 'quick' : 'medium';
+                    actions.push({ id: 'audit-' + id++, title: 'Fix: ' + c.name, desc: c.details, priority, timeframe, category: 'SEO Audit', link: '/website-audit' });
+                });
+            }
+
+            // From Health
+            if (health.success && health.data) {
+                if (!health.data.checks.robots) actions.push({ id: 'health-' + id++, title: 'Create robots.txt file', desc: 'Your site is missing a robots.txt file. This tells search engines how to crawl your site.', priority: 'high', timeframe: 'quick', category: 'Technical SEO' });
+                if (!health.data.checks.sitemap) actions.push({ id: 'health-' + id++, title: 'Submit XML Sitemap', desc: 'No sitemap.xml found. Create and submit to Google Search Console for faster indexing.', priority: 'high', timeframe: 'quick', category: 'Technical SEO' });
+                if (!health.data.checks.meta) actions.push({ id: 'health-' + id++, title: 'Add meta description to homepage', desc: 'Your homepage is missing a meta description, hurting click-through rates from search.', priority: 'high', timeframe: 'quick', category: 'On-Page SEO' });
+            }
+
+            // From AI Discovery
+            if (ai.success) {
+                if (!ai.signals.schema) actions.push({ id: 'ai-' + id++, title: 'Add structured data (JSON-LD)', desc: 'No schema markup detected. Add LocalBusiness schema to help AI platforms understand your business.', priority: 'high', timeframe: 'quick', category: 'AI Visibility', link: '/ai-discovery' });
+                if (!ai.signals.localBusiness) actions.push({ id: 'ai-' + id++, title: 'Add LocalBusiness schema', desc: 'Add Organization or LocalBusiness JSON-LD to your homepage for better entity recognition.', priority: 'high', timeframe: 'quick', category: 'AI Visibility' });
+                if (!ai.signals.hasAboutPage) actions.push({ id: 'ai-' + id++, title: 'Create detailed About page', desc: 'No about page found. Create entity-rich content describing your business, team, and history.', priority: 'medium', timeframe: 'medium', category: 'AI Visibility' });
+                if (ai.signals.socialProfiles && ai.signals.socialProfiles.length < 3) actions.push({ id: 'ai-' + id++, title: 'Add social media profile links', desc: `Only ${ai.signals.socialProfiles.length} social profiles linked from your site. Add links to Facebook, LinkedIn, Instagram, etc.`, priority: 'medium', timeframe: 'quick', category: 'AI Visibility' });
+                if (ai.signals.citations < 5) actions.push({ id: 'ai-' + id++, title: 'Build brand citations online', desc: `Only ${ai.signals.citations} brand citations found. Get mentioned in industry publications, press, and review sites.`, priority: 'high', timeframe: 'long', category: 'AI Visibility' });
+                if (!ai.signals.wikipedia) actions.push({ id: 'ai-' + id++, title: 'Build Wikipedia/Wikidata presence', desc: 'No Wikipedia presence found. This is a major signal for AI entity recognition.', priority: 'medium', timeframe: 'long', category: 'AI Visibility' });
+            }
+
+            // From Local Listing
+            if (local.success) {
+                const notListed = (local.directories || []).filter(d => !d.listed);
+                notListed.slice(0, 6).forEach(d => {
+                    actions.push({ id: 'local-' + id++, title: `Claim listing on ${d.name}`, desc: `Your business was not found on ${d.name}. Create or claim your listing to improve local visibility.`, priority: notListed.length > 6 ? 'high' : 'medium', timeframe: 'medium', category: 'Local SEO', link: '/local-listing' });
+                });
+                const ws = local.websiteSignals || {};
+                if (!ws.hasGoogleMaps) actions.push({ id: 'local-' + id++, title: 'Add Google Maps embed to website', desc: 'No Google Maps integration found. Add an embedded map to your contact page.', priority: 'medium', timeframe: 'quick', category: 'Local SEO' });
+                if (!ws.hasPhone) actions.push({ id: 'local-' + id++, title: 'Display phone number on website', desc: 'Phone number not found or not matching. Ensure it\'s visible in the header/footer.', priority: 'high', timeframe: 'quick', category: 'Local SEO' });
+            }
+
+            // Generic best practices
+            actions.push({ id: 'gen-' + id++, title: 'Set up Google Analytics 4', desc: 'Connect GA4 to track visitor behavior, conversions, and traffic sources.', priority: 'medium', timeframe: 'quick', category: 'Analytics', link: '/integrations' });
+            actions.push({ id: 'gen-' + id++, title: 'Create FAQ content for AI search', desc: 'Publish FAQ-style pages that AI assistants can reference when answering questions about your industry.', priority: 'medium', timeframe: 'medium', category: 'Content' });
+            actions.push({ id: 'gen-' + id++, title: 'Build email subscriber list', desc: 'Start collecting emails from website visitors for monthly newsletters and promotions.', priority: 'low', timeframe: 'long', category: 'Email Marketing', link: '/email-campaigns' });
+        }
+
+        function renderPlan() {
+            const done = getDone();
+            const quick = actions.filter(a => a.timeframe === 'quick');
+            const medium = actions.filter(a => a.timeframe === 'medium');
+            const long = actions.filter(a => a.timeframe === 'long');
+
+            renderActions('quickWins', quick, done);
+            renderActions('mediumTerm', medium, done);
+            renderActions('longTerm', long, done);
+
+            const completedCount = done.filter(d => actions.some(a => a.id === d)).length;
+            const totalCount = actions.length;
+            const pendingCount = totalCount - completedCount;
+            const progress = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+
+            document.getElementById('completedCount').textContent = completedCount;
+            document.getElementById('pendingCount').textContent = pendingCount;
+            document.getElementById('totalCount').textContent = totalCount;
+            document.getElementById('progressBar').style.width = progress + '%';
+            document.getElementById('progressBar').textContent = progress + '%';
+
+            // Score breakdown
+            const categories = [...new Set(actions.map(a => a.category))];
+            document.getElementById('scoreBreakdown').innerHTML = categories.slice(0, 5).map(cat => {
+                const catActions = actions.filter(a => a.category === cat);
+                const catDone = catActions.filter(a => done.includes(a.id)).length;
+                const pct = Math.round((catDone / catActions.length) * 100);
+                const color = pct >= 75 ? '#28a745' : pct >= 40 ? '#ffc107' : '#dc3545';
+                return `<div class="score-row"><span>${cat}</span><div class="score-bar"><div class="score-bar-fill" style="width:${pct}%;background:${color};"></div></div><strong>${catDone}/${catActions.length}</strong></div>`;
+            }).join('');
+
+            // Impact card
+            document.getElementById('impactCard').innerHTML = `
+                <h3>Expected Impact</h3>
+                <p><strong>Quick Wins:</strong> ${quick.length} actions that can be done in 1-2 weeks for immediate SEO improvements</p>
+                <p><strong>Medium-Term:</strong> ${medium.length} actions over 1-2 months to build authority and local presence</p>
+                <p><strong>Long-Term:</strong> ${long.length} actions for sustained growth over 3-6 months</p>
+                <p style="margin-top:10px;"><strong>Progress:</strong> ${completedCount} of ${totalCount} completed (${progress}%)</p>
+            `;
+        }
+
+        function renderActions(containerId, items, done) {
             const container = document.getElementById(containerId);
+            if (!items.length) { container.innerHTML = '<p style="color:#28a745;padding:12px;">All done in this category!</p>'; return; }
 
-            if (actions.length === 0) {
-                container.innerHTML = '<li style="color: #28a745; padding: 20px; background: #d4edda; border-radius: 10px;"><strong>✅ All actions complete!</strong> Check Progress Tracking to see your results.</li>';
-                return;
-            }
-
-            let actionNumber = containerId === 'quickWins' ? 1 : 4;
-
-            container.innerHTML = actions.map(action => `
-                <li class="${action.status === 'completed' ? 'completed' : ''}" id="action-${action.id}">
-                    <div class="action-icon">${actionNumber++}</div>
-                    <div class="action-content">
-                        <div class="action-title">${action.title}</div>
-                        <div class="action-desc">${action.description}</div>
-                        <div class="action-buttons">
-                            ${action.status !== 'completed' ? `
-                                <button class="btn-done" onclick="markDone('${action.id}')">
-                                    ✓ Mark Done
-                                </button>
-                            ` : `
-                                <button class="btn-verify" onclick="markUndone('${action.id}')">
-                                    ↺ Undo
-                                </button>
-                            `}
-                            <button class="btn-verify" onclick="verifyAction('${action.id}')">
-                                🔄 Verify with AI
-                            </button>
-                        </div>
-                        <div id="status-${action.id}" style="margin-top: 10px; font-size: 0.9rem;"></div>
-                    </div>
-                </li>
-            `).join('');
-        }
-
-        function displayImpactMetrics(data) {
-            const container = document.getElementById('impactMetrics');
-
-            const stats = data.stats || {};
-            const total = stats.total || 0;
-            const verified = stats.verified || 0;
-            const notPresent = stats.notPresent || 0;
-            const presenceScore = stats.presenceScore || 0;
-
-            // Calculate potential impact
-            const potentialLeads = Math.round((100 - presenceScore) / 10 * 3); // Estimate 3 leads per 10% improvement
-            const potentialRevenue = potentialLeads * 3000; // Estimate $3K per lead
-
-            container.innerHTML = `
-                <p><strong>🎯 Local Presence Goal:</strong> Improve from ${presenceScore}% to 100% (${100 - presenceScore}% improvement needed)</p>
-                <p><strong>📍 Missing Directories:</strong> ${notPresent} major platforms where you're not listed</p>
-                <p><strong>💰 Revenue Potential:</strong> ${potentialLeads}-${potentialLeads + 5} qualified leads/month • $${(potentialRevenue/1000).toFixed(0)}K-$${((potentialRevenue + 15000)/1000).toFixed(0)}K annual revenue potential</p>
-                <p><strong>📈 Time to Results:</strong> Quick wins show results in 1-2 weeks • Full impact in 60-90 days</p>
-            `;
-        }
-
-        function displayByCategory() {
-            const categories = {
-                'local-listing': { name: 'Local Listing', icon: '📍' },
-                'ai-discovery': { name: 'AI Discovery', icon: '🤖' },
-                'email-marketing': { name: 'Email Marketing', icon: '📧' },
-                'directories': { name: 'Directory Listings', icon: '🔗' }
-            };
-
-            const container = document.getElementById('categoryActions');
-            let html = '';
-
-            for (const [key, category] of Object.entries(categories)) {
-                const categoryActions = actionsData.filter(a => a.category === key);
-                if (categoryActions.length === 0) continue;
-
-                const completed = categoryActions.filter(a => a.status === 'completed').length;
-
-                html += `
-                    <div>
-                        <div class="category-header">
-                            <h3>${category.icon} ${category.name}</h3>
-                            <span class="category-stats">${completed}/${categoryActions.length} completed</span>
-                        </div>
-                        <div id="category-${key}">
-                            ${categoryActions.map(action => `
-                                <div class="action-item ${action.status === 'completed' ? 'completed' : ''}" id="action-cat-${action.id}">
-                                    <div class="action-header">
-                                        <div class="action-title">
-                                            ${action.status === 'completed' ? '✅' : '☐'} ${action.title}
-                                        </div>
-                                    </div>
-                                    <div class="action-description">${action.description}</div>
-                                    <div class="action-footer">
-                                        ${action.status !== 'completed' ? `
-                                            <button class="btn btn-success" onclick="markDone('${action.id}')">✓ Mark Done</button>
-                                        ` : ''}
-                                        <button class="btn btn-outline" onclick="verifyAction('${action.id}')">🔄 Verify</button>
-                                    </div>
-                                    <div id="status-cat-${action.id}"></div>
-                                </div>
-                            `).join('')}
+            let num = 1;
+            container.innerHTML = items.map(a => {
+                const isDone = done.includes(a.id);
+                return `<div class="action-item ${isDone ? 'done' : ''}">
+                    <div class="action-num">${isDone ? '&#10003;' : num++}</div>
+                    <div class="action-body">
+                        <div class="action-title">${isDone ? '<s>' + a.title + '</s>' : a.title}</div>
+                        <div class="action-desc">${a.desc}</div>
+                        <div class="action-meta">
+                            <span class="badge badge-${a.priority}">${a.priority.toUpperCase()}</span>
+                            <span class="badge badge-category">${a.category}</span>
+                            <button class="action-btn btn-done" onclick="toggleDone('${a.id}')">${isDone ? '&#8634; Undo' : '&#10003; Mark Done'}</button>
+                            ${a.link ? `<a href="${a.link}" class="action-btn btn-link">View Details</a>` : ''}
                         </div>
                     </div>
-                `;
-            }
-
-            container.innerHTML = html;
+                </div>`;
+            }).join('');
         }
 
-        async function startAction(actionId) {
-            const action = actionsData.find(a => a.id === actionId);
-            if (!action) return;
-
-            // Open relevant page or show instructions
-            if (action.url) {
-                window.open(action.url, '_blank');
-            }
-
-            showStatus(actionId, 'info', `📖 Follow the instructions above to complete this action.`);
-        }
-
-        async function markDone(actionId) {
-            try {
-                const response = await fetch('/api/action-plan/mark-done', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ leadId: currentLeadId, actionId })
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    showStatus(actionId, 'success', '✅ Marked as completed! Click "Verify" to confirm.');
-
-                    // Update local state
-                    const action = actionsData.find(a => a.id === actionId);
-                    if (action) action.status = 'completed';
-
-                    // Reload to update UI
-                    setTimeout(() => loadActionPlan(), 1000);
-                }
-            } catch (error) {
-                showStatus(actionId, 'error', '❌ Error: ' + error.message);
-            }
-        }
-
-        async function markUndone(actionId) {
-            try {
-                const response = await fetch('/api/action-plan/mark-done', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ leadId: currentLeadId, actionId, undo: true })
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    setTimeout(() => loadActionPlan(), 500);
-                }
-            } catch (error) {
-                showStatus(actionId, 'error', '❌ Error: ' + error.message);
-            }
-        }
-
-        async function verifyAction(actionId) {
-            const action = actionsData.find(a => a.id === actionId);
-            if (!action) return;
-
-            showStatus(actionId, 'info', '🤖 Verifying with AI... This may take a few seconds.');
-
-            try {
-                const response = await fetch('/api/action-plan/verify', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ leadId: currentLeadId, actionId })
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    if (data.verified) {
-                        showStatus(actionId, 'success', `✅ ${data.message}`);
-                    } else {
-                        showStatus(actionId, 'error', `⚠️ ${data.message}`);
-                    }
-                } else {
-                    showStatus(actionId, 'error', '❌ Verification failed: ' + data.error);
-                }
-            } catch (error) {
-                showStatus(actionId, 'error', '❌ Error: ' + error.message);
-            }
-        }
-
-        async function verifyAllProgress() {
-            const btn = event.target;
-            btn.disabled = true;
-            btn.textContent = '🔄 Verifying... This may take a minute';
-
-            try {
-                const response = await fetch('/api/action-plan/verify-all', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ leadId: currentLeadId })
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    alert(`✅ Verification complete!\n\nLocal Presence: ${data.scores.local}%\nAI Visibility: ${data.scores.ai}%\n\nReloading to show updated results...`);
-                    window.location.reload();
-                } else {
-                    alert('❌ Verification failed: ' + data.error);
-                }
-            } catch (error) {
-                alert('❌ Error: ' + error.message);
-            } finally {
-                btn.disabled = false;
-                btn.textContent = '🔄 Verify All Progress';
-            }
-        }
-
-        function showStatus(actionId, type, message) {
-            const statusEl = document.getElementById(`status-${actionId}`);
-            const statusCatEl = document.getElementById(`status-cat-${actionId}`);
-
-            const statusClass = `status-${type}`;
-            const html = `<div class="status-message ${statusClass}">${message}</div>`;
-
-            if (statusEl) statusEl.innerHTML = html;
-            if (statusCatEl) statusCatEl.innerHTML = html;
-        }
-
-        function showEmptyState() {
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('mainContent').innerHTML = `
-                <div class="section">
-                    <div class="empty-state">
-                        <div class="empty-state-icon">📋</div>
-                        <h2>No Action Plan Yet</h2>
-                        <p style="margin: 20px 0;">Complete an SEO audit to generate your personalized action plan.</p>
-                        <a href="/seo-audit" style="display: inline-block; padding: 12px 30px; background: #667eea; color: white; text-decoration: none; border-radius: 8px; font-weight: 600;">
-                            Get Your Free SEO Audit
-                        </a>
-                    </div>
-                </div>
-            `;
-            document.getElementById('mainContent').style.display = 'block';
-        }
+        window.addEventListener('load', init);
     </script>
 </body>
 </html>

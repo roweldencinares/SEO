@@ -427,10 +427,28 @@
         let allKeywords = [];
         let currentView = 'all';
         let isCached = false;
+        let clientConfig = {};
+        let gscProperty = '';
 
         // Load data on page load
-        window.addEventListener('load', () => {
+        window.addEventListener('load', async () => {
             initSidebar('/keywords');
+            // Get client config and resolve GSC property first
+            try {
+                const cfgRes = await fetch('/api/config');
+                clientConfig = await cfgRes.json();
+                const sitesRes = await fetch('/api/gsc/sites');
+                const sitesData = await sitesRes.json();
+                if (sitesData.success && sitesData.sites) {
+                    const match = sitesData.sites.find(s => s.siteUrl.toLowerCase().includes(clientConfig.domain.toLowerCase()));
+                    gscProperty = match ? match.siteUrl : 'https://' + clientConfig.domain + '/';
+                } else {
+                    gscProperty = 'https://' + clientConfig.domain + '/';
+                }
+            } catch(e) {
+                console.log('Config fallback:', e);
+                gscProperty = '';
+            }
             loadKeywords();
         });
 
@@ -451,8 +469,7 @@
                 statusText.textContent = 'Fetching data...';
                 refreshBtn.disabled = true;
 
-                // Call NEXUS API
-                const url = '/api/gsc/keywords?limit=100';
+                const url = '/api/gsc/keywords?limit=500&site=' + encodeURIComponent(gscProperty);
                 const response = await fetch(url);
                 const data = await response.json();
 

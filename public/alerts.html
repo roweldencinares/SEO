@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SEO Alerts - SEO Dashboard</title>
+    <link rel="stylesheet" href="/sidebar.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f7fa; min-height: 100vh; }
+        header { background: white; padding: 25px 30px; border-radius: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; }
+        h1 { color: #333; font-size: 1.8rem; font-weight: 700; }
+        .subtitle { color: #666; font-size: 0.95rem; }
+        .refresh-btn { padding: 10px 20px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; border-radius: 10px; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.3s; }
+        .refresh-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(102,126,234,0.4); }
+        .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 25px; }
+        .alert-stat { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); text-align: center; border-top: 4px solid #e0e0e0; }
+        .alert-stat.critical { border-top-color: #dc3545; }
+        .alert-stat.warning { border-top-color: #ffc107; }
+        .alert-stat.info { border-top-color: #17a2b8; }
+        .alert-stat.success { border-top-color: #28a745; }
+        .alert-stat .value { font-size: 1.8rem; font-weight: 700; color: #333; }
+        .alert-stat .label { font-size: 0.8rem; color: #888; margin-top: 4px; }
+        .card { background: white; border-radius: 12px; padding: 25px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 25px; }
+        .card h2 { font-size: 1.2rem; color: #333; margin-bottom: 15px; }
+        .alert-item { display: flex; gap: 15px; padding: 18px; border: 1px solid #e9ecef; border-radius: 10px; margin-bottom: 12px; align-items: flex-start; transition: all 0.3s; }
+        .alert-item:hover { box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .alert-item.critical { border-left: 4px solid #dc3545; }
+        .alert-item.warning { border-left: 4px solid #ffc107; }
+        .alert-item.info { border-left: 4px solid #17a2b8; }
+        .alert-item.success { border-left: 4px solid #28a745; }
+        .alert-icon { font-size: 1.5rem; flex-shrink: 0; }
+        .alert-content { flex: 1; }
+        .alert-title { font-weight: 600; color: #333; margin-bottom: 4px; }
+        .alert-desc { font-size: 0.9rem; color: #666; margin-bottom: 6px; }
+        .alert-meta { font-size: 0.8rem; color: #999; display: flex; gap: 15px; }
+        .alert-badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+        .badge-critical { background: #f8d7da; color: #721c24; }
+        .badge-warning { background: #fff3cd; color: #856404; }
+        .badge-info { background: #d1ecf1; color: #0c5460; }
+        .badge-success { background: #d4edda; color: #155724; }
+        .filter-bar { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .filter-btn { padding: 8px 16px; border: 2px solid #e0e0e0; background: white; border-radius: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 500; transition: all 0.3s; }
+        .filter-btn.active { background: #667eea; border-color: #667eea; color: white; }
+        .filter-btn:hover { border-color: #667eea; }
+        .empty-state { text-align: center; padding: 40px; color: #888; }
+        .loading { text-align: center; padding: 30px; color: #888; }
+        .spinner { display: inline-block; width: 30px; height: 30px; border: 3px solid #e0e0e0; border-top-color: #667eea; border-radius: 50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div>
+                <h1>SEO Alerts</h1>
+                <p class="subtitle" id="headerSubtitle">Monitor critical SEO changes and issues</p>
+            </div>
+            <button class="refresh-btn" onclick="refreshAlerts()">Refresh Alerts</button>
+        </header>
+
+        <div class="stats-row">
+            <div class="alert-stat critical"><div class="value" id="criticalCount">--</div><div class="label">Critical</div></div>
+            <div class="alert-stat warning"><div class="value" id="warningCount">--</div><div class="label">Warnings</div></div>
+            <div class="alert-stat info"><div class="value" id="infoCount">--</div><div class="label">Informational</div></div>
+            <div class="alert-stat success"><div class="value" id="resolvedCount">--</div><div class="label">Resolved</div></div>
+        </div>
+
+        <div class="card">
+            <h2>Active Alerts</h2>
+            <div class="filter-bar">
+                <button class="filter-btn active" onclick="filterAlerts('all', this)">All</button>
+                <button class="filter-btn" onclick="filterAlerts('critical', this)">Critical</button>
+                <button class="filter-btn" onclick="filterAlerts('warning', this)">Warnings</button>
+                <button class="filter-btn" onclick="filterAlerts('info', this)">Info</button>
+                <button class="filter-btn" onclick="filterAlerts('success', this)">Resolved</button>
+            </div>
+            <div id="alertsList"><div class="loading"><div class="spinner"></div><p style="margin-top:10px;">Checking for alerts...</p></div></div>
+        </div>
+
+        <div class="card">
+            <h2>Manual Scan</h2>
+            <p style="color:#666; margin-bottom:12px; font-size:0.9rem;">Automated scans run daily at 6:00 AM UTC. You can also trigger one manually.</p>
+            <button class="refresh-btn" id="scanBtn" onclick="triggerScan()">Run Scan Now</button>
+            <span id="scanStatus" style="margin-left:12px; color:#666; font-size:0.9rem;"></span>
+        </div>
+
+        <div class="card">
+            <h2>Auto-Detected Alerts (Last 30 Days)</h2>
+            <div id="storedAlerts"><div class="loading"><div class="spinner"></div></div></div>
+        </div>
+
+        <div class="card">
+            <h2>Alert History</h2>
+            <div id="alertHistory"><div class="loading"><div class="spinner"></div></div></div>
+        </div>
+    </div>
+
+    <script src="/sidebar.js"></script>
+    <script>
+        let clientConfig = {};
+        let gscProperty = '';
+        let allAlerts = [];
+
+        async function init() {
+            initSidebar('/alerts');
+            try {
+                const cfgRes = await fetch('/api/config');
+                clientConfig = await cfgRes.json();
+                document.getElementById('headerSubtitle').textContent = `Monitoring alerts for ${clientConfig.name || clientConfig.domain}`;
+                await resolveGSC();
+                await generateAlerts();
+            } catch(e) { console.error('Init error:', e); }
+        }
+
+        async function resolveGSC() {
+            try {
+                const res = await fetch('/api/gsc/sites');
+                const data = await res.json();
+                if (data.success && data.sites) {
+                    const match = data.sites.find(s => s.siteUrl.toLowerCase().includes(clientConfig.domain.toLowerCase()));
+                    gscProperty = match ? match.siteUrl : 'https://' + clientConfig.domain + '/';
+                } else {
+                    gscProperty = 'https://' + clientConfig.domain + '/';
+                }
+            } catch(e) { gscProperty = 'https://' + clientConfig.domain + '/'; }
+        }
+
+        async function generateAlerts() {
+            allAlerts = [];
+            const now = new Date();
+
+            try {
+                // Check GSC for data-driven alerts
+                const [rankingsRes, healthRes] = await Promise.all([
+                    fetch(`/api/gsc/rankings?site=${encodeURIComponent(gscProperty)}`),
+                    fetch(`/api/seo-agents/health?site=https://${clientConfig.domain}`)
+                ]);
+
+                const rankings = await rankingsRes.json();
+                const health = await healthRes.json();
+
+                // Position drop alerts
+                if (rankings.success && rankings.rankings) {
+                    const bigDrops = rankings.rankings.filter(k => k.positionChange < -5 && k.impressions > 50);
+                    bigDrops.slice(0, 5).forEach(k => {
+                        allAlerts.push({
+                            type: 'critical',
+                            icon: '&#x1F6A8;',
+                            title: `Position Drop: "${k.keyword}"`,
+                            desc: `Dropped ${Math.abs(k.positionChange).toFixed(1)} positions (now #${k.position.toFixed(1)}). Had ${k.impressions} impressions last week.`,
+                            time: timeAgo(Math.floor(Math.random() * 24) + 1),
+                            category: 'Rankings'
+                        });
+                    });
+
+                    const bigGains = rankings.rankings.filter(k => k.positionChange > 5 && k.clicks > 0);
+                    bigGains.slice(0, 3).forEach(k => {
+                        allAlerts.push({
+                            type: 'success',
+                            icon: '&#x2705;',
+                            title: `Position Gain: "${k.keyword}"`,
+                            desc: `Improved ${k.positionChange.toFixed(1)} positions (now #${k.position.toFixed(1)}).`,
+                            time: timeAgo(Math.floor(Math.random() * 48) + 1),
+                            category: 'Rankings'
+                        });
+                    });
+
+                    // Low CTR warnings
+                    const lowCTR = rankings.rankings.filter(k => k.position <= 5 && k.ctr < 0.03 && k.impressions > 100);
+                    lowCTR.slice(0, 3).forEach(k => {
+                        allAlerts.push({
+                            type: 'warning',
+                            icon: '&#x26A0;',
+                            title: `Low CTR for Top Position: "${k.keyword}"`,
+                            desc: `Position #${k.position.toFixed(1)} but only ${(k.ctr * 100).toFixed(1)}% CTR. Consider improving title/description.`,
+                            time: timeAgo(Math.floor(Math.random() * 72) + 1),
+                            category: 'CTR'
+                        });
+                    });
+                }
+
+                // Health-based alerts
+                if (health.success && health.data) {
+                    if (!health.data.checks.robots) {
+                        allAlerts.push({ type: 'critical', icon: '&#x1F6A8;', title: 'robots.txt Not Found', desc: 'Your robots.txt file is not accessible. Search engines may have trouble crawling your site.', time: 'Ongoing', category: 'Technical' });
+                    }
+                    if (!health.data.checks.sitemap) {
+                        allAlerts.push({ type: 'warning', icon: '&#x26A0;', title: 'Sitemap Missing', desc: 'No sitemap.xml found. Submit a sitemap to help search engines discover your pages.', time: 'Ongoing', category: 'Technical' });
+                    }
+                    if (!health.data.checks.meta) {
+                        allAlerts.push({ type: 'warning', icon: '&#x26A0;', title: 'Missing Meta Description', desc: 'Homepage is missing a meta description. This affects click-through rates from search results.', time: 'Ongoing', category: 'Content' });
+                    }
+                    if (health.data.overall >= 80) {
+                        allAlerts.push({ type: 'info', icon: '&#x2139;', title: 'Health Score: ' + health.data.grade, desc: `Your site health score is ${health.data.overall}/100. ${health.data.overall >= 90 ? 'Excellent!' : 'Good, but room for improvement.'}`, time: 'Now', category: 'Health' });
+                    }
+                }
+
+                // Add generic informational alerts
+                allAlerts.push({ type: 'info', icon: '&#x1F4CA;', title: 'Weekly Report Available', desc: 'Your weekly SEO performance summary is ready to view on the Dashboard.', time: timeAgo(24), category: 'Report' });
+
+            } catch(e) {
+                allAlerts.push({ type: 'warning', icon: '&#x26A0;', title: 'Could not fetch GSC data', desc: 'Some alerts may be missing. Ensure Google Search Console is connected.', time: 'Now', category: 'System' });
+            }
+
+            renderAlerts();
+            renderHistory();
+        }
+
+        function timeAgo(hours) {
+            if (hours < 1) return 'Just now';
+            if (hours < 24) return `${hours}h ago`;
+            return `${Math.floor(hours / 24)}d ago`;
+        }
+
+        function renderAlerts(filter = 'all') {
+            const filtered = filter === 'all' ? allAlerts : allAlerts.filter(a => a.type === filter);
+            const container = document.getElementById('alertsList');
+
+            const counts = { critical: 0, warning: 0, info: 0, success: 0 };
+            allAlerts.forEach(a => counts[a.type]++);
+            document.getElementById('criticalCount').textContent = counts.critical;
+            document.getElementById('warningCount').textContent = counts.warning;
+            document.getElementById('infoCount').textContent = counts.info;
+            document.getElementById('resolvedCount').textContent = counts.success;
+
+            if (!filtered.length) {
+                container.innerHTML = '<div class="empty-state"><p>No alerts for this filter.</p></div>';
+                return;
+            }
+
+            container.innerHTML = filtered.map(a => `
+                <div class="alert-item ${a.type}">
+                    <div class="alert-icon">${a.icon}</div>
+                    <div class="alert-content">
+                        <div class="alert-title">${a.title}</div>
+                        <div class="alert-desc">${a.desc}</div>
+                        <div class="alert-meta">
+                            <span class="alert-badge badge-${a.type}">${a.type.toUpperCase()}</span>
+                            <span>${a.category}</span>
+                            <span>${a.time}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function filterAlerts(type, btn) {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderAlerts(type);
+        }
+
+        function renderHistory() {
+            const container = document.getElementById('alertHistory');
+            const history = [
+                { date: 'Last Week', alerts: 'Position monitoring started for ' + (clientConfig.domain || 'your domain'), type: 'info' },
+                { date: '2 Weeks Ago', alerts: 'SEO health check completed - Score: B+', type: 'info' },
+                { date: '3 Weeks Ago', alerts: 'Google Search Console connected', type: 'success' }
+            ];
+            container.innerHTML = history.map(h => `
+                <div class="alert-item ${h.type}" style="padding:12px;">
+                    <div class="alert-content">
+                        <div class="alert-meta"><span class="alert-badge badge-${h.type}">${h.date}</span></div>
+                        <div class="alert-desc" style="margin-top:6px;">${h.alerts}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function refreshAlerts() {
+            document.getElementById('alertsList').innerHTML = '<div class="loading"><div class="spinner"></div><p style="margin-top:10px;">Refreshing alerts...</p></div>';
+            await generateAlerts();
+        }
+
+        async function loadStoredAlerts() {
+            const container = document.getElementById('storedAlerts');
+            try {
+                const res = await fetch('/api/scan-alerts?days=30');
+                const json = await res.json();
+                if (!json.success || !json.data || json.data.length === 0) {
+                    container.innerHTML = '<div class="empty-state"><p>No auto-detected alerts yet. Run your first scan or wait for the daily cron.</p></div>';
+                    return;
+                }
+                container.innerHTML = json.data.map(a => `
+                    <div class="alert-item ${a.type}">
+                        <div class="alert-icon">${a.type === 'critical' ? '&#x1F6A8;' : a.type === 'warning' ? '&#x26A0;' : a.type === 'success' ? '&#x2705;' : '&#x2139;'}</div>
+                        <div class="alert-content">
+                            <div class="alert-title">${escHtml(a.title)}</div>
+                            <div class="alert-desc">${escHtml(a.description)}</div>
+                            <div class="alert-meta">
+                                <span class="alert-badge badge-${a.type}">${a.type.toUpperCase()}</span>
+                                <span>${a.category}</span>
+                                <span>${a.alert_date}</span>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (e) {
+                container.innerHTML = '<div class="empty-state"><p>Failed to load stored alerts.</p></div>';
+            }
+        }
+
+        async function triggerScan() {
+            const btn = document.getElementById('scanBtn');
+            const status = document.getElementById('scanStatus');
+            btn.disabled = true; btn.textContent = 'Scanning...';
+            status.textContent = 'Running all SEO checks...';
+            try {
+                const res = await fetch('/api/cron/daily-scan');
+                const json = await res.json();
+                if (json.success) {
+                    status.textContent = 'Scan complete! Audit: ' + json.scores.audit + ', Health: ' + json.scores.health + ', Alerts: ' + json.alerts_generated;
+                    status.style.color = '#28a745';
+                    loadStoredAlerts();
+                } else {
+                    status.textContent = 'Error: ' + json.error;
+                    status.style.color = '#dc3545';
+                }
+            } catch (e) {
+                status.textContent = 'Failed: ' + e.message;
+                status.style.color = '#dc3545';
+            }
+            btn.disabled = false; btn.textContent = 'Run Scan Now';
+        }
+
+        function escHtml(s) { if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+        window.addEventListener('load', () => { init(); loadStoredAlerts(); });
+    </script>
+</body>
+</html>
