@@ -1675,7 +1675,7 @@ app.get('/api/competitors/analyze', async (req, res) => {
 
         // Update Supabase
         if (supabase) {
-            await supabase.from('competitors').update({ last_crawl: new Date().toISOString(), crawl_data: analysis }).eq('domain', normalized).catch(() => {});
+            try { await supabase.from('competitors').update({ last_crawl: new Date().toISOString(), crawl_data: analysis }).eq('domain', normalized); } catch {};
         }
 
         res.json({ success: true, analysis });
