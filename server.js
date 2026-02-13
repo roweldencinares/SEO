@@ -1888,12 +1888,16 @@ app.get('/api/competitors/keyword-battles', async (req, res) => {
 
         const rows = response.data.rows || [];
 
-        // Revenue Intent classification
-        const tier1Patterns = ['near me', 'services', 'company', 'companies', 'hire', 'cost', 'price', 'pricing', 'quote', 'rental', 'contractor', 'emergency', '24/7', '24 hour'];
+        // Revenue Intent classification (4 tiers: emergency > money > contract > trust)
+        const emergencyPatterns = ['emergency', 'urgent', '24/7', '24 hour', '24-hour', 'same day', 'same-day', 'asap', 'immediate'];
+        const tier1Patterns = ['near me', 'services', 'company', 'companies', 'hire', 'cost', 'price', 'pricing', 'quote', 'rental', 'contractor'];
         const tier2Patterns = ['fiber optic', 'gas line', 'non-destructive', 'sue level', 'slot trench', 'potholing', 'daylighting', 'commercial', 'municipal', 'industrial', 'construction', 'utility'];
         const tier3Patterns = [' vs ', 'how to', 'how does', 'what is', 'safe', 'benefits', 'advantage', 'guide', 'difference', 'comparison', 'explained'];
-        // City names from Beach Hydrovac service area (configurable)
         const cityPatterns = (process.env.CLIENT_LOCATION || '').toLowerCase().split(',').map(s => s.trim()).filter(Boolean);
+
+        // SERP feature inference patterns
+        const mapPackTriggers = ['near me', 'near', 'local', ...cityPatterns];
+        const localServiceAdTriggers = ['services', 'contractor', 'company', 'hire', 'repair'];
 
         const expectedCTR = [0.28, 0.15, 0.11, 0.08, 0.06, 0.05, 0.04, 0.03, 0.025, 0.02];
 
@@ -1904,18 +1908,48 @@ app.get('/api/competitors/keyword-battles', async (req, res) => {
             const clicks = row.clicks;
             const impressions = row.impressions;
             const ctr = row.ctr;
+            const wordCount = kw.split(/\s+/).length;
 
-            // Classify tier
+            // Classify tier (emergency is highest)
             let tier = 'unclassified';
             let intentScore = 1;
 
-            if (tier1Patterns.some(p => kw.includes(p)) || cityPatterns.some(p => p && kw.includes(p))) {
+            if (emergencyPatterns.some(p => kw.includes(p))) {
+                tier = 'emergency'; intentScore = 15;
+            } else if (tier1Patterns.some(p => kw.includes(p)) || cityPatterns.some(p => p && kw.includes(p))) {
                 tier = 'money'; intentScore = 10;
             } else if (tier2Patterns.some(p => kw.includes(p))) {
                 tier = 'contract'; intentScore = 5;
             } else if (tier3Patterns.some(p => kw.includes(p))) {
                 tier = 'trust'; intentScore = 2;
             }
+
+            // SERP Feature inference
+            const serpFeatures = [];
+            if (mapPackTriggers.some(p => p && kw.includes(p))) serpFeatures.push('Map Pack');
+            if (localServiceAdTriggers.some(p => kw.includes(p)) && cityPatterns.some(p => p && kw.includes(p))) serpFeatures.push('Local Ads');
+            if (tier3Patterns.some(p => kw.includes(p))) serpFeatures.push('Featured Snippet');
+            if (serpFeatures.length === 0 && (tier === 'money' || tier === 'emergency')) serpFeatures.push('Organic');
+
+            // Win-ability score (0-100): how easy is this keyword to win?
+            let winability = 50;
+            if (position <= 10) winability += 25;        // Already on page 1
+            else if (position <= 20) winability += 10;   // Page 2, within reach
+            else winability -= 15;                        // Deep = harder
+            if (wordCount >= 4) winability += 15;         // Long-tail = less competition
+            else if (wordCount <= 2) winability -= 10;    // Head term = more competition
+            if (cityPatterns.some(p => p && kw.includes(p))) winability += 15; // Local = less national competition
+            if (impressions > 0 && impressions < 100) winability += 5;  // Low volume = less competition
+            if (impressions >= 500) winability -= 10;     // High volume = more competition
+            winability = Math.max(0, Math.min(100, winability));
+
+            // Vibe tags
+            const vibeTags = [];
+            if (position > 10 && position <= 25 && winability >= 60) vibeTags.push('Target This');
+            if (wordCount <= 2 && position > 30 && impressions < 20) vibeTags.push('Ignore');
+            if (serpFeatures.includes('Map Pack')) vibeTags.push('Local Priority');
+            if (position >= 4 && position <= 10 && tier !== 'trust') vibeTags.push('Almost There');
+            if (tier === 'emergency') vibeTags.push('Urgent Revenue');
 
             // Revenue Priority score
             const priority = (intentScore * impressions) - (position * 10);
@@ -1925,7 +1959,7 @@ app.get('/api/competitors/keyword-battles', async (req, res) => {
             const expectedRate = position <= 10 ? expectedCTR[posIndex] : 0.01;
             const trafficLoss = Math.round(impressions * Math.max(0, expectedRate - ctr));
 
-            return { keyword, position, clicks, impressions, ctr, tier, intentScore, priority, trafficLoss };
+            return { keyword, position, clicks, impressions, ctr, tier, intentScore, priority, trafficLoss, serpFeatures, winability, vibeTags };
         });
 
         // Split into groups
@@ -1935,6 +1969,7 @@ app.get('/api/competitors/keyword-battles', async (req, res) => {
 
         // Tier summaries
         const tiers = {
+            emergency: keywords.filter(k => k.tier === 'emergency'),
             money: keywords.filter(k => k.tier === 'money'),
             contract: keywords.filter(k => k.tier === 'contract'),
             trust: keywords.filter(k => k.tier === 'trust'),

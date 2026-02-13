@@ -84,9 +84,29 @@
         .pos-top20 { background: #fff3cd; color: #856404; }
         .pos-low { background: #f8d7da; color: #721c24; }
         .tier-badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+        .tier-emergency { background: #f8d7da; color: #721c24; }
         .tier-money { background: #d4edda; color: #155724; }
         .tier-contract { background: #cce5ff; color: #004085; }
         .tier-trust { background: #e2e3e5; color: #383d41; }
+
+        .vibe-tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; margin-left: 4px; }
+        .vibe-target { background: #28a745; color: white; }
+        .vibe-ignore { background: #6c757d; color: white; }
+        .vibe-local { background: #667eea; color: white; }
+        .vibe-almost { background: #ffc107; color: #333; }
+        .vibe-urgent { background: #dc3545; color: white; }
+
+        .serp-feature { display: inline-block; padding: 1px 7px; border-radius: 3px; font-size: 0.7rem; font-weight: 600; background: #f0f0f0; color: #555; margin-right: 3px; }
+        .serp-map { background: #d4edda; color: #155724; }
+        .serp-ads { background: #fff3cd; color: #856404; }
+        .serp-snippet { background: #cce5ff; color: #004085; }
+
+        .win-bar { display: inline-flex; align-items: center; gap: 6px; }
+        .win-bar-track { width: 50px; height: 6px; background: #e9ecef; border-radius: 3px; overflow: hidden; }
+        .win-bar-fill { height: 100%; border-radius: 3px; }
+        .win-high .win-bar-fill { background: #28a745; }
+        .win-mid .win-bar-fill { background: #ffc107; }
+        .win-low .win-bar-fill { background: #dc3545; }
 
         .cell-win { background: #d4edda44; }
         .cell-lose { background: #f8d7da44; }
@@ -157,9 +177,9 @@
 
         <!-- TIER SUMMARY STATS -->
         <div class="stats-grid" id="tierStats" style="display:none;">
+            <div class="stat-card" style="border-left-color:#dc3545;"><div class="label">Emergency Keywords</div><div class="value" id="statEmergency">--</div><div class="sub" id="statEmergencyAvg">Highest revenue intent</div></div>
             <div class="stat-card"><div class="label">Money Keywords (Tier 1)</div><div class="value" id="statMoney">--</div><div class="sub" id="statMoneyAvg"></div></div>
             <div class="stat-card"><div class="label">Contract Keywords (Tier 2)</div><div class="value" id="statContract">--</div><div class="sub" id="statContractAvg"></div></div>
-            <div class="stat-card"><div class="label">Trust Keywords (Tier 3)</div><div class="value" id="statTrust">--</div><div class="sub" id="statTrustAvg"></div></div>
             <div class="stat-card"><div class="label">Est. Monthly Traffic Lost</div><div class="value" id="statLoss">--</div><div class="sub down" id="statLossSub">To competitors</div></div>
         </div>
 
@@ -175,13 +195,15 @@
             <h2>Keyword Battles - Revenue Intent</h2>
             <p class="card-desc">Keywords ranked by contract value, not vanity volume. Priority = (Intent x Impressions) - Position penalty.</p>
             <div class="tab-nav">
-                <button class="tab-btn active" onclick="switchTab('money')">Money (Tier 1)</button>
+                <button class="tab-btn active" onclick="switchTab('emergency')">Emergency</button>
+                <button class="tab-btn" onclick="switchTab('money')">Money (Tier 1)</button>
                 <button class="tab-btn" onclick="switchTab('contract')">Contract (Tier 2)</button>
                 <button class="tab-btn" onclick="switchTab('trust')">Trust (Tier 3)</button>
                 <button class="tab-btn" onclick="switchTab('almost')">Almost Winning</button>
                 <button class="tab-btn" onclick="switchTab('big')">Big Opportunity</button>
             </div>
-            <div id="tabMoney" class="tab-content active"></div>
+            <div id="tabEmergency" class="tab-content active"></div>
+            <div id="tabMoney" class="tab-content"></div>
             <div id="tabContract" class="tab-content"></div>
             <div id="tabTrust" class="tab-content"></div>
             <div id="tabAlmost" class="tab-content"></div>
@@ -398,18 +420,21 @@
             if (!keywordData || !keywordData.success) return;
 
             const ts = keywordData.tierSummary;
+            document.getElementById('statEmergency').textContent = ts.emergency?.count || 0;
+            document.getElementById('statEmergencyAvg').textContent = ts.emergency?.count ? `Avg pos: ${ts.emergency.avgPosition}` : 'None found yet';
+            document.getElementById('statEmergencyAvg').className = 'sub ' + (ts.emergency?.count > 0 ? 'up' : '');
             document.getElementById('statMoney').textContent = ts.money?.count || 0;
             document.getElementById('statMoneyAvg').textContent = ts.money?.count ? `Avg pos: ${ts.money.avgPosition}` : '';
             document.getElementById('statMoneyAvg').className = 'sub ' + (ts.money?.avgPosition <= 10 ? 'up' : 'down');
             document.getElementById('statContract').textContent = ts.contract?.count || 0;
             document.getElementById('statContractAvg').textContent = ts.contract?.count ? `Avg pos: ${ts.contract.avgPosition}` : '';
-            document.getElementById('statTrust').textContent = ts.trust?.count || 0;
 
-            const totalLoss = (ts.money?.totalTrafficLoss || 0) + (ts.contract?.totalTrafficLoss || 0) + (ts.trust?.totalTrafficLoss || 0);
+            const totalLoss = (ts.emergency?.totalTrafficLoss || 0) + (ts.money?.totalTrafficLoss || 0) + (ts.contract?.totalTrafficLoss || 0) + (ts.trust?.totalTrafficLoss || 0);
             document.getElementById('statLoss').textContent = totalLoss.toLocaleString();
             document.getElementById('statLossSub').textContent = `Est. clicks/month lost to competitors`;
 
             // Render tier tabs
+            renderKwTable('tabEmergency', ts.emergency?.topKeywords || [], 'emergency');
             renderKwTable('tabMoney', ts.money?.topKeywords || [], 'money');
             renderKwTable('tabContract', ts.contract?.topKeywords || [], 'contract');
             renderKwTable('tabTrust', ts.trust?.topKeywords || [], 'trust');
@@ -422,20 +447,40 @@
             if (!keywords.length) { el.innerHTML = '<p style="color:#888;padding:20px;">No keywords in this category yet.</p>'; return; }
 
             const rows = keywords.map(k => {
-                const tierBadge = k.tier === 'money' ? '<span class="tier-badge tier-money">$$</span>'
+                const tierBadge = k.tier === 'emergency' ? '<span class="tier-badge tier-emergency">URGENT</span>'
+                    : k.tier === 'money' ? '<span class="tier-badge tier-money">$$</span>'
                     : k.tier === 'contract' ? '<span class="tier-badge tier-contract">B2B</span>'
                     : k.tier === 'trust' ? '<span class="tier-badge tier-trust">EDU</span>' : '';
+
+                // Vibe tags
+                const vibeHtml = (k.vibeTags || []).map(t => {
+                    const cls = t === 'Target This' ? 'vibe-target' : t === 'Ignore' ? 'vibe-ignore' : t === 'Local Priority' ? 'vibe-local' : t === 'Almost There' ? 'vibe-almost' : t === 'Urgent Revenue' ? 'vibe-urgent' : '';
+                    return `<span class="vibe-tag ${cls}">${t}</span>`;
+                }).join('');
+
+                // SERP features
+                const serpHtml = (k.serpFeatures || []).map(f => {
+                    const cls = f === 'Map Pack' ? 'serp-map' : f === 'Local Ads' ? 'serp-ads' : f === 'Featured Snippet' ? 'serp-snippet' : '';
+                    return `<span class="serp-feature ${cls}">${f}</span>`;
+                }).join('');
+
+                // Win-ability bar
+                const w = k.winability || 50;
+                const winCls = w >= 65 ? 'win-high' : w >= 40 ? 'win-mid' : 'win-low';
+                const winHtml = `<span class="win-bar ${winCls}"><span class="win-bar-track"><span class="win-bar-fill" style="width:${w}%"></span></span>${w}</span>`;
+
                 return `<tr>
-                    <td><strong>${k.keyword}</strong> ${tierBadge}</td>
+                    <td><strong>${k.keyword}</strong> ${tierBadge}${vibeHtml}<br>${serpHtml}</td>
                     <td>${posBadge(k.position)}</td>
                     <td>${k.impressions.toLocaleString()}</td>
                     <td>${k.clicks.toLocaleString()}</td>
                     <td style="font-weight:600;">${Math.round(k.priority).toLocaleString()}</td>
+                    <td>${winHtml}</td>
                     <td style="color:#dc3545;font-weight:600;">${k.trafficLoss > 0 ? '-' + k.trafficLoss : '0'}</td>
                 </tr>`;
             }).join('');
 
-            el.innerHTML = `<table><thead><tr><th>Keyword</th><th>Position</th><th>Impressions</th><th>Clicks</th><th>Priority</th><th>Traffic Lost</th></tr></thead><tbody>${rows}</tbody></table>`;
+            el.innerHTML = `<table><thead><tr><th>Keyword</th><th>Position</th><th>Impr.</th><th>Clicks</th><th>Priority</th><th>Win-ability</th><th>Traffic Lost</th></tr></thead><tbody>${rows}</tbody></table>`;
         }
 
         function posBadge(pos) {
@@ -448,7 +493,7 @@
         function switchTab(tab) {
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            const tabMap = { money: 'tabMoney', contract: 'tabContract', trust: 'tabTrust', almost: 'tabAlmost', big: 'tabBig' };
+            const tabMap = { emergency: 'tabEmergency', money: 'tabMoney', contract: 'tabContract', trust: 'tabTrust', almost: 'tabAlmost', big: 'tabBig' };
             document.getElementById(tabMap[tab]).classList.add('active');
             event.target.classList.add('active');
         }
