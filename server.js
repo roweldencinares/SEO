@@ -56,6 +56,37 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Sites are stored in memory (use database for production)
 let siteConfigs = {};
 
+// Competitor tracking
+let competitorsList = [];
+const crawlCache = new Map();
+const speedCache = new Map();
+const sitemapCache = new Map();
+const CRAWL_CACHE_TTL = 24 * 60 * 60 * 1000;
+const SPEED_CACHE_TTL = 60 * 60 * 1000;
+const SITEMAP_CACHE_TTL = 24 * 60 * 60 * 1000;
+
+function normalizeDomain(input) {
+    let d = input.trim().toLowerCase();
+    d = d.replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/+$/, '');
+    return d;
+}
+
+function getCached(cache, key, ttl) {
+    const entry = cache.get(key);
+    if (entry && (Date.now() - entry.timestamp) < ttl) return entry.data;
+    return null;
+}
+
+// Load competitors from Supabase on startup
+async function loadCompetitorsFromDB() {
+    if (!supabase) return;
+    try {
+        const { data } = await supabase.from('competitors').select('*').order('added_at', { ascending: true });
+        if (data) competitorsList = data;
+    } catch (e) { console.log('Competitors table not found, will create on first add'); }
+}
+loadCompetitorsFromDB();
+
 // Helper to get site URL for GSC
 // GSC accepts either: "https://example.com/" (URL property) or "sc-domain:example.com" (domain property)
 function getGSCSiteUrl(siteUrl) {
@@ -1441,6 +1472,558 @@ app.get('/api/scan-alerts', async (req, res) => {
 
         if (error) throw error;
         res.json({ success: true, data: data || [] });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// ============================================================
+// COMPETITOR INTELLIGENCE API
+// ============================================================
+
+// --- Competitor CRUD ---
+
+app.get('/api/competitors', async (req, res) => {
+    try {
+        if (supabase) {
+            const { data, error } = await supabase.from('competitors').select('*').order('added_at', { ascending: true });
+            if (error) throw error;
+            res.json({ success: true, competitors: data || [] });
+        } else {
+            res.json({ success: true, competitors: competitorsList });
+        }
+    } catch (error) {
+        res.json({ success: true, competitors: competitorsList });
+    }
+});
+
+app.post('/api/competitors', async (req, res) => {
+    try {
+        const { domain, name, type, notes } = req.body;
+        if (!domain) return res.status(400).json({ success: false, error: 'Domain required' });
+
+        const normalized = normalizeDomain(domain);
+        if (!/^[a-z0-9.-]+\.[a-z]{2,}$/.test(normalized)) {
+            return res.status(400).json({ success: false, error: 'Invalid domain format' });
+        }
+
+        const competitor = {
+            domain: normalized,
+            name: name || normalized,
+            type: type || 'general',
+            notes: notes || '',
+            added_at: new Date().toISOString(),
+            last_crawl: null
+        };
+
+        if (supabase) {
+            const { error } = await supabase.from('competitors').upsert(competitor, { onConflict: 'domain' });
+            if (error) console.error('Supabase upsert error:', error.message);
+        }
+
+        const idx = competitorsList.findIndex(c => c.domain === normalized);
+        if (idx >= 0) competitorsList[idx] = competitor;
+        else competitorsList.push(competitor);
+
+        res.json({ success: true, competitor });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+app.delete('/api/competitors/:domain', async (req, res) => {
+    try {
+        const domain = normalizeDomain(req.params.domain);
+
+        if (supabase) {
+            await supabase.from('competitors').delete().eq('domain', domain);
+        }
+
+        competitorsList = competitorsList.filter(c => c.domain !== domain);
+        crawlCache.delete(domain);
+        speedCache.delete(domain);
+        sitemapCache.delete(domain);
+
+        res.json({ success: true, removed: domain });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// --- Competitor Crawl Analysis ---
+
+app.get('/api/competitors/analyze', async (req, res) => {
+    const domain = req.query.domain;
+    if (!domain) return res.status(400).json({ success: false, error: 'domain query param required' });
+
+    const normalized = normalizeDomain(domain);
+    const cached = getCached(crawlCache, normalized, CRAWL_CACHE_TTL);
+    if (cached) return res.json({ success: true, analysis: cached, cached: true });
+
+    try {
+        const url = `https://${normalized}`;
+        const response = await fetch(url, {
+            timeout: 15000,
+            headers: { 'User-Agent': 'Mozilla/5.0 (compatible; SEOAnalyzer/1.0)' }
+        });
+        const html = await response.text();
+        const $ = cheerio.load(html);
+
+        // On-page SEO signals
+        const title = $('title').text().trim();
+        const metaDesc = $('meta[name="description"]').attr('content') || '';
+        const h1s = [];
+        $('h1').each((_, el) => h1s.push($(el).text().trim()));
+
+        const headingCounts = { h1: 0, h2: 0, h3: 0, h4: 0, h5: 0, h6: 0 };
+        for (const tag of ['h1','h2','h3','h4','h5','h6']) {
+            headingCounts[tag] = $(tag).length;
+        }
+
+        const bodyText = $('body').text().replace(/\s+/g, ' ').trim();
+        const wordCount = bodyText.split(/\s+/).filter(w => w.length > 0).length;
+
+        const totalImages = $('img').length;
+        const imagesWithAlt = $('img[alt]').filter((_, el) => $(el).attr('alt').trim().length > 0).length;
+
+        // Links
+        const allLinks = $('a[href]');
+        let internalLinks = 0, externalLinks = 0;
+        allLinks.each((_, el) => {
+            const href = $(el).attr('href') || '';
+            if (href.startsWith('/') || href.includes(normalized)) internalLinks++;
+            else if (href.startsWith('http')) externalLinks++;
+        });
+
+        // Schema markup
+        const schemaTypes = [];
+        $('script[type="application/ld+json"]').each((_, el) => {
+            try {
+                const json = JSON.parse($(el).html());
+                const types = Array.isArray(json) ? json.map(j => j['@type']) : [json['@type']];
+                types.filter(Boolean).forEach(t => { if (!schemaTypes.includes(t)) schemaTypes.push(t); });
+            } catch {}
+        });
+
+        const canonical = $('link[rel="canonical"]').attr('href') || '';
+        const ogTitle = $('meta[property="og:title"]').attr('content') || '';
+        const ogDesc = $('meta[property="og:description"]').attr('content') || '';
+        const ogImage = $('meta[property="og:image"]').attr('content') || '';
+
+        // Technology detection
+        let cms = 'Unknown';
+        if (html.includes('wp-content') || html.includes('wp-includes')) cms = 'WordPress';
+        else if (html.includes('Squarespace')) cms = 'Squarespace';
+        else if (html.includes('wix.com')) cms = 'Wix';
+        else if (html.includes('Shopify')) cms = 'Shopify';
+        else if (html.includes('weebly.com')) cms = 'Weebly';
+
+        const analytics = [];
+        if (html.includes('google-analytics.com') || html.includes('gtag')) analytics.push('Google Analytics');
+        if (html.includes('fbq(') || html.includes('facebook.com/tr')) analytics.push('Facebook Pixel');
+        if (html.includes('hotjar.com')) analytics.push('Hotjar');
+        if (html.includes('segment.com') || html.includes('analytics.js')) analytics.push('Segment');
+
+        const hasLocalBusiness = schemaTypes.some(t => t && t.toLowerCase().includes('localbusiness')) || html.toLowerCase().includes('localbusiness');
+
+        // Service page detection (scan internal links)
+        const servicePatterns = [
+            'potholing', 'daylighting', 'slot-trenching', 'slot trenching', 'hydrovac', 'hydro-excavation',
+            'vacuum-excavation', 'vacuum excavation', 'remote-excavation', 'sue-level', 'sue level',
+            'utility-locating', 'non-destructive', 'excavation-services', 'trenching',
+            'emergency', '24-7', 'fiber-optic', 'fiber optic', 'underground'
+        ];
+
+        const servicePages = [];
+        const internalUrls = new Set();
+        allLinks.each((_, el) => {
+            const href = $(el).attr('href') || '';
+            if (href.startsWith('/') || href.includes(normalized)) {
+                internalUrls.add(href);
+                const lower = href.toLowerCase();
+                for (const pattern of servicePatterns) {
+                    if (lower.includes(pattern)) {
+                        servicePages.push({ url: href, matchedService: pattern, title: $(el).text().trim() });
+                        break;
+                    }
+                }
+            }
+        });
+
+        const analysis = {
+            domain: normalized,
+            crawledAt: new Date().toISOString(),
+            homepage: {
+                title, titleLength: title.length,
+                metaDescription: metaDesc, metaDescLength: metaDesc.length,
+                h1s, h1Count: headingCounts.h1,
+                headingCounts,
+                totalHeadings: Object.values(headingCounts).reduce((a, b) => a + b, 0),
+                wordCount,
+                imageCount: totalImages, imagesWithAlt,
+                imageAltCoverage: totalImages > 0 ? Math.round((imagesWithAlt / totalImages) * 100) : 0,
+                internalLinks, externalLinks,
+                canonical, ogTitle, ogDescription: ogDesc, ogImage,
+                schemaTypes, hasLocalBusiness
+            },
+            technology: { cms, analytics },
+            servicePages,
+            totalInternalUrls: internalUrls.size
+        };
+
+        crawlCache.set(normalized, { data: analysis, timestamp: Date.now() });
+
+        // Update Supabase
+        if (supabase) {
+            await supabase.from('competitors').update({ last_crawl: new Date().toISOString(), crawl_data: analysis }).eq('domain', normalized).catch(() => {});
+        }
+
+        res.json({ success: true, analysis });
+    } catch (error) {
+        res.json({ success: false, error: `Could not crawl ${normalized}: ${error.message}`, analysis: { domain: normalized, blocked: true } });
+    }
+});
+
+// --- PageSpeed Comparison ---
+
+app.get('/api/competitors/speed-compare', async (req, res) => {
+    try {
+        const clientDomain = process.env.CLIENT_DOMAIN || 'example.com';
+        const comps = supabase
+            ? (await supabase.from('competitors').select('domain').then(r => r.data || [])).map(c => c.domain)
+            : competitorsList.map(c => c.domain);
+
+        const domains = [clientDomain, ...comps].slice(0, 5);
+        const apiKey = process.env.PAGESPEED_API_KEY || '';
+
+        const results = await Promise.allSettled(domains.map(async (domain) => {
+            const cached = getCached(speedCache, domain, SPEED_CACHE_TTL);
+            if (cached) return cached;
+
+            const apiUrl = `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=https://${domain}&strategy=mobile&category=performance${apiKey ? '&key=' + apiKey : ''}`;
+            const resp = await fetch(apiUrl, { timeout: 30000 });
+            const json = await resp.json();
+
+            if (!json.lighthouseResult) throw new Error('No lighthouse data');
+
+            const lh = json.lighthouseResult;
+            const audits = lh.audits || {};
+            const getMetric = (id) => {
+                const a = audits[id];
+                return a ? { value: a.numericValue, displayValue: a.displayValue || '', score: a.score } : null;
+            };
+
+            const result = {
+                domain,
+                fetchedAt: new Date().toISOString(),
+                performanceScore: Math.round((lh.categories?.performance?.score || 0) * 100),
+                vitals: {
+                    LCP: getMetric('largest-contentful-paint'),
+                    FCP: getMetric('first-contentful-paint'),
+                    CLS: getMetric('cumulative-layout-shift'),
+                    TBT: getMetric('total-blocking-time'),
+                    SI: getMetric('speed-index'),
+                    TTFB: getMetric('server-response-time')
+                }
+            };
+
+            speedCache.set(domain, { data: result, timestamp: Date.now() });
+            return result;
+        }));
+
+        const data = results.map((r, i) => {
+            if (r.status === 'fulfilled') return r.value;
+            return { domain: domains[i], error: r.reason?.message || 'Failed', performanceScore: 0, vitals: {} };
+        });
+
+        res.json({ success: true, results: data });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// --- Content Gap Analysis ---
+
+async function fetchSitemapUrls(domain) {
+    const cached = getCached(sitemapCache, domain, SITEMAP_CACHE_TTL);
+    if (cached) return cached;
+
+    const urls = [];
+    try {
+        const sitemapUrl = `https://${domain}/sitemap.xml`;
+        const resp = await fetch(sitemapUrl, { timeout: 10000, headers: { 'User-Agent': 'Mozilla/5.0 (compatible; SEOAnalyzer/1.0)' } });
+        const xml = await resp.text();
+        const $ = cheerio.load(xml, { xmlMode: true });
+
+        // Check if it's a sitemap index
+        const sitemapLocs = [];
+        $('sitemap loc').each((_, el) => sitemapLocs.push($(el).text().trim()));
+
+        if (sitemapLocs.length > 0) {
+            // Follow up to 3 child sitemaps
+            const children = sitemapLocs.slice(0, 3);
+            for (const childUrl of children) {
+                try {
+                    const childResp = await fetch(childUrl, { timeout: 8000, headers: { 'User-Agent': 'Mozilla/5.0 (compatible; SEOAnalyzer/1.0)' } });
+                    const childXml = await childResp.text();
+                    const c$ = cheerio.load(childXml, { xmlMode: true });
+                    c$('url loc').each((_, el) => urls.push(c$(el).text().trim()));
+                } catch {}
+            }
+        } else {
+            $('url loc').each((_, el) => urls.push($(el).text().trim()));
+        }
+    } catch {}
+
+    sitemapCache.set(domain, { data: urls, timestamp: Date.now() });
+    return urls;
+}
+
+app.get('/api/competitors/content-gap', async (req, res) => {
+    const domain = req.query.domain;
+    if (!domain) return res.status(400).json({ success: false, error: 'domain required' });
+
+    const normalized = normalizeDomain(domain);
+    const clientDomain = process.env.CLIENT_DOMAIN || 'example.com';
+
+    try {
+        const [yourUrls, theirUrls] = await Promise.all([
+            fetchSitemapUrls(clientDomain),
+            fetchSitemapUrls(normalized)
+        ]);
+
+        // Categorize by path segments
+        const categorize = (urls) => {
+            const cats = {};
+            urls.forEach(u => {
+                try {
+                    const p = new URL(u).pathname.replace(/^\/|\/$/g, '').split('/')[0] || 'homepage';
+                    cats[p] = (cats[p] || 0) + 1;
+                } catch {}
+            });
+            return cats;
+        };
+
+        const yourCats = categorize(yourUrls);
+        const theirCats = categorize(theirUrls);
+
+        // Categories competitor has but you don't
+        const competitorOnly = Object.keys(theirCats).filter(c => !yourCats[c]).map(c => ({ category: c, pages: theirCats[c] }));
+
+        // Service coverage detection
+        const serviceKeywords = [
+            { name: 'Potholing / Daylighting', patterns: ['potholing', 'daylighting', 'daylight', 'pothole'] },
+            { name: 'Slot Trenching', patterns: ['slot-trenching', 'slot_trenching', 'slottrenching', 'trenching'] },
+            { name: 'Hydro Excavation', patterns: ['hydrovac', 'hydro-excavation', 'hydroexcavation', 'hydro_excavation', 'vacuum-excavation'] },
+            { name: 'Remote Excavation', patterns: ['remote-excavation', 'remote_excavation', 'remote-hose'] },
+            { name: 'SUE Level A', patterns: ['sue-level', 'sue_level', 'subsurface-utility', 'utility-verification'] },
+            { name: 'Emergency Services', patterns: ['emergency', '24-7', '24-hour', 'urgent'] },
+            { name: 'Fiber Optic', patterns: ['fiber-optic', 'fiber_optic', 'fiberoptic', 'fibre'] },
+            { name: 'Utility Locating', patterns: ['utility-locat', 'locate', 'underground-utility'] },
+            { name: 'Non-Destructive Digging', patterns: ['non-destructive', 'nondestructive', 'safe-digging'] }
+        ];
+
+        const checkCoverage = (urls) => {
+            const coverage = {};
+            serviceKeywords.forEach(svc => {
+                const matchedUrls = urls.filter(u => svc.patterns.some(p => u.toLowerCase().includes(p)));
+                coverage[svc.name] = { covered: matchedUrls.length > 0, urls: matchedUrls, count: matchedUrls.length };
+            });
+            return coverage;
+        };
+
+        const yourCoverage = checkCoverage(yourUrls);
+        const theirCoverage = checkCoverage(theirUrls);
+
+        // Build gap matrix
+        const gapMatrix = serviceKeywords.map(svc => ({
+            service: svc.name,
+            you: yourCoverage[svc.name].covered,
+            competitor: theirCoverage[svc.name].covered,
+            gap: !yourCoverage[svc.name].covered && theirCoverage[svc.name].covered,
+            yourPages: yourCoverage[svc.name].count,
+            theirPages: theirCoverage[svc.name].count
+        }));
+
+        res.json({
+            success: true,
+            gap: {
+                yourTotalPages: yourUrls.length,
+                theirTotalPages: theirUrls.length,
+                yourCategories: yourCats,
+                theirCategories: theirCats,
+                competitorOnly,
+                gapMatrix,
+                yourCoverage,
+                theirCoverage
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// --- Keyword Battles with Revenue Intent ---
+
+app.get('/api/competitors/keyword-battles', async (req, res) => {
+    try {
+        await ensureValidToken();
+        const site = req.query.site || process.env.GSC_SITE || '';
+        const siteUrl = getGSCSiteUrl(site);
+
+        const searchconsole = google.searchconsole({ version: 'v1', auth: oauth2Client });
+        const endDate = new Date();
+        const startDate = new Date();
+        startDate.setDate(endDate.getDate() - 28);
+
+        const response = await searchconsole.searchanalytics.query({
+            siteUrl,
+            requestBody: {
+                startDate: startDate.toISOString().split('T')[0],
+                endDate: endDate.toISOString().split('T')[0],
+                dimensions: ['query'],
+                rowLimit: 500
+            }
+        });
+
+        const rows = response.data.rows || [];
+
+        // Revenue Intent classification
+        const tier1Patterns = ['near me', 'services', 'company', 'companies', 'hire', 'cost', 'price', 'pricing', 'quote', 'rental', 'contractor', 'emergency', '24/7', '24 hour'];
+        const tier2Patterns = ['fiber optic', 'gas line', 'non-destructive', 'sue level', 'slot trench', 'potholing', 'daylighting', 'commercial', 'municipal', 'industrial', 'construction', 'utility'];
+        const tier3Patterns = [' vs ', 'how to', 'how does', 'what is', 'safe', 'benefits', 'advantage', 'guide', 'difference', 'comparison', 'explained'];
+        // City names from Beach Hydrovac service area (configurable)
+        const cityPatterns = (process.env.CLIENT_LOCATION || '').toLowerCase().split(',').map(s => s.trim()).filter(Boolean);
+
+        const expectedCTR = [0.28, 0.15, 0.11, 0.08, 0.06, 0.05, 0.04, 0.03, 0.025, 0.02];
+
+        const keywords = rows.map(row => {
+            const keyword = row.keys[0];
+            const kw = keyword.toLowerCase();
+            const position = Math.round(row.position * 10) / 10;
+            const clicks = row.clicks;
+            const impressions = row.impressions;
+            const ctr = row.ctr;
+
+            // Classify tier
+            let tier = 'unclassified';
+            let intentScore = 1;
+
+            if (tier1Patterns.some(p => kw.includes(p)) || cityPatterns.some(p => p && kw.includes(p))) {
+                tier = 'money'; intentScore = 10;
+            } else if (tier2Patterns.some(p => kw.includes(p))) {
+                tier = 'contract'; intentScore = 5;
+            } else if (tier3Patterns.some(p => kw.includes(p))) {
+                tier = 'trust'; intentScore = 2;
+            }
+
+            // Revenue Priority score
+            const priority = (intentScore * impressions) - (position * 10);
+
+            // Estimated traffic loss
+            const posIndex = Math.min(Math.max(Math.round(position) - 1, 0), 9);
+            const expectedRate = position <= 10 ? expectedCTR[posIndex] : 0.01;
+            const trafficLoss = Math.round(impressions * Math.max(0, expectedRate - ctr));
+
+            return { keyword, position, clicks, impressions, ctr, tier, intentScore, priority, trafficLoss };
+        });
+
+        // Split into groups
+        const almostWinning = keywords.filter(k => k.position >= 4 && k.position <= 10).sort((a, b) => b.priority - a.priority);
+        const bigOpportunity = keywords.filter(k => k.position > 10 && k.position <= 20).sort((a, b) => b.priority - a.priority);
+        const contentGap = keywords.filter(k => k.impressions >= 50 && k.clicks === 0).sort((a, b) => b.impressions - a.impressions);
+
+        // Tier summaries
+        const tiers = {
+            money: keywords.filter(k => k.tier === 'money'),
+            contract: keywords.filter(k => k.tier === 'contract'),
+            trust: keywords.filter(k => k.tier === 'trust'),
+            unclassified: keywords.filter(k => k.tier === 'unclassified')
+        };
+
+        const tierSummary = {};
+        for (const [name, kws] of Object.entries(tiers)) {
+            tierSummary[name] = {
+                count: kws.length,
+                avgPosition: kws.length > 0 ? Math.round(kws.reduce((s, k) => s + k.position, 0) / kws.length * 10) / 10 : 0,
+                totalTrafficLoss: kws.reduce((s, k) => s + k.trafficLoss, 0),
+                topKeywords: kws.sort((a, b) => b.priority - a.priority).slice(0, 20)
+            };
+        }
+
+        res.json({
+            success: true,
+            totalKeywords: keywords.length,
+            almostWinning: almostWinning.slice(0, 30),
+            bigOpportunity: bigOpportunity.slice(0, 30),
+            contentGap: contentGap.slice(0, 20),
+            tierSummary
+        });
+    } catch (error) {
+        res.json({ success: false, error: error.message, almostWinning: [], bigOpportunity: [], contentGap: [], tierSummary: {} });
+    }
+});
+
+// --- Local Presence Comparison ---
+
+app.get('/api/competitors/local-compare', async (req, res) => {
+    try {
+        const clientDomain = process.env.CLIENT_DOMAIN || 'example.com';
+        const clientName = process.env.CLIENT_NAME || 'Business';
+        const location = process.env.CLIENT_LOCATION || '';
+
+        const comps = supabase
+            ? (await supabase.from('competitors').select('domain, name').then(r => r.data || []))
+            : competitorsList;
+
+        const allDomains = [{ domain: clientDomain, name: clientName }, ...comps];
+
+        const scanDomain = async (d) => {
+            const results = [];
+            const directories = ['Google Business', 'Yelp', 'BBB', 'Yellow Pages', 'LinkedIn', 'Facebook'];
+
+            for (const dir of directories) {
+                try {
+                    const dirDomainMap = {
+                        'Google Business': 'google.com', 'Yelp': 'yelp.com', 'BBB': 'bbb.org',
+                        'Yellow Pages': 'yellowpages.com', 'LinkedIn': 'linkedin.com', 'Facebook': 'facebook.com'
+                    };
+                    const searchQuery = `site:${dirDomainMap[dir]} "${d.name}"`;
+                    const googleUrl = `https://www.google.com/search?q=${encodeURIComponent(searchQuery)}&num=3`;
+                    const resp = await fetch(googleUrl, { timeout: 8000, headers: { 'User-Agent': 'Mozilla/5.0 (compatible; SEOBot/1.0)' } });
+                    const html = await resp.text();
+                    const found = html.toLowerCase().includes(d.name.toLowerCase()) && html.toLowerCase().includes(dirDomainMap[dir]);
+                    results.push({ directory: dir, listed: found });
+                } catch {
+                    results.push({ directory: dir, listed: false });
+                }
+            }
+
+            // Website signals check
+            let signals = { hasSchema: false, hasLocalBusiness: false, hasAddress: false, hasPhone: false };
+            try {
+                const siteResp = await fetch(`https://${d.domain}`, { timeout: 10000 });
+                const html = await siteResp.text();
+                const $ = cheerio.load(html);
+                signals.hasSchema = $('script[type="application/ld+json"]').length > 0;
+                signals.hasLocalBusiness = html.toLowerCase().includes('localbusiness');
+                signals.hasAddress = $('[itemprop="address"]').length > 0 || (location && html.toLowerCase().includes(location.toLowerCase()));
+                signals.hasPhone = $('a[href^="tel:"]').length > 0;
+            } catch {}
+
+            const listedCount = results.filter(r => r.listed).length;
+            const localScore = Math.round((listedCount / results.length) * 60 + (Object.values(signals).filter(v => v).length / 4) * 40);
+
+            return { domain: d.domain, name: d.name, directories: results, signals, localScore, listedCount, total: results.length };
+        };
+
+        const allResults = await Promise.allSettled(allDomains.map(d => scanDomain(d)));
+        const data = allResults.map((r, i) => {
+            if (r.status === 'fulfilled') return r.value;
+            return { domain: allDomains[i].domain, name: allDomains[i].name, error: true, localScore: 0 };
+        });
+
+        res.json({ success: true, results: data });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
     }
