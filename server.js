@@ -2433,9 +2433,9 @@ app.get('/api/weekly-kpis', async (req, res) => {
         };
 
         // 1. GSC Performance (if connected)
-        if (oauth2Client && tokenStore.refresh_token) {
+        if (oauth2Client) {
             try {
-                oauth2Client.setCredentials({ refresh_token: tokenStore.refresh_token });
+                await ensureValidToken();
                 const searchconsole = google.searchconsole({ version: 'v1', auth: oauth2Client });
 
                 const endDate = new Date();
@@ -2523,10 +2523,10 @@ app.get('/api/weekly-kpis', async (req, res) => {
                 } catch {}
 
             } catch (e) {
-                report.sections.performance = { error: 'GSC not connected or token expired: ' + e.message };
+                report.sections.performance = { error: 'GSC error: ' + e.message };
             }
         } else {
-            report.sections.performance = { error: 'GSC not connected' };
+            report.sections.performance = { error: 'GSC not connected. Go to /auth/google to connect.' };
         }
 
         // 2. Technical health quick check
