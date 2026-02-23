@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Technical Health | SEO Dashboard</title>
+    <link rel="stylesheet" href="/sidebar.css">
+    <style>
+        .main-content { margin-left: 260px; padding: 30px; background: #f7fafc; min-height: 100vh; }
+        .page-header { margin-bottom: 30px; }
+        .page-header h1 { font-size: 28px; color: #1a202c; margin: 0 0 8px 0; }
+        .page-header p { color: #718096; margin: 0; }
+
+        .score-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 16px; padding: 30px; color: white; margin-bottom: 30px;
+            display: flex; align-items: center; gap: 30px;
+        }
+        .score-circle {
+            width: 120px; height: 120px; border-radius: 50%;
+            background: rgba(255,255,255,0.2); display: flex; align-items: center;
+            justify-content: center; font-size: 36px; font-weight: 800;
+            border: 4px solid rgba(255,255,255,0.5); flex-shrink: 0;
+        }
+        .score-details h2 { margin: 0 0 8px 0; font-size: 22px; }
+        .score-details p { margin: 0; opacity: 0.9; }
+
+        .check-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px; }
+        .check-category {
+            background: white; border-radius: 12px; padding: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0;
+        }
+        .check-category h3 { margin: 0 0 16px 0; font-size: 16px; color: #4a5568; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        .check-item {
+            display: flex; align-items: flex-start; gap: 10px; padding: 10px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .check-item:last-child { border-bottom: none; }
+        .check-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+        .check-name { font-weight: 600; color: #2d3748; font-size: 14px; }
+        .check-detail { font-size: 12px; color: #718096; margin-top: 2px; word-break: break-all; }
+
+        .sub-checks { margin-left: 28px; margin-top: 4px; }
+        .sub-check { font-size: 12px; color: #718096; padding: 2px 0; }
+
+        .scan-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; border: none; padding: 12px 24px; border-radius: 8px;
+            font-weight: 600; cursor: pointer; font-size: 14px;
+        }
+        .scan-btn:hover { opacity: 0.9; }
+        .scan-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .loading { text-align: center; padding: 60px; color: #718096; }
+        .loading .spinner { font-size: 40px; animation: spin 1s linear infinite; display: inline-block; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+        .site-input-row { display: flex; gap: 12px; align-items: center; margin-bottom: 24px; flex-wrap: wrap; }
+        .site-input {
+            flex: 1; min-width: 300px; padding: 12px 16px; border: 2px solid #e2e8f0;
+            border-radius: 8px; font-size: 14px;
+        }
+        .site-input:focus { border-color: #667eea; outline: none; }
+    </style>
+</head>
+<body>
+    <script src="/sidebar.js"></script>
+    <script src="/site-manager.js"></script>
+
+    <div class="main-content">
+        <div class="page-header">
+            <h1>Technical Health Audit</h1>
+            <p>Full checklist: canonicals, robots, headers, schema, sitemaps, trust signals</p>
+        </div>
+
+        <div class="site-input-row">
+            <input type="url" id="siteUrl" class="site-input" placeholder="https://beachhydrovac.com">
+            <button class="scan-btn" id="scanBtn" onclick="runAudit()">Run Full Audit</button>
+        </div>
+
+        <div id="results"></div>
+    </div>
+
+    <script>
+        initSidebar('/technical-health');
+
+        // Pre-fill with current site
+        const currentSite = SiteManager.getCurrentSite();
+        if (currentSite) {
+            document.getElementById('siteUrl').value = currentSite.url;
+        }
+
+        async function runAudit() {
+            const siteUrl = document.getElementById('siteUrl').value.trim();
+            if (!siteUrl) { alert('Enter a site URL'); return; }
+
+            const btn = document.getElementById('scanBtn');
+            btn.disabled = true;
+            btn.textContent = 'Scanning...';
+
+            document.getElementById('results').innerHTML = `
+                <div class="loading">
+                    <div class="spinner">&#x21BB;</div>
+                    <p>Running full technical audit...</p>
+                </div>`;
+
+            try {
+                const resp = await fetch(`/api/technical-health?site=${encodeURIComponent(siteUrl)}`);
+                const data = await resp.json();
+
+                if (!data.success) throw new Error(data.error);
+                renderResults(data);
+            } catch (e) {
+                document.getElementById('results').innerHTML = `<div style="color:red;padding:20px;">Error: ${e.message}</div>`;
+            }
+
+            btn.disabled = false;
+            btn.textContent = 'Run Full Audit';
+        }
+
+        function renderResults(data) {
+            const scoreColor = data.score >= 80 ? '#48bb78' : data.score >= 60 ? '#ecc94b' : '#fc8181';
+
+            // Group checks by category
+            const categories = {};
+            data.checks.forEach(check => {
+                const cat = check.category || 'Other';
+                if (!categories[cat]) categories[cat] = [];
+                categories[cat].push(check);
+            });
+
+            const statusIcon = (status) => {
+                if (status === 'pass') return '<span class="check-icon" style="color:#48bb78;">&#10003;</span>';
+                if (status === 'warn') return '<span class="check-icon" style="color:#ecc94b;">&#9888;</span>';
+                return '<span class="check-icon" style="color:#fc8181;">&#10007;</span>';
+            };
+
+            let html = `
+                <div class="score-card">
+                    <div class="score-circle" style="border-color:${scoreColor};">${data.score}</div>
+                    <div class="score-details">
+                        <h2>Technical Health Score</h2>
+                        <p>${data.passedChecks} of ${data.totalChecks} checks passed | ${data.url}</p>
+                        <p style="margin-top:8px;font-size:13px;opacity:0.8;">
+                            ${data.score >= 80 ? 'Excellent technical foundation' : data.score >= 60 ? 'Good but some issues to address' : 'Significant technical issues found'}
+                        </p>
+                    </div>
+                </div>
+                <div class="check-grid">`;
+
+            for (const [cat, checks] of Object.entries(categories)) {
+                const catEmoji = { Crawl: '&#128375;', Technical: '&#9881;', Headers: '&#128196;', Schema: '&#127760;', Security: '&#128274;' }[cat] || '&#128269;';
+                html += `<div class="check-category"><h3>${catEmoji} ${cat}</h3>`;
+
+                for (const check of checks) {
+                    html += `
+                        <div class="check-item">
+                            ${statusIcon(check.status)}
+                            <div>
+                                <div class="check-name">${check.name}</div>
+                                <div class="check-detail">${check.details || ''}</div>
+                                ${check.subChecks ? `<div class="sub-checks">${check.subChecks.map(sc =>
+                                    `<div class="sub-check">${statusIcon(sc.status)} ${sc.name}: ${sc.details}</div>`
+                                ).join('')}</div>` : ''}
+                            </div>
+                        </div>`;
+                }
+                html += `</div>`;
+            }
+
+            html += `</div>`;
+            document.getElementById('results').innerHTML = html;
+        }
+    </script>
+</body>
+</html>

@@ -244,6 +244,9 @@ app.get('/ai-discovery', (req, res) => res.sendFile(path.join(__dirname, 'public
 app.get('/alerts', (req, res) => res.sendFile(path.join(__dirname, 'public', 'alerts.html')));
 app.get('/integrations', (req, res) => res.sendFile(path.join(__dirname, 'public', 'integrations.html')));
 app.get('/email-campaigns', (req, res) => res.sendFile(path.join(__dirname, 'public', 'email-campaigns.html')));
+app.get('/technical-health', (req, res) => res.sendFile(path.join(__dirname, 'public', 'technical-health.html')));
+app.get('/schema-validator', (req, res) => res.sendFile(path.join(__dirname, 'public', 'schema-validator.html')));
+app.get('/weekly-kpis', (req, res) => res.sendFile(path.join(__dirname, 'public', 'weekly-kpis.html')));
 
 // ============================================================
 // AUTH ROUTES
@@ -501,6 +504,77 @@ app.get('/api/gsc/pages', async (req, res) => {
         res.json({ authenticated: true, success: true, count: pages.length, pages });
     } catch (error) {
         res.json({ authenticated: false, error: error.message, pages: [] });
+    }
+});
+
+// Submit/resubmit sitemap to trigger re-crawl
+app.post('/api/gsc/submit-sitemap', async (req, res) => {
+    try {
+        await ensureValidToken();
+        const { site, sitemapUrl } = req.body;
+        if (!site) return res.json({ success: false, error: 'site required' });
+
+        const siteUrl = getGSCSiteUrl(site);
+        const sitemap = sitemapUrl || `${siteUrl}sitemap_index.xml`;
+        const searchconsole = google.searchconsole({ version: 'v1', auth: oauth2Client });
+
+        // Delete and re-submit to force Google to re-process
+        try { await searchconsole.sitemaps.delete({ siteUrl, feedpath: sitemap }); } catch(e) {}
+        await searchconsole.sitemaps.submit({ siteUrl, feedpath: sitemap });
+
+        res.json({ success: true, message: `Sitemap resubmitted: ${sitemap}`, siteUrl });
+    } catch (error) {
+        res.json({ success: false, error: error.message });
+    }
+});
+
+// List sitemaps for a site
+app.get('/api/gsc/sitemaps', async (req, res) => {
+    try {
+        await ensureValidToken();
+        const site = req.query.site;
+        if (!site) return res.json({ success: false, error: 'site required' });
+
+        const siteUrl = getGSCSiteUrl(site);
+        const searchconsole = google.searchconsole({ version: 'v1', auth: oauth2Client });
+        const response = await searchconsole.sitemaps.list({ siteUrl });
+
+        res.json({ success: true, sitemaps: response.data.sitemap || [] });
+    } catch (error) {
+        res.json({ success: false, error: error.message });
+    }
+});
+
+// URL Inspection API - check index status of specific URL
+app.post('/api/gsc/inspect-url', async (req, res) => {
+    try {
+        await ensureValidToken();
+        const { site, url } = req.body;
+        if (!site || !url) return res.json({ success: false, error: 'site and url required' });
+
+        const siteUrl = getGSCSiteUrl(site);
+        const searchconsole = google.searchconsole({ version: 'v1', auth: oauth2Client });
+
+        const response = await searchconsole.urlInspection.index.inspect({
+            requestBody: { inspectionUrl: url, siteUrl }
+        });
+
+        const result = response.data.inspectionResult;
+        res.json({
+            success: true,
+            url,
+            indexStatus: result?.indexStatusResult?.verdict,
+            coverageState: result?.indexStatusResult?.coverageState,
+            crawledAs: result?.indexStatusResult?.crawledAs,
+            lastCrawlTime: result?.indexStatusResult?.lastCrawlTime,
+            pageFetchState: result?.indexStatusResult?.pageFetchState,
+            robotsTxtState: result?.indexStatusResult?.robotsTxtState,
+            mobileUsability: result?.mobileUsabilityResult?.verdict,
+            richResults: result?.richResultsResult?.verdict,
+            raw: result
+        });
+    } catch (error) {
+        res.json({ success: false, error: error.message });
     }
 });
 
@@ -2059,6 +2133,452 @@ app.get('/api/competitors/local-compare', async (req, res) => {
         });
 
         res.json({ success: true, results: data });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// ============================================================
+// TECHNICAL HEALTH AUDIT API
+// ============================================================
+
+app.get('/api/technical-health', async (req, res) => {
+    try {
+        const siteUrl = req.query.site;
+        if (!siteUrl) return res.status(400).json({ error: 'site parameter required' });
+
+        const url = siteUrl.endsWith('/') ? siteUrl : siteUrl + '/';
+        const results = { url, checks: [], score: 0, totalChecks: 0, passedChecks: 0 };
+
+        // 1. Robots.txt
+        try {
+            const robotsResp = await fetch(url + 'robots.txt', { timeout: 10000 });
+            const robotsText = await robotsResp.text();
+            const hasSitemap = robotsText.includes('Sitemap:');
+            const hasBroadDisallow = robotsText.includes('Disallow: /') && !robotsText.includes('Disallow: /wp-admin');
+            results.checks.push({
+                category: 'Crawl',
+                name: 'Robots.txt',
+                status: robotsResp.ok ? 'pass' : 'fail',
+                details: robotsResp.ok ? `Found (${robotsText.length} bytes)` : 'Missing',
+                subChecks: [
+                    { name: 'Sitemap declared', status: hasSitemap ? 'pass' : 'warn', details: hasSitemap ? 'Yes' : 'No sitemap in robots.txt' },
+                    { name: 'No broad disallow', status: !hasBroadDisallow ? 'pass' : 'fail', details: hasBroadDisallow ? 'Broad Disallow: / found' : 'Clean' }
+                ]
+            });
+        } catch (e) {
+            results.checks.push({ category: 'Crawl', name: 'Robots.txt', status: 'fail', details: e.message });
+        }
+
+        // 2. Sitemap
+        const sitemapUrls = ['sitemap_index.xml', 'sitemap.xml', 'sitemap_index.xml'];
+        let sitemapFound = false;
+        for (const sm of sitemapUrls) {
+            try {
+                const smResp = await fetch(url + sm, { timeout: 10000 });
+                if (smResp.ok) {
+                    const text = await smResp.text();
+                    const urlCount = (text.match(/<loc>/g) || []).length;
+                    results.checks.push({
+                        category: 'Crawl',
+                        name: 'XML Sitemap',
+                        status: 'pass',
+                        details: `${sm} found - ${urlCount} URLs`
+                    });
+                    sitemapFound = true;
+                    break;
+                }
+            } catch {}
+        }
+        if (!sitemapFound) {
+            results.checks.push({ category: 'Crawl', name: 'XML Sitemap', status: 'fail', details: 'No sitemap found' });
+        }
+
+        // 3. Homepage audit
+        try {
+            const homeResp = await fetch(url, { timeout: 15000 });
+            const html = await homeResp.text();
+            const $ = cheerio.load(html);
+            const head = html.substring(0, html.indexOf('</head>') || html.length);
+
+            // Canonical
+            const canonicals = $('link[rel="canonical"]');
+            results.checks.push({
+                category: 'Technical',
+                name: 'Canonical Tag',
+                status: canonicals.length === 1 ? 'pass' : canonicals.length === 0 ? 'fail' : 'warn',
+                details: canonicals.length === 1 ? canonicals.attr('href') : canonicals.length === 0 ? 'Missing' : `${canonicals.length} canonicals (duplicate!)`
+            });
+
+            // Meta description
+            const metaDescs = $('meta[name="description"]');
+            results.checks.push({
+                category: 'Technical',
+                name: 'Meta Description',
+                status: metaDescs.length === 1 ? 'pass' : metaDescs.length === 0 ? 'fail' : 'warn',
+                details: metaDescs.length === 1 ? `${metaDescs.attr('content')?.substring(0, 80)}...` : metaDescs.length === 0 ? 'Missing' : `${metaDescs.length} meta descriptions (duplicate!)`
+            });
+
+            // OG tags
+            const ogTitle = $('meta[property="og:title"]').length;
+            const ogDesc = $('meta[property="og:description"]').length;
+            const ogImage = $('meta[property="og:image"]').length;
+            results.checks.push({
+                category: 'Headers',
+                name: 'Open Graph Tags',
+                status: ogTitle === 1 && ogDesc === 1 ? 'pass' : 'warn',
+                details: `og:title(${ogTitle}) og:description(${ogDesc}) og:image(${ogImage})`,
+                subChecks: [
+                    { name: 'og:title', status: ogTitle === 1 ? 'pass' : ogTitle === 0 ? 'fail' : 'warn', details: ogTitle === 1 ? 'OK' : ogTitle === 0 ? 'Missing' : 'Duplicate' },
+                    { name: 'og:description', status: ogDesc === 1 ? 'pass' : ogDesc === 0 ? 'fail' : 'warn', details: ogDesc === 1 ? 'OK' : ogDesc === 0 ? 'Missing' : 'Duplicate' },
+                    { name: 'og:image', status: ogImage >= 1 ? 'pass' : 'warn', details: ogImage >= 1 ? 'OK' : 'Missing' }
+                ]
+            });
+
+            // H1 tags
+            const h1Count = $('h1').length;
+            results.checks.push({
+                category: 'Headers',
+                name: 'H1 Tag',
+                status: h1Count === 1 ? 'pass' : h1Count === 0 ? 'fail' : 'warn',
+                details: h1Count === 1 ? $('h1').first().text().substring(0, 60) : h1Count === 0 ? 'No H1 found' : `${h1Count} H1 tags (should be 1)`
+            });
+
+            // Schema markup
+            const schemaBlocks = $('script[type="application/ld+json"]');
+            const schemaTypes = [];
+            schemaBlocks.each((i, el) => {
+                try {
+                    const parsed = JSON.parse($(el).html());
+                    schemaTypes.push(parsed['@type'] || 'Unknown');
+                } catch {}
+            });
+            results.checks.push({
+                category: 'Schema',
+                name: 'JSON-LD Schema',
+                status: schemaBlocks.length > 0 ? 'pass' : 'fail',
+                details: schemaBlocks.length > 0 ? `${schemaBlocks.length} blocks: ${schemaTypes.join(', ')}` : 'No schema markup found'
+            });
+
+            // Check specific schema types
+            const requiredSchemas = ['LocalBusiness', 'Organization', 'FAQPage', 'WebSite', 'BreadcrumbList', 'HowTo', 'Service'];
+            for (const type of requiredSchemas) {
+                const found = schemaTypes.includes(type);
+                results.checks.push({
+                    category: 'Schema',
+                    name: `${type} Schema`,
+                    status: found ? 'pass' : type === 'HowTo' || type === 'BreadcrumbList' ? 'warn' : 'fail',
+                    details: found ? 'Present on homepage' : 'Not found on homepage'
+                });
+            }
+
+            // Duplicate scripts
+            const scripts = [];
+            $('script[src]').each((i, el) => scripts.push($(el).attr('src')));
+            const dupeScripts = scripts.filter((s, i) => scripts.indexOf(s) !== i);
+            results.checks.push({
+                category: 'Headers',
+                name: 'No Duplicate Scripts',
+                status: dupeScripts.length === 0 ? 'pass' : 'warn',
+                details: dupeScripts.length === 0 ? 'Clean' : `${dupeScripts.length} duplicates: ${dupeScripts[0]?.substring(0, 50)}`
+            });
+
+            // HTTPS
+            results.checks.push({
+                category: 'Security',
+                name: 'HTTPS',
+                status: url.startsWith('https') ? 'pass' : 'fail',
+                details: url.startsWith('https') ? 'Secure' : 'Not using HTTPS'
+            });
+
+            // Noindex check
+            const hasNoindex = $('meta[name="robots"][content*="noindex"]').length > 0;
+            results.checks.push({
+                category: 'Technical',
+                name: 'No Noindex on Homepage',
+                status: !hasNoindex ? 'pass' : 'fail',
+                details: hasNoindex ? 'Homepage has noindex!' : 'Indexable'
+            });
+
+            // Head weight
+            const metaCount = (head.match(/<meta /g) || []).length;
+            const linkCount = (head.match(/<link /g) || []).length;
+            const scriptCount = (head.match(/<script/g) || []).length;
+            results.checks.push({
+                category: 'Headers',
+                name: 'Head Weight',
+                status: scriptCount < 15 ? 'pass' : 'warn',
+                details: `${metaCount} meta, ${linkCount} links, ${scriptCount} scripts`
+            });
+
+        } catch (e) {
+            results.checks.push({ category: 'Technical', name: 'Homepage Fetch', status: 'fail', details: e.message });
+        }
+
+        // Calculate score
+        results.totalChecks = results.checks.length;
+        results.passedChecks = results.checks.filter(c => c.status === 'pass').length;
+        const warnChecks = results.checks.filter(c => c.status === 'warn').length;
+        results.score = Math.round(((results.passedChecks + warnChecks * 0.5) / results.totalChecks) * 100);
+
+        res.json({ success: true, ...results });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// ============================================================
+// SCHEMA VALIDATOR API
+// ============================================================
+
+app.get('/api/schema-validate', async (req, res) => {
+    try {
+        const pageUrl = req.query.url;
+        if (!pageUrl) return res.status(400).json({ error: 'url parameter required' });
+
+        const resp = await fetch(pageUrl, { timeout: 15000 });
+        const html = await resp.text();
+        const $ = cheerio.load(html);
+
+        const schemas = [];
+        $('script[type="application/ld+json"]').each((i, el) => {
+            const raw = $(el).html();
+            try {
+                const parsed = JSON.parse(raw);
+                const type = parsed['@type'] || 'Unknown';
+
+                // Validate required fields per type
+                const issues = [];
+                const warnings = [];
+
+                if (type === 'LocalBusiness' || type === 'Organization') {
+                    if (!parsed.name) issues.push('Missing: name');
+                    if (!parsed.address) issues.push('Missing: address');
+                    if (!parsed.telephone) warnings.push('Missing: telephone');
+                    if (!parsed.url) warnings.push('Missing: url');
+                    if (!parsed.geo) warnings.push('Missing: geo (GeoCoordinates)');
+                    if (!parsed.areaServed) warnings.push('Missing: areaServed');
+                    if (!parsed.image) warnings.push('Missing: image');
+                }
+                if (type === 'Service') {
+                    if (!parsed.name) issues.push('Missing: name');
+                    if (!parsed.provider) warnings.push('Missing: provider');
+                    if (!parsed.areaServed) warnings.push('Missing: areaServed');
+                    if (!parsed.description) warnings.push('Missing: description');
+                }
+                if (type === 'FAQPage') {
+                    if (!parsed.mainEntity || !parsed.mainEntity.length) issues.push('Missing: mainEntity (questions)');
+                    else if (parsed.mainEntity.length < 3) warnings.push(`Only ${parsed.mainEntity.length} questions (recommend 5+)`);
+                }
+                if (type === 'HowTo') {
+                    if (!parsed.name) issues.push('Missing: name');
+                    if (!parsed.step || !parsed.step.length) issues.push('Missing: step array');
+                    if (!parsed.description) warnings.push('Missing: description');
+                }
+                if (type === 'WebSite') {
+                    if (!parsed.name) issues.push('Missing: name');
+                    if (!parsed.url) issues.push('Missing: url');
+                    if (!parsed.potentialAction) warnings.push('Missing: potentialAction (SearchAction for sitelinks)');
+                }
+                if (type === 'BreadcrumbList') {
+                    if (!parsed.itemListElement || !parsed.itemListElement.length) issues.push('Missing: itemListElement');
+                }
+
+                schemas.push({
+                    type,
+                    valid: issues.length === 0,
+                    issues,
+                    warnings,
+                    fields: Object.keys(parsed).filter(k => k !== '@context'),
+                    raw: raw.substring(0, 500)
+                });
+            } catch (e) {
+                schemas.push({ type: 'Parse Error', valid: false, issues: [e.message], warnings: [], raw: raw.substring(0, 200) });
+            }
+        });
+
+        // Check for missing recommended types
+        const foundTypes = schemas.map(s => s.type);
+        const recommended = ['LocalBusiness', 'FAQPage', 'WebSite', 'BreadcrumbList', 'Service'];
+        const missing = recommended.filter(t => !foundTypes.includes(t));
+
+        res.json({
+            success: true,
+            url: pageUrl,
+            totalSchemas: schemas.length,
+            validSchemas: schemas.filter(s => s.valid).length,
+            schemas,
+            missingRecommended: missing,
+            score: schemas.length === 0 ? 0 : Math.round((schemas.filter(s => s.valid).length / schemas.length) * 100)
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// ============================================================
+// WEEKLY KPI REPORT API
+// ============================================================
+
+app.get('/api/weekly-kpis', async (req, res) => {
+    try {
+        const siteUrl = req.query.site;
+        if (!siteUrl) return res.status(400).json({ error: 'site parameter required' });
+
+        const report = {
+            site: siteUrl,
+            generatedAt: new Date().toISOString(),
+            period: '7 days',
+            sections: {}
+        };
+
+        // 1. GSC Performance (if connected)
+        if (oauth2Client && tokenStore.refresh_token) {
+            try {
+                oauth2Client.setCredentials({ refresh_token: tokenStore.refresh_token });
+                const searchconsole = google.searchconsole({ version: 'v1', auth: oauth2Client });
+
+                const endDate = new Date();
+                const startDate = new Date(endDate - 7 * 24 * 60 * 60 * 1000);
+                const prevStartDate = new Date(startDate - 7 * 24 * 60 * 60 * 1000);
+
+                const formatDate = d => d.toISOString().split('T')[0];
+
+                // Current week
+                const current = await searchconsole.searchanalytics.query({
+                    siteUrl: siteUrl,
+                    requestBody: {
+                        startDate: formatDate(startDate),
+                        endDate: formatDate(endDate),
+                        dimensions: ['query'],
+                        rowLimit: 50
+                    }
+                });
+
+                // Previous week
+                const previous = await searchconsole.searchanalytics.query({
+                    siteUrl: siteUrl,
+                    requestBody: {
+                        startDate: formatDate(prevStartDate),
+                        endDate: formatDate(startDate),
+                        dimensions: ['query'],
+                        rowLimit: 50
+                    }
+                });
+
+                const currentRows = current.data.rows || [];
+                const prevRows = previous.data.rows || [];
+
+                const currentTotals = currentRows.reduce((acc, r) => ({
+                    clicks: acc.clicks + r.clicks,
+                    impressions: acc.impressions + r.impressions,
+                    position: acc.position + r.position
+                }), { clicks: 0, impressions: 0, position: 0 });
+
+                const prevTotals = prevRows.reduce((acc, r) => ({
+                    clicks: acc.clicks + r.clicks,
+                    impressions: acc.impressions + r.impressions,
+                    position: acc.position + r.position
+                }), { clicks: 0, impressions: 0, position: 0 });
+
+                const avgPos = currentRows.length > 0 ? (currentTotals.position / currentRows.length).toFixed(1) : 0;
+                const prevAvgPos = prevRows.length > 0 ? (prevTotals.position / prevRows.length).toFixed(1) : 0;
+
+                report.sections.performance = {
+                    current: {
+                        clicks: currentTotals.clicks,
+                        impressions: currentTotals.impressions,
+                        avgPosition: parseFloat(avgPos),
+                        keywords: currentRows.length
+                    },
+                    previous: {
+                        clicks: prevTotals.clicks,
+                        impressions: prevTotals.impressions,
+                        avgPosition: parseFloat(prevAvgPos),
+                        keywords: prevRows.length
+                    },
+                    changes: {
+                        clicks: currentTotals.clicks - prevTotals.clicks,
+                        impressions: currentTotals.impressions - prevTotals.impressions,
+                        avgPosition: parseFloat((prevAvgPos - avgPos).toFixed(1)),
+                        keywords: currentRows.length - prevRows.length
+                    },
+                    topKeywords: currentRows.slice(0, 10).map(r => ({
+                        keyword: r.keys[0],
+                        clicks: r.clicks,
+                        impressions: r.impressions,
+                        position: r.position.toFixed(1)
+                    }))
+                };
+
+                // Indexation status
+                try {
+                    const sitemaps = await searchconsole.sitemaps.list({ siteUrl });
+                    const sitemapData = (sitemaps.data.sitemap || []).map(sm => ({
+                        path: sm.path,
+                        submitted: sm.contents?.[0]?.submitted || 0,
+                        indexed: sm.contents?.[0]?.indexed || 0
+                    }));
+                    report.sections.indexation = { sitemaps: sitemapData };
+                } catch {}
+
+            } catch (e) {
+                report.sections.performance = { error: 'GSC not connected or token expired: ' + e.message };
+            }
+        } else {
+            report.sections.performance = { error: 'GSC not connected' };
+        }
+
+        // 2. Technical health quick check
+        try {
+            const url = siteUrl.endsWith('/') ? siteUrl : siteUrl + '/';
+            const homeResp = await fetch(url, { timeout: 10000 });
+            const html = await homeResp.text();
+            const $ = cheerio.load(html);
+
+            const schemaCount = $('script[type="application/ld+json"]').length;
+            const hasCanonical = $('link[rel="canonical"]').length > 0;
+            const h1Count = $('h1').length;
+            const hasMetaDesc = $('meta[name="description"]').length > 0;
+
+            report.sections.technical = {
+                schemaBlocks: schemaCount,
+                hasCanonical,
+                h1Count,
+                hasMetaDescription: hasMetaDesc,
+                score: [schemaCount > 0, hasCanonical, h1Count === 1, hasMetaDesc].filter(Boolean).length * 25
+            };
+        } catch (e) {
+            report.sections.technical = { error: e.message };
+        }
+
+        // 3. Checklist status
+        report.sections.checklist = {
+            items: [
+                { name: 'Robots.txt clean', status: 'done', category: 'Crawl' },
+                { name: 'Sitemaps submitted (Google)', status: 'done', category: 'Crawl' },
+                { name: 'Sitemaps submitted (Bing)', status: 'pending', category: 'Crawl' },
+                { name: 'Canonical tags on all pages', status: 'done', category: 'Technical' },
+                { name: 'No noindex on live pages', status: 'done', category: 'Technical' },
+                { name: 'Single H1 per page', status: 'done', category: 'Headers' },
+                { name: 'No duplicate OG tags', status: 'done', category: 'Headers' },
+                { name: 'LocalBusiness schema', status: 'done', category: 'Schema' },
+                { name: 'Service schema', status: 'done', category: 'Schema' },
+                { name: 'FAQ schema', status: 'done', category: 'Schema' },
+                { name: 'HowTo schema', status: 'done', category: 'Schema' },
+                { name: 'WebSite schema', status: 'done', category: 'Schema' },
+                { name: 'BreadcrumbList schema', status: 'done', category: 'Schema' },
+                { name: 'Internal linking network', status: 'done', category: 'Architecture' },
+                { name: 'Google Business Profile', status: 'pending', category: 'Local' },
+                { name: 'Local directory listings', status: 'pending', category: 'Local' },
+                { name: 'Bing Webmaster Tools', status: 'pending', category: 'Crawl' }
+            ]
+        };
+
+        const doneCount = report.sections.checklist.items.filter(i => i.status === 'done').length;
+        report.sections.checklist.progress = Math.round((doneCount / report.sections.checklist.items.length) * 100);
+
+        res.json({ success: true, ...report });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
     }

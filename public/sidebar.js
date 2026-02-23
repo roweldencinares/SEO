@@ -35,14 +35,17 @@ function initSidebar(activePage = '/dashboard') {
 
                 <!-- Pro SEO Tools Section (Collapsible) -->
                 <li>
-                    <div class="parent-item ${['/indexation-control', '/sitemap-automation', '/deindex-recovery', '/entity-management'].includes(activePage) ? 'active expanded' : ''}" data-section="pro-seo-tools">
+                    <div class="parent-item ${['/indexation-control', '/sitemap-automation', '/deindex-recovery', '/entity-management', '/technical-health', '/schema-validator', '/weekly-kpis'].includes(activePage) ? 'active expanded' : ''}" data-section="pro-seo-tools">
                         <div class="parent-content">
                             <span class="icon">⚡</span>
                             <span>Pro SEO Tools</span>
                         </div>
                         <span class="arrow">▼</span>
                     </div>
-                    <ul class="sub-menu ${['/indexation-control', '/sitemap-automation', '/deindex-recovery', '/entity-management'].includes(activePage) ? 'expanded' : ''}">
+                    <ul class="sub-menu ${['/indexation-control', '/sitemap-automation', '/deindex-recovery', '/entity-management', '/technical-health', '/schema-validator', '/weekly-kpis'].includes(activePage) ? 'expanded' : ''}">
+                        <li><a href="/technical-health" class="${activePage === '/technical-health' ? 'active' : ''}">🏥 Technical Health</a></li>
+                        <li><a href="/schema-validator" class="${activePage === '/schema-validator' ? 'active' : ''}">🔬 Schema Validator</a></li>
+                        <li><a href="/weekly-kpis" class="${activePage === '/weekly-kpis' ? 'active' : ''}">📊 Weekly KPIs</a></li>
                         <li><a href="/indexation-control" class="${activePage === '/indexation-control' ? 'active' : ''}">🛡️ Indexation Control</a></li>
                         <li><a href="/sitemap-automation" class="${activePage === '/sitemap-automation' ? 'active' : ''}">🗺️ Sitemap Automation</a></li>
                         <li><a href="/deindex-recovery" class="${activePage === '/deindex-recovery' ? 'active' : ''}">🚨 Deindex Recovery</a></li>

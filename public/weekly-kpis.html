@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weekly KPIs | SEO Dashboard</title>
+    <link rel="stylesheet" href="/sidebar.css">
+    <style>
+        .main-content { margin-left: 260px; padding: 30px; background: #f7fafc; min-height: 100vh; }
+        .page-header { margin-bottom: 30px; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; }
+        .page-header h1 { font-size: 28px; color: #1a202c; margin: 0 0 8px 0; }
+        .page-header p { color: #718096; margin: 0; }
+
+        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .kpi-card {
+            background: white; border-radius: 12px; padding: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0;
+        }
+        .kpi-label { font-size: 12px; color: #718096; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+        .kpi-value { font-size: 32px; font-weight: 800; color: #2d3748; }
+        .kpi-change { font-size: 14px; margin-top: 4px; font-weight: 600; }
+        .kpi-change.positive { color: #48bb78; }
+        .kpi-change.negative { color: #fc8181; }
+        .kpi-change.neutral { color: #718096; }
+
+        .section { background: white; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; }
+        .section h2 { margin: 0 0 16px 0; font-size: 18px; color: #2d3748; }
+
+        .keyword-table { width: 100%; border-collapse: collapse; }
+        .keyword-table th { text-align: left; padding: 10px; font-size: 12px; color: #718096; text-transform: uppercase; border-bottom: 2px solid #e2e8f0; }
+        .keyword-table td { padding: 10px; font-size: 14px; color: #2d3748; border-bottom: 1px solid #f0f0f0; }
+        .keyword-table tr:hover { background: #f7fafc; }
+
+        .checklist-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+        .checklist-item {
+            display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+            background: #f7fafc; border-radius: 8px; font-size: 14px;
+        }
+        .checklist-item.done { background: #f0fff4; }
+        .checklist-item.pending { background: #fffaf0; }
+        .check-status { font-size: 16px; flex-shrink: 0; }
+
+        .progress-bar-wrap { background: #e2e8f0; border-radius: 8px; height: 24px; overflow: hidden; margin-bottom: 16px; }
+        .progress-bar-fill { height: 100%; background: linear-gradient(135deg, #48bb78, #38a169); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 13px; transition: width 0.5s; }
+
+        .refresh-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; border: none; padding: 10px 20px; border-radius: 8px;
+            font-weight: 600; cursor: pointer; font-size: 14px;
+        }
+        .refresh-btn:disabled { opacity: 0.5; }
+
+        .loading { text-align: center; padding: 60px; color: #718096; }
+        .error-msg { background: #fff5f5; border: 1px solid #feb2b2; border-radius: 8px; padding: 16px; color: #9b2c2c; }
+        .timestamp { color: #a0aec0; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <script src="/sidebar.js"></script>
+    <script src="/site-manager.js"></script>
+
+    <div class="main-content">
+        <div class="page-header">
+            <div>
+                <h1>Weekly KPI Report</h1>
+                <p>Performance snapshot: clicks, impressions, rankings, and checklist progress</p>
+            </div>
+            <button class="refresh-btn" id="refreshBtn" onclick="loadKPIs()">Generate Report</button>
+        </div>
+
+        <div id="siteSelector" style="margin-bottom: 20px;"></div>
+        <div id="content">
+            <div class="loading"><p>Select a site and click "Generate Report"</p></div>
+        </div>
+    </div>
+
+    <script>
+        initSidebar('/weekly-kpis');
+
+        SiteManager.init({
+            selectorContainer: 'siteSelector',
+            defaultSite: { url: 'https://beachhydrovac.com', name: 'Beach HydroVac' }
+        });
+
+        async function loadKPIs() {
+            const site = SiteManager.getCurrentSite();
+            if (!site) { alert('Add a site first'); return; }
+
+            const btn = document.getElementById('refreshBtn');
+            btn.disabled = true;
+            btn.textContent = 'Loading...';
+            document.getElementById('content').innerHTML = '<div class="loading"><p>Generating weekly KPI report...</p></div>';
+
+            try {
+                const resp = await fetch(`/api/weekly-kpis?site=${encodeURIComponent(site.url)}`);
+                const data = await resp.json();
+                if (!data.success) throw new Error(data.error);
+                renderReport(data);
+            } catch (e) {
+                document.getElementById('content').innerHTML = `<div class="error-msg">Error: ${e.message}</div>`;
+            }
+
+            btn.disabled = false;
+            btn.textContent = 'Generate Report';
+        }
+
+        function renderReport(data) {
+            let html = '';
+            const ts = new Date(data.generatedAt).toLocaleString();
+
+            // Performance KPIs
+            const perf = data.sections.performance;
+            if (perf && !perf.error) {
+                const changeArrow = (val) => val > 0 ? `&#9650; +${val}` : val < 0 ? `&#9660; ${val}` : '&#8212; 0';
+                const changeClass = (val, invert) => {
+                    const positive = invert ? val < 0 : val > 0;
+                    return val === 0 ? 'neutral' : positive ? 'positive' : 'negative';
+                };
+
+                html += `
+                    <div class="kpi-grid">
+                        <div class="kpi-card">
+                            <div class="kpi-label">Clicks (7d)</div>
+                            <div class="kpi-value">${perf.current.clicks}</div>
+                            <div class="kpi-change ${changeClass(perf.changes.clicks)}">${changeArrow(perf.changes.clicks)} vs prev week</div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-label">Impressions (7d)</div>
+                            <div class="kpi-value">${perf.current.impressions.toLocaleString()}</div>
+                            <div class="kpi-change ${changeClass(perf.changes.impressions)}">${changeArrow(perf.changes.impressions)} vs prev week</div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-label">Avg Position</div>
+                            <div class="kpi-value">${perf.current.avgPosition}</div>
+                            <div class="kpi-change ${changeClass(perf.changes.avgPosition)}">${perf.changes.avgPosition > 0 ? '&#9650; ' + perf.changes.avgPosition + ' better' : perf.changes.avgPosition < 0 ? '&#9660; ' + Math.abs(perf.changes.avgPosition) + ' worse' : 'No change'}</div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-label">Keywords Ranking</div>
+                            <div class="kpi-value">${perf.current.keywords}</div>
+                            <div class="kpi-change ${changeClass(perf.changes.keywords)}">${changeArrow(perf.changes.keywords)} vs prev week</div>
+                        </div>
+                    </div>`;
+
+                // Top keywords table
+                if (perf.topKeywords && perf.topKeywords.length > 0) {
+                    html += `
+                        <div class="section">
+                            <h2>Top Keywords This Week</h2>
+                            <table class="keyword-table">
+                                <thead><tr><th>Keyword</th><th>Clicks</th><th>Impressions</th><th>Avg Position</th></tr></thead>
+                                <tbody>
+                                    ${perf.topKeywords.map(k => `
+                                        <tr>
+                                            <td><strong>${k.keyword}</strong></td>
+                                            <td>${k.clicks}</td>
+                                            <td>${k.impressions}</td>
+                                            <td>${k.position}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>`;
+                }
+            } else {
+                html += `<div class="section"><h2>Search Performance</h2><p class="error-msg">${perf?.error || 'GSC not connected. Go to Integrations to connect.'}</p></div>`;
+            }
+
+            // Technical health
+            const tech = data.sections.technical;
+            if (tech && !tech.error) {
+                html += `
+                    <div class="section">
+                        <h2>Technical Health Quick Check</h2>
+                        <div class="kpi-grid" style="margin-bottom:0;">
+                            <div class="kpi-card"><div class="kpi-label">Schema Blocks</div><div class="kpi-value">${tech.schemaBlocks}</div></div>
+                            <div class="kpi-card"><div class="kpi-label">Canonical</div><div class="kpi-value" style="color:${tech.hasCanonical ? '#48bb78' : '#fc8181'}">${tech.hasCanonical ? 'Yes' : 'No'}</div></div>
+                            <div class="kpi-card"><div class="kpi-label">H1 Count</div><div class="kpi-value" style="color:${tech.h1Count === 1 ? '#48bb78' : '#fc8181'}">${tech.h1Count}</div></div>
+                            <div class="kpi-card"><div class="kpi-label">Tech Score</div><div class="kpi-value">${tech.score}%</div></div>
+                        </div>
+                    </div>`;
+            }
+
+            // Checklist
+            const checklist = data.sections.checklist;
+            if (checklist) {
+                html += `
+                    <div class="section">
+                        <h2>SEO Checklist Progress</h2>
+                        <div class="progress-bar-wrap">
+                            <div class="progress-bar-fill" style="width:${checklist.progress}%;">${checklist.progress}%</div>
+                        </div>
+                        <div class="checklist-grid">
+                            ${checklist.items.map(item => `
+                                <div class="checklist-item ${item.status}">
+                                    <span class="check-status">${item.status === 'done' ? '&#10003;' : '&#9744;'}</span>
+                                    <span>${item.name}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>`;
+            }
+
+            html += `<p class="timestamp">Report generated: ${ts}</p>`;
+            document.getElementById('content').innerHTML = html;
+        }
+    </script>
+</body>
+</html>

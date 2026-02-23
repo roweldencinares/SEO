@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schema Validator | SEO Dashboard</title>
+    <link rel="stylesheet" href="/sidebar.css">
+    <style>
+        .main-content { margin-left: 260px; padding: 30px; background: #f7fafc; min-height: 100vh; }
+        .page-header { margin-bottom: 30px; }
+        .page-header h1 { font-size: 28px; color: #1a202c; margin: 0 0 8px 0; }
+        .page-header p { color: #718096; margin: 0; }
+
+        .url-input-row { display: flex; gap: 12px; align-items: center; margin-bottom: 24px; flex-wrap: wrap; }
+        .url-input {
+            flex: 1; min-width: 350px; padding: 12px 16px; border: 2px solid #e2e8f0;
+            border-radius: 8px; font-size: 14px;
+        }
+        .url-input:focus { border-color: #667eea; outline: none; }
+        .validate-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; border: none; padding: 12px 24px; border-radius: 8px;
+            font-weight: 600; cursor: pointer; font-size: 14px;
+        }
+        .validate-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .summary-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+        .summary-card {
+            background: white; border-radius: 12px; padding: 20px; text-align: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0;
+        }
+        .summary-card .number { font-size: 36px; font-weight: 800; }
+        .summary-card .label { color: #718096; font-size: 13px; margin-top: 4px; }
+
+        .schema-block {
+            background: white; border-radius: 12px; padding: 24px; margin-bottom: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0;
+        }
+        .schema-block.valid { border-left: 4px solid #48bb78; }
+        .schema-block.invalid { border-left: 4px solid #fc8181; }
+        .schema-type { font-size: 20px; font-weight: 700; color: #2d3748; margin: 0 0 8px 0; }
+        .schema-badge {
+            display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 12px;
+            font-weight: 600; margin-left: 8px;
+        }
+        .badge-pass { background: #c6f6d5; color: #276749; }
+        .badge-fail { background: #fed7d7; color: #9b2c2c; }
+
+        .field-list { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0; }
+        .field-tag { background: #edf2f7; padding: 3px 10px; border-radius: 6px; font-size: 12px; color: #4a5568; }
+
+        .issue-list, .warning-list { margin: 8px 0; padding: 0; list-style: none; }
+        .issue-list li { color: #e53e3e; font-size: 13px; padding: 3px 0; }
+        .issue-list li:before { content: '\\2717 '; }
+        .warning-list li { color: #d69e2e; font-size: 13px; padding: 3px 0; }
+        .warning-list li:before { content: '\\26A0 '; }
+
+        .missing-section { background: #fff5f5; border: 1px solid #feb2b2; border-radius: 12px; padding: 20px; margin-top: 20px; }
+        .missing-section h3 { margin: 0 0 12px 0; color: #9b2c2c; }
+        .missing-tag { display: inline-block; background: #fed7d7; color: #9b2c2c; padding: 4px 12px; border-radius: 6px; font-size: 13px; margin: 4px; }
+
+        .loading { text-align: center; padding: 60px; color: #718096; }
+        .quick-links { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+        .quick-link { background: #edf2f7; border: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; cursor: pointer; color: #4a5568; }
+        .quick-link:hover { background: #e2e8f0; }
+    </style>
+</head>
+<body>
+    <script src="/sidebar.js"></script>
+    <script src="/site-manager.js"></script>
+
+    <div class="main-content">
+        <div class="page-header">
+            <h1>Schema Validator</h1>
+            <p>Validate JSON-LD schema markup on any URL. Checks required fields per schema type.</p>
+        </div>
+
+        <div class="url-input-row">
+            <input type="url" id="pageUrl" class="url-input" placeholder="https://beachhydrovac.com/">
+            <button class="validate-btn" id="validateBtn" onclick="validateSchema()">Validate Schema</button>
+        </div>
+
+        <div class="quick-links" id="quickLinks"></div>
+        <div id="results"></div>
+    </div>
+
+    <script>
+        initSidebar('/schema-validator');
+
+        const currentSite = SiteManager.getCurrentSite();
+        if (currentSite) {
+            document.getElementById('pageUrl').value = currentSite.url;
+            // Quick links for common pages
+            const base = currentSite.url;
+            document.getElementById('quickLinks').innerHTML = `
+                <button class="quick-link" onclick="validateUrl('${base}/')">Homepage</button>
+                <button class="quick-link" onclick="validateUrl('${base}/services/')">Services</button>
+                <button class="quick-link" onclick="validateUrl('${base}/about/')">About</button>
+                <button class="quick-link" onclick="validateUrl('${base}/contact/')">Contact</button>
+                <button class="quick-link" onclick="validateUrl('${base}/faq/')">FAQ</button>
+            `;
+        }
+
+        function validateUrl(url) {
+            document.getElementById('pageUrl').value = url;
+            validateSchema();
+        }
+
+        async function validateSchema() {
+            const pageUrl = document.getElementById('pageUrl').value.trim();
+            if (!pageUrl) { alert('Enter a URL to validate'); return; }
+
+            const btn = document.getElementById('validateBtn');
+            btn.disabled = true;
+            btn.textContent = 'Validating...';
+            document.getElementById('results').innerHTML = '<div class="loading"><p>Fetching and validating schema...</p></div>';
+
+            try {
+                const resp = await fetch(`/api/schema-validate?url=${encodeURIComponent(pageUrl)}`);
+                const data = await resp.json();
+                if (!data.success) throw new Error(data.error);
+                renderResults(data);
+            } catch (e) {
+                document.getElementById('results').innerHTML = `<div style="color:red;padding:20px;">Error: ${e.message}</div>`;
+            }
+
+            btn.disabled = false;
+            btn.textContent = 'Validate Schema';
+        }
+
+        function renderResults(data) {
+            let html = `
+                <div class="summary-cards">
+                    <div class="summary-card">
+                        <div class="number" style="color:#667eea;">${data.totalSchemas}</div>
+                        <div class="label">Schema Blocks Found</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="number" style="color:#48bb78;">${data.validSchemas}</div>
+                        <div class="label">Valid (no errors)</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="number" style="color:${data.score >= 80 ? '#48bb78' : data.score >= 50 ? '#ecc94b' : '#fc8181'};">${data.score}%</div>
+                        <div class="label">Validation Score</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="number" style="color:${data.missingRecommended.length === 0 ? '#48bb78' : '#fc8181'};">${data.missingRecommended.length}</div>
+                        <div class="label">Missing Recommended</div>
+                    </div>
+                </div>`;
+
+            // Each schema block
+            for (const schema of data.schemas) {
+                const isValid = schema.valid;
+                html += `
+                    <div class="schema-block ${isValid ? 'valid' : 'invalid'}">
+                        <div class="schema-type">
+                            @type: ${schema.type}
+                            <span class="schema-badge ${isValid ? 'badge-pass' : 'badge-fail'}">${isValid ? 'VALID' : 'ERRORS'}</span>
+                        </div>
+                        <div class="field-list">
+                            ${schema.fields.map(f => `<span class="field-tag">${f}</span>`).join('')}
+                        </div>
+                        ${schema.issues.length ? `<ul class="issue-list">${schema.issues.map(i => `<li>${i}</li>`).join('')}</ul>` : ''}
+                        ${schema.warnings.length ? `<ul class="warning-list">${schema.warnings.map(w => `<li>${w}</li>`).join('')}</ul>` : ''}
+                    </div>`;
+            }
+
+            // Missing recommended
+            if (data.missingRecommended.length > 0) {
+                html += `
+                    <div class="missing-section">
+                        <h3>Missing Recommended Schema Types</h3>
+                        <p style="color:#718096;font-size:13px;margin:0 0 12px 0;">These schema types are recommended for local service businesses:</p>
+                        ${data.missingRecommended.map(t => `<span class="missing-tag">${t}</span>`).join('')}
+                    </div>`;
+            }
+
+            if (data.totalSchemas === 0) {
+                html += `
+                    <div class="missing-section">
+                        <h3>No Schema Markup Found</h3>
+                        <p style="color:#718096;margin:0;">This page has no JSON-LD structured data. Add schema markup to improve search visibility and AI discoverability.</p>
+                    </div>`;
+            }
+
+            document.getElementById('results').innerHTML = html;
+        }
+    </script>
+</body>
+</html>
