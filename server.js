@@ -228,6 +228,7 @@ app.get('/', (req, res) => res.redirect('/seo-agents'));
 app.get('/dashboard', (req, res) => res.sendFile(path.join(__dirname, 'public', 'seo-dashboard.html')));
 app.get('/seo', (req, res) => res.sendFile(path.join(__dirname, 'public', 'seo-dashboard.html')));
 app.get('/seo-agents', (req, res) => res.sendFile(path.join(__dirname, 'public', 'seo-agents.html')));
+app.get('/bhv-report', (req, res) => res.sendFile(path.join(__dirname, 'public', 'bhv-report.html')));
 app.get('/keywords', (req, res) => res.sendFile(path.join(__dirname, 'public', 'keywords-live.html')));
 app.get('/keywords-live', (req, res) => res.sendFile(path.join(__dirname, 'public', 'keywords-live.html')));
 app.get('/website-audit', (req, res) => res.sendFile(path.join(__dirname, 'public', 'website-audit.html')));

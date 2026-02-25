@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beach Hydrovac — SEO Work Report</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f0f4f8;
+            color: #1a2332;
+        }
+
+        .page-wrap {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 40px 24px 80px;
+        }
+
+        /* HEADER */
+        .report-header {
+            background: linear-gradient(135deg, #0f2134 0%, #1a3a5c 100%);
+            border-radius: 16px;
+            padding: 40px 48px;
+            margin-bottom: 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .report-header .brand {
+            color: #fff;
+        }
+
+        .report-header .brand h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        .report-header .brand .accent {
+            color: #e8a020;
+        }
+
+        .report-header .brand p {
+            color: #a0b4c8;
+            font-size: 0.95rem;
+            margin-top: 4px;
+        }
+
+        .report-meta {
+            text-align: right;
+            color: #a0b4c8;
+            font-size: 0.875rem;
+            line-height: 1.8;
+        }
+
+        .report-meta strong {
+            color: #fff;
+        }
+
+        .status-badge {
+            display: inline-block;
+            background: #e8a020;
+            color: #0f2134;
+            font-weight: 700;
+            font-size: 0.75rem;
+            padding: 4px 12px;
+            border-radius: 20px;
+            margin-top: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* SUMMARY CARDS */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .summary-card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 24px 20px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            border-top: 4px solid #e8a020;
+        }
+
+        .summary-card .number {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: #0f2134;
+            line-height: 1;
+        }
+
+        .summary-card .label {
+            font-size: 0.8rem;
+            color: #64748b;
+            margin-top: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* SECTION */
+        .section {
+            background: #fff;
+            border-radius: 12px;
+            padding: 32px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid #f1f5f9;
+        }
+
+        .section-icon {
+            width: 40px;
+            height: 40px;
+            background: #0f2134;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        .section-header h2 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #0f2134;
+        }
+
+        .section-header p {
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-top: 2px;
+        }
+
+        /* ITEM LIST */
+        .item-list {
+            list-style: none;
+        }
+
+        .item-list li {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 10px 0;
+            border-bottom: 1px solid #f8fafc;
+            font-size: 0.9rem;
+            color: #334155;
+            line-height: 1.5;
+        }
+
+        .item-list li:last-child { border-bottom: none; }
+
+        .item-list li .check {
+            width: 20px;
+            height: 20px;
+            background: #dcfce7;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.65rem;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .item-list li strong {
+            color: #0f2134;
+        }
+
+        /* TABLE */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+        }
+
+        .data-table th {
+            background: #f8fafc;
+            color: #64748b;
+            font-weight: 600;
+            text-align: left;
+            padding: 10px 14px;
+            font-size: 0.775rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .data-table td {
+            padding: 10px 14px;
+            border-bottom: 1px solid #f1f5f9;
+            color: #334155;
+            vertical-align: top;
+        }
+
+        .data-table tr:last-child td { border-bottom: none; }
+
+        .data-table tr:hover td { background: #fafbfc; }
+
+        .tag {
+            display: inline-block;
+            background: #dcfce7;
+            color: #16a34a;
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .tag.blue {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+
+        .tag.orange {
+            background: #fef3c7;
+            color: #d97706;
+        }
+
+        /* TWO COL */
+        .two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        /* KW TABLE */
+        .kw-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 0.875rem;
+        }
+
+        .kw-row:last-child { border-bottom: none; }
+
+        .kw-name { color: #334155; }
+
+        .kw-vol {
+            background: #f1f5f9;
+            color: #475569;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 0.775rem;
+            font-weight: 600;
+        }
+
+        /* PENDING */
+        .pending-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 0;
+            border-bottom: 1px solid #f8fafc;
+            font-size: 0.875rem;
+            color: #64748b;
+        }
+
+        .pending-item:last-child { border-bottom: none; }
+
+        .pending-dot {
+            width: 8px;
+            height: 8px;
+            background: #f59e0b;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        /* FOOTER */
+        .report-footer {
+            background: #0f2134;
+            border-radius: 12px;
+            padding: 32px 40px;
+            text-align: center;
+            color: #a0b4c8;
+            margin-top: 32px;
+        }
+
+        .report-footer h3 {
+            color: #fff;
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+        }
+
+        .report-footer a {
+            color: #e8a020;
+            text-decoration: none;
+        }
+
+        .divider {
+            height: 1px;
+            background: #e2e8f0;
+            margin: 20px 0;
+        }
+
+        @media print {
+            body { background: #fff; }
+            .page-wrap { padding: 20px; }
+            .section { box-shadow: none; border: 1px solid #e2e8f0; }
+            .report-header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .summary-card { border: 1px solid #e2e8f0; box-shadow: none; }
+        }
+
+        @media (max-width: 700px) {
+            .summary-grid { grid-template-columns: repeat(2, 1fr); }
+            .two-col { grid-template-columns: 1fr; }
+            .report-header { flex-direction: column; gap: 20px; }
+            .report-meta { text-align: left; }
+        }
+    </style>
+</head>
+<body>
+<div class="page-wrap">
+
+    <!-- HEADER -->
+    <div class="report-header">
+        <div class="brand">
+            <h1>Beach<span class="accent">Hydrovac</span></h1>
+            <p>SEO &amp; Digital Marketing — Work Report</p>
+            <span class="status-badge">Invoice Ready</span>
+        </div>
+        <div class="report-meta">
+            <strong>Prepared by:</strong> Rowel Dencinares<br>
+            <strong>Client:</strong> BeachHydrovac.com<br>
+            <strong>Period:</strong> Jan 2026 – Feb 2026<br>
+            <strong>Date:</strong> February 26, 2026<br>
+        </div>
+    </div>
+
+    <!-- SUMMARY NUMBERS -->
+    <div class="summary-grid">
+        <div class="summary-card">
+            <div class="number">39</div>
+            <div class="label">Pages Created / Optimized</div>
+        </div>
+        <div class="summary-card">
+            <div class="number">7</div>
+            <div class="label">Schema Types Deployed</div>
+        </div>
+        <div class="summary-card">
+            <div class="number">17</div>
+            <div class="label">Location Pages Built</div>
+        </div>
+        <div class="summary-card">
+            <div class="number">8</div>
+            <div class="label">SEO Blog Posts Published</div>
+        </div>
+    </div>
+
+    <!-- WEBSITE BUILD -->
+    <div class="section">
+        <div class="section-header">
+            <div class="section-icon">🏗️</div>
+            <div>
+                <h2>Website Design &amp; Build</h2>
+                <p>Full WordPress site built on Spectra / Kadence blocks</p>
+            </div>
+        </div>
+        <ul class="item-list">
+            <li><span class="check">✓</span><div><strong>Homepage</strong> — Full-width hero, services grid, CTAs, veteran badge, service area section. Brand colors: Deep Atlantic #0f2134 + Gold #e8a020.</div></li>
+            <li><span class="check">✓</span><div><strong>Services Page</strong> — Potholing, Daylighting, Slot Trenching, Remote Dig, SUE Level A — each with detailed content, icons, CTAs.</div></li>
+            <li><span class="check">✓</span><div><strong>About Page</strong> — Company story, AIM Locating partnership, veteran-owned focus, capabilities grid, service area list.</div></li>
+            <li><span class="check">✓</span><div><strong>Contact Page</strong> — Phone 757-510-5220, request quote form, business hours, service area.</div></li>
+            <li><span class="check">✓</span><div><strong>Child Theme</strong> — Custom beachhydrovac child theme created and deployed for safe customization without breaking core theme.</div></li>
+            <li><span class="check">✓</span><div><strong>Mobile Responsive</strong> — All pages fully responsive across mobile, tablet, and desktop.</div></li>
+            <li><span class="check">✓</span><div><strong>Page Restoration</strong> — Restored original Spectra block format on About &amp; Services pages after scripts corrupted the layout. Images fixed to correct sizing.</div></li>
+        </ul>
+    </div>
+
+    <!-- LOCATION PAGES -->
+    <div class="section">
+        <div class="section-header">
+            <div class="section-icon">📍</div>
+            <div>
+                <h2>Location Pages — 17 Cities</h2>
+                <p>Full city-specific landing pages targeting local search intent</p>
+            </div>
+        </div>
+        <div class="two-col">
+            <div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>City</th>
+                            <th>URL</th>
+                            <th>Priority</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Virginia Beach</td><td>/locations/virginia-beach/</td><td><span class="tag">P1</span></td></tr>
+                        <tr><td>Norfolk</td><td>/locations/norfolk/</td><td><span class="tag">P1</span></td></tr>
+                        <tr><td>Chesapeake</td><td>/locations/chesapeake/</td><td><span class="tag">P1</span></td></tr>
+                        <tr><td>Newport News</td><td>/locations/newport-news/</td><td><span class="tag">P1</span></td></tr>
+                        <tr><td>Hampton</td><td>/locations/hampton/</td><td><span class="tag">P1</span></td></tr>
+                        <tr><td>Richmond</td><td>/locations/richmond/</td><td><span class="tag">P1</span></td></tr>
+                        <tr><td>Suffolk</td><td>/locations/suffolk/</td><td><span class="tag blue">P2</span></td></tr>
+                        <tr><td>Portsmouth</td><td>/locations/portsmouth/</td><td><span class="tag blue">P2</span></td></tr>
+                        <tr><td>Williamsburg</td><td>/locations/williamsburg/</td><td><span class="tag blue">P2</span></td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>City</th>
+                            <th>URL</th>
+                            <th>Priority</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Henrico</td><td>/locations/henrico/</td><td><span class="tag blue">P2</span></td></tr>
+                        <tr><td>Chesterfield</td><td>/locations/chesterfield/</td><td><span class="tag blue">P2</span></td></tr>
+                        <tr><td>Alexandria</td><td>/locations/alexandria/</td><td><span class="tag blue">P2</span></td></tr>
+                        <tr><td>Arlington</td><td>/locations/arlington/</td><td><span class="tag blue">P2</span></td></tr>
+                        <tr><td>Fairfax</td><td>/locations/fairfax/</td><td><span class="tag blue">P2</span></td></tr>
+                        <tr><td>Fredericksburg</td><td>/locations/fredericksburg/</td><td><span class="tag blue">P2</span></td></tr>
+                        <tr><td>Roanoke</td><td>/locations/roanoke/</td><td><span class="tag orange">P3</span></td></tr>
+                        <tr><td>Lynchburg</td><td>/locations/lynchburg/</td><td><span class="tag orange">P3</span></td></tr>
+                        <tr><td>Eastern Shore</td><td>/locations/eastern-shore/</td><td><span class="tag blue">P2</span></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div style="margin-top:16px;">
+            <p style="font-size:0.85rem;color:#64748b;">Each location page includes: city-specific H1, services list, why choose us section, industries served, local area info, and CTA with phone number. Also includes 6 <strong>Vacuum Excavation</strong> city variants (Virginia Beach, Norfolk, Chesapeake, Newport News, Hampton, Richmond).</p>
+        </div>
+    </div>
+
+    <!-- SERVICE PAGES -->
+    <div class="section">
+        <div class="section-header">
+            <div class="section-icon">⚙️</div>
+            <div>
+                <h2>Service &amp; Content Pages</h2>
+                <p>Dedicated pages for each service and educational guides</p>
+            </div>
+        </div>
+        <table class="data-table">
+            <thead>
+                <tr><th>Page</th><th>URL</th><th>Type</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Hydro Excavation (main)</td><td>/hydro-excavation/</td><td><span class="tag blue">Service</span></td><td><span class="tag">Live</span></td></tr>
+                <tr><td>Potholing / Daylighting</td><td>/potholing/</td><td><span class="tag blue">Service</span></td><td><span class="tag">Live</span></td></tr>
+                <tr><td>Slot Trenching</td><td>/slot-trenching/</td><td><span class="tag blue">Service</span></td><td><span class="tag">Live</span></td></tr>
+                <tr><td>SUE Level A</td><td>/sue-level-a/</td><td><span class="tag blue">Service</span></td><td><span class="tag">Live</span></td></tr>
+                <tr><td>Remote Excavation</td><td>/remote-excavation/</td><td><span class="tag blue">Service</span></td><td><span class="tag">Live</span></td></tr>
+                <tr><td>What is Hydro Excavation?</td><td>/what-is-hydro-excavation/</td><td><span class="tag orange">Education</span></td><td><span class="tag">Live</span></td></tr>
+                <tr><td>Cost Guide Virginia 2026</td><td>/hydro-excavation-cost-guide-virginia-2026/</td><td><span class="tag orange">Education</span></td><td><span class="tag">Live</span></td></tr>
+                <tr><td>Safety Best Practices</td><td>/hydro-excavation-safety-best-practices/</td><td><span class="tag orange">Education</span></td><td><span class="tag">Live</span></td></tr>
+                <tr><td>VDOT SUE Requirements Guide</td><td>/vdot-sue-requirements-contractors-guide/</td><td><span class="tag orange">Education</span></td><td><span class="tag">Live</span></td></tr>
+                <tr><td>Virginia 811 Guide</td><td>/virginia-811-miss-utility-guide/</td><td><span class="tag orange">Education</span></td><td><span class="tag">Live</span></td></tr>
+                <tr><td>Service Areas Hub</td><td>/service-areas/</td><td><span class="tag blue">Hub</span></td><td><span class="tag">Live</span></td></tr>
+                <tr><td>Locations Hub</td><td>/locations/</td><td><span class="tag blue">Hub</span></td><td><span class="tag">Live</span></td></tr>
+                <tr><td>FAQ Page</td><td>/faq/</td><td><span class="tag blue">Support</span></td><td><span class="tag">Live</span></td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- BLOG POSTS -->
+    <div class="section">
+        <div class="section-header">
+            <div class="section-icon">✍️</div>
+            <div>
+                <h2>Blog Content — 8 Posts Published</h2>
+                <p>Educational content for authority building and long-tail keyword capture</p>
+            </div>
+        </div>
+        <ul class="item-list">
+            <li><span class="check">✓</span><div><strong>"What is Hydro Excavation? Complete Guide"</strong> — Targets informational searches, foundational authority piece.</div></li>
+            <li><span class="check">✓</span><div><strong>"Hydro Excavation Cost Guide Virginia 2026"</strong> — High commercial intent, unique pricing data.</div></li>
+            <li><span class="check">✓</span><div><strong>"VDOT SUE Requirements: Contractor's Guide"</strong> — No competitor has this. Targets niche B2B searches.</div></li>
+            <li><span class="check">✓</span><div><strong>"Virginia 811 Before You Dig — Complete Guide"</strong> — Targets compliance searches by contractors.</div></li>
+            <li><span class="check">✓</span><div><strong>"Hydro Excavation Safety Best Practices"</strong> — Builds trust with safety-focused buyers.</div></li>
+            <li><span class="check">✓</span><div><strong>"Utility Strike Prevention with Hydrovac"</strong> — Industry-specific risk management content.</div></li>
+            <li><span class="check">✓</span><div><strong>"Fiber Optic Installation: Hydro Excavation Guide"</strong> — Industry vertical targeting telecom contractors.</div></li>
+            <li><span class="check">✓</span><div><strong>"Hampton Roads Infrastructure Projects 2026"</strong> — Local market authority content.</div></li>
+        </ul>
+    </div>
+
+    <!-- TECHNICAL SEO -->
+    <div class="section">
+        <div class="section-header">
+            <div class="section-icon">🔧</div>
+            <div>
+                <h2>Technical SEO Implementation</h2>
+                <p>On-page and structural SEO across all pages</p>
+            </div>
+        </div>
+        <div class="two-col">
+            <div>
+                <p style="font-size:0.8rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;">Schema Markup (7 Types)</p>
+                <ul class="item-list">
+                    <li><span class="check">✓</span><div><strong>Organization</strong> — All pages. Builds Knowledge Panel.</div></li>
+                    <li><span class="check">✓</span><div><strong>LocalBusiness</strong> — Homepage &amp; Contact. Google Maps SEO.</div></li>
+                    <li><span class="check">✓</span><div><strong>Service (×4)</strong> — Services &amp; Homepage. Rich results.</div></li>
+                    <li><span class="check">✓</span><div><strong>FAQPage</strong> — Homepage, Services, Contact. FAQ snippets.</div></li>
+                    <li><span class="check">✓</span><div><strong>BreadcrumbList</strong> — All interior pages.</div></li>
+                    <li><span class="check">✓</span><div><strong>Article</strong> — All blog posts. Article rich results.</div></li>
+                    <li><span class="check">✓</span><div><strong>WebSite</strong> — All pages. Enables Sitelinks Searchbox.</div></li>
+                </ul>
+            </div>
+            <div>
+                <p style="font-size:0.8rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;">Meta &amp; On-Page</p>
+                <ul class="item-list">
+                    <li><span class="check">✓</span><div><strong>Title Tags</strong> — Custom per page, keyword-optimized</div></li>
+                    <li><span class="check">✓</span><div><strong>Meta Descriptions</strong> — 155 chars max, conversion-focused</div></li>
+                    <li><span class="check">✓</span><div><strong>Focus Keywords</strong> — Set via Yoast SEO on all pages</div></li>
+                    <li><span class="check">✓</span><div><strong>Canonical URLs</strong> — Auto-generated, query strings stripped</div></li>
+                    <li><span class="check">✓</span><div><strong>Open Graph</strong> — Full OG tags for social sharing</div></li>
+                    <li><span class="check">✓</span><div><strong>H1 Audit &amp; Fix</strong> — Single H1 per page enforced</div></li>
+                    <li><span class="check">✓</span><div><strong>Robots Meta</strong> — index, follow + max-snippet:-1</div></li>
+                    <li><span class="check">✓</span><div><strong>Geo Tags</strong> — Virginia Beach coordinates</div></li>
+                    <li><span class="check">✓</span><div><strong>Sitemap Submitted</strong> — XML sitemap via Google Search Console</div></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- INTERNAL LINKING -->
+    <div class="section">
+        <div class="section-header">
+            <div class="section-icon">🔗</div>
+            <div>
+                <h2>Internal Linking Structure</h2>
+                <p>Link equity distribution and orphan page elimination</p>
+            </div>
+        </div>
+        <ul class="item-list">
+            <li><span class="check">✓</span><div><strong>Internal Link Audit</strong> — All pages audited for orphan status. 30+ orphan pages identified and fixed.</div></li>
+            <li><span class="check">✓</span><div><strong>Related Resources Blocks</strong> — Added to all location pages linking to: full service pages, what-is guides, cost guide, service areas.</div></li>
+            <li><span class="check">✓</span><div><strong>CTA Blocks</strong> — "Request a Free Quote" CTA added to every page with phone number 757-510-5220.</div></li>
+            <li><span class="check">✓</span><div><strong>Hub Pages Linked</strong> — Locations Hub (/locations/) and Service Areas (/service-areas/) properly linked to all child pages.</div></li>
+            <li><span class="check">✓</span><div><strong>Vacuum Excavation Variants</strong> — 6 city pages linked back to their full hydro excavation location counterparts.</div></li>
+        </ul>
+    </div>
+
+    <!-- AI SEO -->
+    <div class="section">
+        <div class="section-header">
+            <div class="section-icon">🤖</div>
+            <div>
+                <h2>AI Search Optimization (GEO)</h2>
+                <p>Optimized for ChatGPT, Perplexity, Google AI Overviews, and voice assistants</p>
+            </div>
+        </div>
+        <ul class="item-list">
+            <li><span class="check">✓</span><div><strong>llms.txt Created &amp; Live</strong> — beachhydrovac.com/llms.txt gives structured company/service data to AI crawlers (ChatGPT, Perplexity, Claude).</div></li>
+            <li><span class="check">✓</span><div><strong>AI-Optimized Content Page</strong> — /hydro-excavation-virginia-guide/ structured in Q&amp;A format for AI Overview capture.</div></li>
+            <li><span class="check">✓</span><div><strong>FAQ Schema Expansion</strong> — Expanded FAQ schema across multiple pages for Google AI Overview and voice assistant answers.</div></li>
+            <li><span class="check">✓</span><div><strong>Structured Speakable Content</strong> — Key facts formatted for voice assistant read-aloud responses.</div></li>
+        </ul>
+    </div>
+
+    <!-- KEYWORDS -->
+    <div class="section">
+        <div class="section-header">
+            <div class="section-icon">🎯</div>
+            <div>
+                <h2>Target Keywords</h2>
+                <p>Keywords optimized across pages and content strategy</p>
+            </div>
+        </div>
+        <div class="two-col">
+            <div>
+                <p style="font-size:0.8rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;">Primary (High Competition)</p>
+                <div class="kw-row"><span class="kw-name">hydro excavation Virginia</span><span class="kw-vol">590/mo</span></div>
+                <div class="kw-row"><span class="kw-name">hydrovac services Virginia Beach</span><span class="kw-vol">320/mo</span></div>
+                <div class="kw-row"><span class="kw-name">vacuum excavation Norfolk</span><span class="kw-vol">210/mo</span></div>
+                <div class="kw-row"><span class="kw-name">potholing services Virginia</span><span class="kw-vol">170/mo</span></div>
+                <div class="kw-row"><span class="kw-name">SUE Level A Virginia</span><span class="kw-vol">140/mo</span></div>
+                <div class="kw-row"><span class="kw-name">daylighting services Hampton Roads</span><span class="kw-vol">90/mo</span></div>
+            </div>
+            <div>
+                <p style="font-size:0.8rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;">Long-Tail (Low Competition, High Intent)</p>
+                <div class="kw-row"><span class="kw-name">hydro excavation cost Virginia 2026</span><span class="kw-vol">Unique</span></div>
+                <div class="kw-row"><span class="kw-name">VDOT SUE requirements contractors</span><span class="kw-vol">Unique</span></div>
+                <div class="kw-row"><span class="kw-name">fiber optic hydro excavation Virginia</span><span class="kw-vol">Niche</span></div>
+                <div class="kw-row"><span class="kw-name">utility strike prevention excavation</span><span class="kw-vol">Niche</span></div>
+                <div class="kw-row"><span class="kw-name">veteran owned hydro excavation virginia</span><span class="kw-vol">Brand</span></div>
+                <div class="kw-row"><span class="kw-name">hydro excavation [city] VA (×17)</span><span class="kw-vol">Local</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- COMPETITIVE ADVANTAGES -->
+    <div class="section">
+        <div class="section-header">
+            <div class="section-icon">🏆</div>
+            <div>
+                <h2>Competitive Advantages Built</h2>
+                <p>Content gaps filled that no competitor currently has</p>
+            </div>
+        </div>
+        <ul class="item-list">
+            <li><span class="check">✓</span><div><strong>VDOT SUE Requirements Guide</strong> — Zero competitors have this. Targets high-value contractor B2B searches.</div></li>
+            <li><span class="check">✓</span><div><strong>Virginia-Specific 2026 Cost Guide</strong> — First with current pricing data for the state.</div></li>
+            <li><span class="check">✓</span><div><strong>17 City Location Pages</strong> — Badger Daylighting and Black Hydrovac have minimal local Virginia presence. We dominate locally.</div></li>
+            <li><span class="check">✓</span><div><strong>Industry Vertical Content</strong> — Fiber optic, electrical, HRSD sewer — niche content competitors haven't targeted.</div></li>
+            <li><span class="check">✓</span><div><strong>Comprehensive FAQ with Schema</strong> — Positioned for Google AI Overviews and voice answers.</div></li>
+            <li><span class="check">✓</span><div><strong>Veteran-Owned Positioning</strong> — Differentiation angle embedded in all content and schema.</div></li>
+        </ul>
+    </div>
+
+    <!-- PENDING -->
+    <div class="section">
+        <div class="section-header">
+            <div class="section-icon">⏳</div>
+            <div>
+                <h2>Recommended Next Steps</h2>
+                <p>Ongoing work for continued ranking growth</p>
+            </div>
+        </div>
+        <div class="two-col">
+            <div>
+                <p style="font-size:0.8rem;font-weight:700;color:#f59e0b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;">Client Action Required</p>
+                <div class="pending-item"><span class="pending-dot"></span>Claim Google Business Profile at business.google.com</div>
+                <div class="pending-item"><span class="pending-dot"></span>Upload 20+ photos (truck, equipment, team, job sites)</div>
+                <div class="pending-item"><span class="pending-dot"></span>Enable GBP messaging and set service areas</div>
+                <div class="pending-item"><span class="pending-dot"></span>Post weekly GBP updates (15 min/week)</div>
+                <div class="pending-item"><span class="pending-dot"></span>Submit to local citation directories (Yelp, BBB, Angi)</div>
+            </div>
+            <div>
+                <p style="font-size:0.8rem;font-weight:700;color:#f59e0b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;">Ongoing SEO Work</p>
+                <div class="pending-item"><span class="pending-dot"></span>2–4 blog posts per month (content calendar ready)</div>
+                <div class="pending-item"><span class="pending-dot"></span>Weekly Google Search Console monitoring</div>
+                <div class="pending-item"><span class="pending-dot"></span>Quarterly technical SEO audit</div>
+                <div class="pending-item"><span class="pending-dot"></span>Backlink building (Blue Book, industry directories)</div>
+                <div class="pending-item"><span class="pending-dot"></span>Case studies + project gallery with location data</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="report-footer">
+        <h3>Beach Hydrovac — SEO Foundation Complete</h3>
+        <p style="margin-top:8px;">39 pages live &bull; 7 schema types &bull; 17 cities &bull; AI search optimized &bull; Full internal link structure</p>
+        <div class="divider" style="background:#1a3a5c;"></div>
+        <p style="font-size:0.85rem;">Questions? Contact: <a href="mailto:roweldencinares@gmail.com">roweldencinares@gmail.com</a></p>
+        <p style="font-size:0.8rem;margin-top:8px;color:#64748b;">Generated Feb 26, 2026 &bull; beachhydrovac.com</p>
+    </div>
+
+</div>
+</body>
+</html>
